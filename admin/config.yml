@@ -5,7 +5,7 @@ backend:
 media_folder: "uploads/images"
 public_folder: "/uploads/images"
 
-site_url: https://heimatliebeinstitute.netlify.app  # EDIT: replace with actual Netlify URL after deploy
+site_url: https://hmli.netlify.app  # EDIT: replace with actual Netlify URL after deploy
 
 collections:
 
