@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "strapi-plugin-netlify-deployments": "^2.0.2"
+  }
+}
