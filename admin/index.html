@@ -1,26 +1,63 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Heimatliebe Institute CMS</title>
 
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f8f9fb;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(201,168,76,0.35), #1e5cc6);
+      color: white;
+      padding: 24px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+
+    .welcome-banner h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+
+    .welcome-banner p {
+      margin: 8px 0 0;
+      opacity: 0.9;
+      font-size: 1rem;
+    }
+
+    .admin-info {
+      padding: 16px 40px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .admin-info strong {
+      color: #0b3d91;
+    }
+  </style>
 </head>
 <body>
 
-<script src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
+  <div class="welcome-banner">
+    <h1>Heimatliebe Institute CMS</h1>
+    <p>Content Management Portal</p>
+  </div>
 
-<script>
-if (window.netlifyIdentity) {
-  window.netlifyIdentity.on("init", user => {
-    if (!user) {
-      window.netlifyIdentity.on("login", () => {
-        document.location.href = "/admin/";
-      });
-    }
-  });
-}
-</script>
+  <div class="admin-info">
+    Manage news, courses, gallery items, documents, and testimonials from this dashboard.
+    Changes published here will automatically update the website after deployment.
+  </div>
+
+  <script src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
 
 </body>
 </html>
