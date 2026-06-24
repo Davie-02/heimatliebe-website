@@ -251,10 +251,10 @@
   <section id="hero">
     <div class="lang-tower" aria-hidden="true">
       <div class="word">Heim</div>
-      <div class="word">Maison</div>
-      <div class="word">Heimat</div>
-      <div class="word">Casa</div>
-      <div class="word">Nyumba</div>
+      <div class="word">atliebe</div>
+      <div class="word">Institute</div>
+      <div class="word">Language</div>
+      <div class="word">Connects!</div>
     </div>
     <div class="lang-label" style="color:var(--gold-pale);letter-spacing:0.18em;font-size:0.65rem;text-transform:uppercase;margin-bottom:1.5rem;">German · A1 – B2</div>
     <p class="hero-location">Karonga, Northern Malawi</p>
@@ -421,12 +421,12 @@
         <div class="contact-detail">
           <div class="icon">📞</div>
           <!-- EDIT: replace with actual number -->
-          <div class="detail-body"><strong>Phone / WhatsApp</strong><span><a href="tel:+265000000000">+265 000 000 000</a></span></div>
+          <div class="detail-body"><strong>Phone / WhatsApp</strong><span><a href="tel:+265991383466">+265 991 383 466</a></span></div>
         </div>
         <div class="contact-detail">
           <div class="icon">✉️</div>
           <!-- EDIT: replace with actual email -->
-          <div class="detail-body"><strong>Email</strong><span><a href="mailto:info@heimatliebe.mw">info@heimatliebe.mw</a></span></div>
+          <div class="detail-body"><strong>Email</strong><span><a href="mailto:heimatliebemw@gmail.com">heimatliebemw@gmail.com</a></span></div>
         </div>
         <div class="contact-detail">
           <div class="icon">🕐</div>
@@ -449,7 +449,7 @@
           <option>General Enquiry</option>
         </select>
         <textarea name="message" placeholder="Tell us about your goals or questions…"></textarea>
-        <!-- EDIT: replace 265000000000 with your WhatsApp number -->
+        <!-- EDIT: replace WhatsApp number everytime it's changed -->
         <button type="submit" class="btn btn-primary">Send Enquiry</button>
       </form>
     </div>
@@ -459,10 +459,10 @@
   <footer>
     <div class="footer-brand">Heimatliebe Institute</div>
     <div>Karonga, Northern Malawi · Language School</div>
-    <!-- EDIT: replace # with your actual social media URLs -->
+    <!-- EDIT: replace # with actual social media URLs -->
     <div style="display:flex;gap:1.25rem;">
       <a href="#">Facebook</a>
-      <a href="#">WhatsApp</a>
+      <a href="https://wa.me/265991383466">WhatsApp</a>
       <a href="#">Instagram</a>
     </div>
     <div>© <span id="yr"></span> Heimatliebe Institute. All rights reserved.</div>
@@ -481,8 +481,8 @@
     function handleEnquiry(e) {
       e.preventDefault();
       const f = e.target;
-      // EDIT: replace with your WhatsApp number (no + or spaces)
-      const phone = '265000000000';
+      // EDIT: replace WhatsApp number when changed (no + or spaces)
+      const phone = '265991383466';
       const text = encodeURIComponent(
         `Hello Heimatliebe Institute!\n\nName: ${f.name.value}\nInterest: ${f.interest.value || 'General'}\n\n${f.message.value}\n\nThank you!`
       );
