@@ -1,0 +1,123 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "uploads/images"
+public_folder: "/uploads/images"
+
+site_url: https://your-site-name.netlify.app  # EDIT: replace with your actual Netlify URL after deploy
+
+collections:
+
+  # ── NEWS & ANNOUNCEMENTS ─────────────────────────────────────
+  - name: "news"
+    label: "News & Announcements"
+    folder: "content/news"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - label: "Category"
+        name: "category"
+        widget: "select"
+        options: ["Announcement", "Event", "Achievement", "Update"]
+      - { label: "Summary (shown in card)", name: "summary", widget: "text" }
+      - { label: "Full Content", name: "body", widget: "markdown" }
+      - { label: "Cover Image (optional)", name: "image", widget: "image", required: false }
+      - label: "Published"
+        name: "published"
+        widget: "boolean"
+        default: true
+
+  # ── COURSES & TIMETABLE ──────────────────────────────────────
+  - name: "courses"
+    label: "Courses & Timetable"
+    folder: "content/courses"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Course Name", name: "title", widget: "string" }
+      - label: "Language"
+        name: "language"
+        widget: "select"
+        options: ["German", "French", "Swahili", "Spanish", "Chinese", "Latin"]
+      - label: "Level"
+        name: "level"
+        widget: "select"
+        options: ["A1", "A2", "B1", "B2", "C1", "C2", "Beginner", "Intermediate", "Advanced"]
+      - label: "Status"
+        name: "status"
+        widget: "select"
+        options: ["Enrolling Now", "Starting Soon", "Full", "Coming Soon"]
+      - { label: "Schedule (e.g. Mon & Wed, 5pm–7pm)", name: "schedule", widget: "string" }
+      - { label: "Duration", name: "duration", widget: "string", hint: "e.g. 3 months" }
+      - { label: "Fee (MWK)", name: "fee", widget: "string", hint: "e.g. MWK 25,000 or 'Contact us'" }
+      - { label: "Description", name: "body", widget: "markdown", required: false }
+      - label: "Show on Website"
+        name: "published"
+        widget: "boolean"
+        default: true
+
+  # ── PHOTO GALLERY ────────────────────────────────────────────
+  - name: "gallery"
+    label: "Photo Gallery"
+    folder: "content/gallery"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Album Title", name: "title", widget: "string" }
+      - { label: "Date", name: "date", widget: "datetime" }
+      - label: "Category"
+        name: "category"
+        widget: "select"
+        options: ["Classroom", "Events", "Graduation", "Community", "Staff"]
+      - label: "Photos"
+        name: "photos"
+        widget: "list"
+        fields:
+          - { label: "Photo", name: "image", widget: "image" }
+          - { label: "Caption", name: "caption", widget: "string", required: false }
+      - label: "Show on Website"
+        name: "published"
+        widget: "boolean"
+        default: true
+
+  # ── DOCUMENTS ────────────────────────────────────────────────
+  - name: "documents"
+    label: "Documents & Brochures"
+    folder: "content/documents"
+    create: true
+    slug: "{{slug}}"
+    media_folder: "/uploads/documents"
+    public_folder: "/uploads/documents"
+    fields:
+      - { label: "Document Title", name: "title", widget: "string" }
+      - label: "Type"
+        name: "type"
+        widget: "select"
+        options: ["Brochure", "Timetable", "Application Form", "Certificate Sample", "Other"]
+      - { label: "PDF File", name: "file", widget: "file", allow_multiple: false }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Date Added", name: "date", widget: "datetime" }
+      - label: "Show on Website"
+        name: "published"
+        widget: "boolean"
+        default: true
+
+  # ── STUDENT TESTIMONIALS ─────────────────────────────────────
+  - name: "testimonials"
+    label: "Student Testimonials"
+    folder: "content/testimonials"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Student Name", name: "name", widget: "string" }
+      - { label: "Course Taken", name: "course", widget: "string", hint: "e.g. German B1" }
+      - { label: "Year", name: "year", widget: "string", hint: "e.g. 2024" }
+      - { label: "Testimonial", name: "body", widget: "text" }
+      - { label: "Photo (optional)", name: "photo", widget: "image", required: false }
+      - label: "Show on Website"
+        name: "published"
+        widget: "boolean"
+        default: true

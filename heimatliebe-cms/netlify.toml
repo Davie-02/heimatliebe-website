@@ -1,0 +1,23 @@
+# ── NETLIFY CONFIGURATION ────────────────────────────────────────
+# This file tells Netlify how to build and serve your site.
+
+[build]
+  publish = "."   # serve files from root folder
+
+# Enable Netlify Identity for CMS login
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+
+# Allow CORS for content files (needed by the CMS loader)
+[[headers]]
+  for = "/content/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/uploads/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"

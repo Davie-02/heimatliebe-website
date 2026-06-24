@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heimatliebe Institute — Language School, Karonga, Malawi</title>
+  <meta name="description" content="Heimatliebe Institute is a private international language school in Karonga, Northern Malawi, offering German (A1–B2) and expanding to French, Spanish, Swahili, Chinese, and Latin." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- For parsing front-matter from CMS markdown files -->
+  <script src="https://cdn.jsdelivr.net/npm/gray-matter@4.0.3/browser/js/gray-matter.min.js"></script>
+  <!-- Marked for rendering markdown body -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --green-deep:  #1B4332;
+      --green-mid:   #2D6A4F;
+      --green-light: #52B788;
+      --gold:        #C9A84C;
+      --gold-pale:   #EDD591;
+      --cream:       #F7F5EF;
+      --charcoal:    #1A1A1A;
+      --slate:       #4A6572;
+      --white:       #FFFFFF;
+      --rule:        rgba(201,168,76,0.35);
+      --font-display:'Playfair Display', Georgia, serif;
+      --font-body:   'Inter', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); background: var(--cream); color: var(--charcoal); line-height: 1.7; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 5vw;
+      background: rgba(27,67,50,0.96); backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--rule);
+    }
+    .nav-logo { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--gold); text-decoration: none; }
+    .nav-logo span { color: var(--white); font-weight: 400; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,0.82); text-decoration: none; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--gold-pale); }
+    .nav-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+    .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--white); border-radius: 2px; }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh; background: var(--green-deep);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 8rem 5vw 5rem; position: relative; overflow: hidden;
+    }
+    .lang-tower { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; margin-bottom: 2.5rem; }
+    .lang-tower .word { font-family: var(--font-display); font-weight: 900; line-height: 1.05; color: var(--white); letter-spacing: -0.02em; }
+    .lang-tower .word:nth-child(1) { font-size: clamp(1.2rem,3vw,2rem);   opacity: 0.25; }
+    .lang-tower .word:nth-child(2) { font-size: clamp(2rem,5vw,3.5rem);   opacity: 0.5; }
+    .lang-tower .word:nth-child(3) { font-size: clamp(3rem,9vw,6.5rem);   opacity: 1; color: var(--gold); }
+    .lang-tower .word:nth-child(4) { font-size: clamp(2rem,5vw,3.5rem);   opacity: 0.5; }
+    .lang-tower .word:nth-child(5) { font-size: clamp(1.2rem,3vw,2rem);   opacity: 0.25; }
+    .lang-label { font-family: var(--font-body); font-size: 0.65rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold-pale); margin-top: 0.25rem; }
+    .hero-location { font-size: 0.78rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 1rem; }
+    .hero-tagline { font-size: clamp(0.9rem,2vw,1.1rem); font-weight: 300; color: rgba(255,255,255,0.75); max-width: 520px; margin: 0 auto 2.5rem; }
+    .btn { display: inline-block; padding: 0.85rem 2.2rem; border-radius: 2px; font-family: var(--font-body); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none; transition: background 0.2s, color 0.2s, transform 0.15s; cursor: pointer; border: none; }
+    .btn-primary { background: var(--gold); color: var(--green-deep); }
+    .btn-primary:hover { background: var(--gold-pale); transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: var(--white); border: 1.5px solid rgba(255,255,255,0.45); margin-left: 1rem; }
+    .btn-outline:hover { border-color: var(--gold-pale); color: var(--gold-pale); }
+    .hero-scroll { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.4); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; }
+    .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, rgba(201,168,76,0.5), transparent); animation: scrollPulse 2s ease-in-out infinite; }
+    @keyframes scrollPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+    /* ── SECTION COMMON ── */
+    section { padding: 6rem 5vw; }
+    .gold-rule { width: 48px; height: 2px; background: var(--gold); margin-bottom: 1.5rem; }
+    .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+    h2.section-title { font-family: var(--font-display); font-size: clamp(2rem,4vw,3rem); font-weight: 700; line-height: 1.15; color: var(--green-deep); max-width: 600px; }
+    .section-intro { max-width: 640px; color: var(--slate); font-size: 1.05rem; margin-top: 1.25rem; }
+    .empty-state { color: var(--slate); font-style: italic; margin-top: 2rem; opacity: 0.7; }
+
+    /* ── ABOUT ── */
+    #about { background: var(--white); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: start; margin-top: 3.5rem; }
+    .about-body { color: var(--slate); font-size: 1rem; }
+    .about-body p + p { margin-top: 1rem; }
+    .stat-stack { display: flex; flex-direction: column; gap: 2rem; }
+    .stat-card { border-left: 3px solid var(--gold); padding: 1.25rem 1.5rem; background: var(--cream); }
+    .stat-card .stat-num { font-family: var(--font-display); font-size: 2.4rem; font-weight: 900; color: var(--green-deep); line-height: 1; }
+    .stat-card .stat-label { font-size: 0.82rem; font-weight: 500; color: var(--slate); margin-top: 0.35rem; letter-spacing: 0.04em; }
+
+    /* ── GOALS ── */
+    #goals { background: var(--cream); }
+    .goals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 3.5rem; }
+    .goal-card { background: var(--white); border-top: 3px solid var(--green-light); padding: 1.75rem; transition: box-shadow 0.2s, transform 0.2s; }
+    .goal-card:hover { box-shadow: 0 8px 30px rgba(27,67,50,0.1); transform: translateY(-3px); }
+    .goal-card .goal-icon { font-size: 1.6rem; margin-bottom: 1rem; display: block; }
+    .goal-card h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--green-deep); margin-bottom: 0.6rem; }
+    .goal-card p { font-size: 0.9rem; color: var(--slate); }
+
+    /* ── COURSES ── */
+    #courses { background: var(--white); }
+    .courses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 1.25rem; margin-top: 3rem; }
+    .course-card { border: 1.5px solid rgba(27,67,50,0.12); padding: 1.5rem; background: var(--cream); position: relative; }
+    .course-card .course-lang { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--green-mid); margin-bottom: 0.4rem; }
+    .course-card h3 { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--green-deep); margin-bottom: 0.75rem; }
+    .course-card .course-meta { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.83rem; color: var(--slate); margin-bottom: 1rem; }
+    .course-card .course-meta span { display: flex; gap: 0.5rem; align-items: center; }
+    .course-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.25rem 0.6rem; border-radius: 2px; }
+    .badge-enrolling { background: var(--gold); color: var(--green-deep); }
+    .badge-soon      { background: rgba(82,183,136,0.15); color: var(--green-mid); border: 1px solid var(--green-light); }
+    .badge-full      { background: rgba(200,0,0,0.08); color: #a00; border: 1px solid rgba(200,0,0,0.2); }
+    .badge-coming    { background: rgba(201,168,76,0.12); color: var(--gold); border: 1px solid var(--rule); }
+    .course-fee { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--green-deep); margin-top: 0.75rem; }
+
+    /* ── NEWS ── */
+    #news { background: var(--cream); }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 1.5rem; margin-top: 3rem; }
+    .news-card { background: var(--white); overflow: hidden; transition: box-shadow 0.2s, transform 0.2s; }
+    .news-card:hover { box-shadow: 0 6px 24px rgba(27,67,50,0.1); transform: translateY(-2px); }
+    .news-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .news-card-body { padding: 1.4rem; }
+    .news-card .news-cat { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.4rem; }
+    .news-card h3 { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: var(--green-deep); margin-bottom: 0.5rem; line-height: 1.3; }
+    .news-card .news-summary { font-size: 0.87rem; color: var(--slate); }
+    .news-card .news-date { font-size: 0.75rem; color: rgba(74,101,114,0.6); margin-top: 0.75rem; }
+
+    /* ── GALLERY ── */
+    #gallery { background: var(--white); }
+    .gallery-grid { columns: 3; column-gap: 1rem; margin-top: 3rem; }
+    .gallery-grid img { width: 100%; margin-bottom: 1rem; display: block; border-radius: 2px; cursor: pointer; transition: opacity 0.2s; }
+    .gallery-grid img:hover { opacity: 0.85; }
+    .gallery-caption { font-size: 0.78rem; color: var(--slate); text-align: center; margin-top: -0.75rem; margin-bottom: 1rem; }
+
+    /* Lightbox */
+    #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999; align-items: center; justify-content: center; }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 2px; }
+    #lightbox-close { position: absolute; top: 1.5rem; right: 2rem; color: var(--white); font-size: 2rem; cursor: pointer; background: none; border: none; line-height: 1; }
+
+    /* ── DOCUMENTS ── */
+    #documents { background: var(--cream); }
+    .docs-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2.5rem; max-width: 700px; }
+    .doc-row { display: flex; align-items: center; justify-content: space-between; background: var(--white); padding: 1rem 1.25rem; border-left: 3px solid var(--gold); gap: 1rem; }
+    .doc-row .doc-info { flex: 1; }
+    .doc-row .doc-title { font-weight: 600; color: var(--green-deep); font-size: 0.95rem; }
+    .doc-row .doc-type { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--slate); margin-top: 0.15rem; }
+    .doc-row .doc-date { font-size: 0.75rem; color: rgba(74,101,114,0.6); }
+    .doc-row a { white-space: nowrap; font-size: 0.8rem; font-weight: 600; color: var(--green-mid); text-decoration: none; border: 1.5px solid var(--green-light); padding: 0.35rem 0.85rem; border-radius: 2px; transition: background 0.2s; }
+    .doc-row a:hover { background: var(--green-light); color: var(--white); }
+
+    /* ── TESTIMONIALS ── */
+    #testimonials { background: var(--green-deep); }
+    #testimonials h2.section-title { color: var(--white); }
+    #testimonials .eyebrow { color: var(--gold-pale); }
+    #testimonials .section-intro { color: rgba(255,255,255,0.6); }
+    .testi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 1.25rem; margin-top: 3rem; }
+    .testi-card { border: 1px solid var(--rule); padding: 1.75rem; transition: border-color 0.2s; }
+    .testi-card:hover { border-color: var(--gold); }
+    .testi-card .testi-text { font-size: 0.95rem; color: rgba(255,255,255,0.82); line-height: 1.75; font-style: italic; margin-bottom: 1.25rem; }
+    .testi-card .testi-footer { display: flex; align-items: center; gap: 0.85rem; }
+    .testi-card img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+    .testi-card .testi-avatar-placeholder { width: 42px; height: 42px; border-radius: 50%; background: var(--green-mid); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+    .testi-card .testi-name { font-weight: 600; color: var(--gold-pale); font-size: 0.88rem; }
+    .testi-card .testi-course { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
+
+    /* ── LANGUAGES ── */
+    #languages { background: var(--green-deep); }
+    #languages h2.section-title { color: var(--white); }
+    #languages .section-intro { color: rgba(255,255,255,0.65); }
+    #languages .eyebrow { color: var(--gold-pale); }
+    .lang-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 1rem; margin-top: 3.5rem; }
+    .lang-card { border: 1px solid var(--rule); padding: 1.75rem 1.5rem; transition: border-color 0.2s, background 0.2s; }
+    .lang-card:hover { border-color: var(--gold); background: rgba(201,168,76,0.06); }
+    .lang-card .flag { font-size: 2rem; display: block; margin-bottom: 0.75rem; }
+    .lang-card .lang-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--white); margin-bottom: 0.4rem; }
+    .lang-card .lang-levels { font-size: 0.78rem; color: var(--gold-pale); letter-spacing: 0.08em; font-weight: 500; margin-bottom: 0.75rem; }
+    .lang-status { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.25rem 0.65rem; border-radius: 2px; display: inline-block; }
+    .status-active   { background: var(--gold); color: var(--green-deep); }
+    .status-upcoming { background: rgba(201,168,76,0.15); color: var(--gold-pale); border: 1px solid var(--rule); }
+
+    /* ── CONTACT ── */
+    #contact { background: var(--cream); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; margin-top: 3.5rem; align-items: start; }
+    .contact-detail { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.75rem; }
+    .contact-detail .icon { width: 38px; height: 38px; background: var(--green-deep); border-radius: 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem; }
+    .contact-detail .detail-body strong { display: block; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green-deep); margin-bottom: 0.2rem; }
+    .contact-detail .detail-body span { color: var(--slate); font-size: 0.95rem; }
+    .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .contact-form input, .contact-form select, .contact-form textarea { width: 100%; padding: 0.85rem 1rem; border: 1.5px solid rgba(27,67,50,0.2); border-radius: 2px; font-family: var(--font-body); font-size: 0.9rem; background: var(--white); color: var(--charcoal); outline: none; transition: border-color 0.2s; }
+    .contact-form input:focus, .contact-form select:focus, .contact-form textarea:focus { border-color: var(--green-mid); }
+    .contact-form textarea { height: 130px; resize: vertical; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--charcoal); color: rgba(255,255,255,0.55); padding: 3rem 5vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; }
+    footer .footer-brand { font-family: var(--font-display); font-weight: 700; color: var(--gold); font-size: 1rem; }
+    footer a { color: rgba(255,255,255,0.55); text-decoration: none; }
+    footer a:hover { color: var(--gold-pale); }
+
+    /* ── VISION ── */
+    #vision { background: var(--white); display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 0; }
+    .vision-text { padding: 6rem 5vw; }
+    .vision-accent { background: var(--green-mid); display: flex; align-items: center; justify-content: center; padding: 4rem 3rem; }
+    .vision-quote { font-family: var(--font-display); font-size: clamp(1.3rem,2.5vw,1.75rem); font-weight: 700; color: var(--white); line-height: 1.4; text-align: center; }
+    .vision-quote cite { display: block; font-style: normal; font-family: var(--font-body); font-size: 0.78rem; font-weight: 500; color: var(--gold-pale); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 1.25rem; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 800px) {
+      .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: var(--green-deep); padding: 1.5rem 5vw; gap: 1.25rem; }
+      .nav-links.open { display: flex; }
+      .nav-toggle { display: flex; }
+      .about-grid, .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      #vision { grid-template-columns: 1fr; }
+      .gallery-grid { columns: 2; }
+      .form-row { grid-template-columns: 1fr; }
+      .btn-outline { margin-left: 0; margin-top: 0.75rem; }
+    }
+    @media (max-width: 480px) { .gallery-grid { columns: 1; } }
+    @media (prefers-reduced-motion: reduce) { .scroll-line { animation: none; } * { transition: none !important; } }
+
+    /* Loading skeleton */
+    .skeleton { background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 2px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#hero" class="nav-logo">Heimatliebe <span>Institute</span></a>
+    <button class="nav-toggle" aria-label="Menu" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#courses">Courses</a></li>
+      <li><a href="#news">News</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#documents">Downloads</a></li>
+      <li><a href="#testimonials">Testimonials</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="lang-tower" aria-hidden="true">
+      <div class="word">Heim</div>
+      <div class="word">Maison</div>
+      <div class="word">Heimat</div>
+      <div class="word">Casa</div>
+      <div class="word">Nyumba</div>
+    </div>
+    <div class="lang-label" style="color:var(--gold-pale);letter-spacing:0.18em;font-size:0.65rem;text-transform:uppercase;margin-bottom:1.5rem;">German · A1 – B2</div>
+    <p class="hero-location">Karonga, Northern Malawi</p>
+    <p class="hero-tagline">A private international language school empowering Malawians with foreign language skills that open doors to education, employment, and the world.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:0.75rem;justify-content:center;">
+      <a href="#courses" class="btn btn-primary">Explore Courses</a>
+      <a href="#contact" class="btn btn-outline">Enquire Now</a>
+    </div>
+    <div class="hero-scroll" aria-hidden="true">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="eyebrow">Who We Are</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">Language education rooted in Malawi, reaching the world.</h2>
+    <div class="about-grid">
+      <div class="about-body">
+        <p>Heimatliebe Institute is a private international language school based in Karonga, in the Northern Region of Malawi. We exist to deliver high-quality foreign language education that is accessible, practical, and career-defining.</p>
+        <p>Our name reflects our belief: that a love of one's homeland and the drive to connect with the wider world are not opposites — they strengthen each other. We give Malawians the linguistic tools to engage confidently in education, travel, employment, and culture across borders.</p>
+        <p>Currently offering German at levels A1 through B2, we are building toward becoming a comprehensive multilingual centre and a certified language examination hub — so that Malawians no longer need to travel abroad to sit for internationally recognised language qualifications.</p>
+      </div>
+      <div class="stat-stack">
+        <div class="stat-card"><div class="stat-num">A1–B2</div><div class="stat-label">German levels currently offered</div></div>
+        <div class="stat-card"><div class="stat-num">6</div><div class="stat-label">Languages in the expansion plan</div></div>
+        <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">Core programme goals</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GOALS -->
+  <section id="goals">
+    <div class="eyebrow">What We Stand For</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">Seven goals that drive our programme.</h2>
+    <p class="section-intro">Every course we design, every student we enrol, and every partnership we build is guided by these commitments.</p>
+    <div class="goals-grid">
+      <div class="goal-card"><span class="goal-icon">🎓</span><h3>Study Abroad Support</h3><p>We prepare students with the language proficiency needed to gain admission to — and succeed in — academic programmes in German-speaking countries and beyond.</p></div>
+      <div class="goal-card"><span class="goal-icon">💼</span><h3>Workforce Preparation</h3><p>For those planning to work abroad, our courses build real workplace communication skills, improving job prospects and supporting Malawi's economy through remittances.</p></div>
+      <div class="goal-card"><span class="goal-icon">✈️</span><h3>Travel Confidence</h3><p>We equip travellers with practical language knowledge and cultural context so they can navigate new environments with ease and confidence.</p></div>
+      <div class="goal-card"><span class="goal-icon">🌍</span><h3>Tourism Growth</h3><p>Graduates can serve as interpreters or certified tour guides, contributing directly to Malawi's growing tourism sector and the local economy.</p></div>
+      <div class="goal-card"><span class="goal-icon">📚</span><h3>Training of Trainers</h3><p>We actively support the development of future language teachers, strengthening Malawi's educational capacity in German, French, English, and other foreign languages.</p></div>
+      <div class="goal-card"><span class="goal-icon">🌱</span><h3>Youth Empowerment</h3><p>We promote multilingualism among young Malawians, widening their worldview and introducing them to career and educational pathways made possible through language.</p></div>
+      <div class="goal-card"><span class="goal-icon">🏛️</span><h3>Certified Exam Centre</h3><p>We are working toward becoming an accredited language examination centre in Malawi — so students can earn internationally recognised certificates without leaving the country.</p></div>
+    </div>
+  </section>
+
+  <!-- COURSES (CMS-powered) -->
+  <section id="courses">
+    <div class="eyebrow">Enrol Today</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">Courses &amp; Timetable</h2>
+    <p class="section-intro">All current and upcoming courses — updated directly from our admin panel.</p>
+    <div class="courses-grid" id="courses-grid">
+      <div class="skeleton" style="height:180px;"></div>
+      <div class="skeleton" style="height:180px;"></div>
+      <div class="skeleton" style="height:180px;"></div>
+    </div>
+  </section>
+
+  <!-- NEWS (CMS-powered) -->
+  <section id="news">
+    <div class="eyebrow">Latest Updates</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">News &amp; Announcements</h2>
+    <div class="news-grid" id="news-grid">
+      <div class="skeleton" style="height:260px;"></div>
+      <div class="skeleton" style="height:260px;"></div>
+      <div class="skeleton" style="height:260px;"></div>
+    </div>
+  </section>
+
+  <!-- GALLERY (CMS-powered) -->
+  <section id="gallery">
+    <div class="eyebrow">Life at Heimatliebe</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">Photo Gallery</h2>
+    <div class="gallery-grid" id="gallery-grid">
+      <div class="skeleton" style="height:200px;margin-bottom:1rem;"></div>
+      <div class="skeleton" style="height:160px;margin-bottom:1rem;"></div>
+      <div class="skeleton" style="height:220px;margin-bottom:1rem;"></div>
+    </div>
+  </section>
+
+  <!-- LIGHTBOX -->
+  <div id="lightbox">
+    <button id="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')">✕</button>
+    <img id="lightbox-img" src="" alt="" />
+  </div>
+
+  <!-- DOCUMENTS (CMS-powered) -->
+  <section id="documents">
+    <div class="eyebrow">Resources</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">Documents &amp; Downloads</h2>
+    <p class="section-intro">Brochures, timetables, and forms — always up to date.</p>
+    <div class="docs-list" id="docs-list">
+      <div class="skeleton" style="height:64px;"></div>
+      <div class="skeleton" style="height:64px;"></div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS (CMS-powered) -->
+  <section id="testimonials">
+    <div class="eyebrow">Student Stories</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">What Our Students Say</h2>
+    <p class="section-intro">Voices from the Heimatliebe community.</p>
+    <div class="testi-grid" id="testi-grid">
+      <div class="skeleton" style="height:180px;background:rgba(255,255,255,0.06);"></div>
+      <div class="skeleton" style="height:180px;background:rgba(255,255,255,0.06);"></div>
+      <div class="skeleton" style="height:180px;background:rgba(255,255,255,0.06);"></div>
+    </div>
+  </section>
+
+  <!-- LANGUAGES -->
+  <section id="languages" style="background:var(--green-deep);">
+    <div class="eyebrow" style="color:var(--gold-pale);">Our Curriculum</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title" style="color:var(--white);">Languages we teach — and those coming next.</h2>
+    <p class="section-intro" style="color:rgba(255,255,255,0.65);">We currently offer German from beginner to upper-intermediate level, with an ambitious expansion plan in motion.</p>
+    <div class="lang-grid">
+      <div class="lang-card"><span class="flag">🇩🇪</span><div class="lang-name">German</div><div class="lang-levels">A1 · A2 · B1 · B2</div><span class="lang-status status-active">Currently Offered</span></div>
+      <div class="lang-card"><span class="flag">🌍</span><div class="lang-name">Swahili</div><div class="lang-levels">East African regional language</div><span class="lang-status status-upcoming">Coming Soon</span></div>
+      <div class="lang-card"><span class="flag">🇫🇷</span><div class="lang-name">French</div><div class="lang-levels">International &amp; regional reach</div><span class="lang-status status-upcoming">Coming Soon</span></div>
+      <div class="lang-card"><span class="flag">🇪🇸</span><div class="lang-name">Spanish</div><div class="lang-levels">Global language of opportunity</div><span class="lang-status status-upcoming">Coming Soon</span></div>
+      <div class="lang-card"><span class="flag">🇨🇳</span><div class="lang-name">Chinese</div><div class="lang-levels">Mandarin — global importance</div><span class="lang-status status-upcoming">Coming Soon</span></div>
+      <div class="lang-card"><span class="flag">🏛️</span><div class="lang-name">Latin</div><div class="lang-levels">Classical &amp; academic foundation</div><span class="lang-status status-upcoming">Coming Soon</span></div>
+    </div>
+  </section>
+
+  <!-- VISION -->
+  <section id="vision" style="padding:0;">
+    <div class="vision-text">
+      <div class="eyebrow">Our Aspiration</div>
+      <div class="gold-rule"></div>
+      <h2 class="section-title">A centre of excellence in language training for Malawi.</h2>
+      <p class="section-intro" style="margin-top:1.25rem;">Heimatliebe Language Institute aspires to become the definitive hub for foreign language education in Malawi — where academic rigour meets cultural curiosity, and every student leaves with skills that genuinely change the direction of their life.</p>
+      <p class="section-intro" style="margin-top:1rem;">We believe that strong language education fosters cross-cultural connections, improves employability, and prepares Malawians to engage confidently with the global community.</p>
+      <a href="#contact" class="btn btn-primary" style="margin-top:2rem;display:inline-block;">Join Us</a>
+    </div>
+    <div class="vision-accent">
+      <blockquote class="vision-quote">
+        "Strong language education fosters cross-cultural connections and prepares Malawians to engage confidently with the global community."
+        <cite>— Heimatliebe Institute</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="eyebrow">Get In Touch</div>
+    <div class="gold-rule"></div>
+    <h2 class="section-title">Enrol, enquire, or just say hello.</h2>
+    <div class="contact-grid">
+      <div>
+        <div class="contact-detail">
+          <div class="icon">📍</div>
+          <div class="detail-body"><strong>Location</strong><span>Karonga, Northern Region, Malawi</span></div>
+        </div>
+        <div class="contact-detail">
+          <div class="icon">📞</div>
+          <!-- EDIT: replace with actual number -->
+          <div class="detail-body"><strong>Phone / WhatsApp</strong><span><a href="tel:+265000000000">+265 000 000 000</a></span></div>
+        </div>
+        <div class="contact-detail">
+          <div class="icon">✉️</div>
+          <!-- EDIT: replace with actual email -->
+          <div class="detail-body"><strong>Email</strong><span><a href="mailto:info@heimatliebe.mw">info@heimatliebe.mw</a></span></div>
+        </div>
+        <div class="contact-detail">
+          <div class="icon">🕐</div>
+          <!-- EDIT: your actual hours -->
+          <div class="detail-body"><strong>Office Hours</strong><span>Mon–Fri: 8:00 AM – 5:00 PM<br>Saturday: 9:00 AM – 1:00 PM</span></div>
+        </div>
+      </div>
+      <form class="contact-form" onsubmit="handleEnquiry(event)">
+        <div class="form-row">
+          <input type="text"  name="name"  placeholder="Full Name" required />
+          <input type="email" name="email" placeholder="Email Address" required />
+        </div>
+        <input type="tel" name="phone" placeholder="Phone / WhatsApp Number" />
+        <select name="interest" id="course-select">
+          <option value="" disabled selected>I am interested in…</option>
+          <option>German — A1 (Beginner)</option>
+          <option>German — A2 (Elementary)</option>
+          <option>German — B1 (Intermediate)</option>
+          <option>German — B2 (Upper Intermediate)</option>
+          <option>General Enquiry</option>
+        </select>
+        <textarea name="message" placeholder="Tell us about your goals or questions…"></textarea>
+        <!-- EDIT: replace 265000000000 with your WhatsApp number -->
+        <button type="submit" class="btn btn-primary">Send Enquiry</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">Heimatliebe Institute</div>
+    <div>Karonga, Northern Malawi · Language School</div>
+    <!-- EDIT: replace # with your actual social media URLs -->
+    <div style="display:flex;gap:1.25rem;">
+      <a href="#">Facebook</a>
+      <a href="#">WhatsApp</a>
+      <a href="#">Instagram</a>
+    </div>
+    <div>© <span id="yr"></span> Heimatliebe Institute. All rights reserved.</div>
+  </footer>
+
+  <script>
+    // ── YEAR ─────────────────────────────────────────────────
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    // ── NAV ──────────────────────────────────────────────────
+    document.querySelectorAll('.nav-links a').forEach(l => l.addEventListener('click', () => {
+      document.querySelector('.nav-links').classList.remove('open');
+    }));
+
+    // ── CONTACT FORM → WHATSAPP ───────────────────────────────
+    function handleEnquiry(e) {
+      e.preventDefault();
+      const f = e.target;
+      // EDIT: replace with your WhatsApp number (no + or spaces)
+      const phone = '265000000000';
+      const text = encodeURIComponent(
+        `Hello Heimatliebe Institute!\n\nName: ${f.name.value}\nInterest: ${f.interest.value || 'General'}\n\n${f.message.value}\n\nThank you!`
+      );
+      window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    }
+
+    // ── LIGHTBOX ──────────────────────────────────────────────
+    function openLightbox(src, alt) {
+      const lb = document.getElementById('lightbox');
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox-img').alt = alt || '';
+      lb.classList.add('open');
+    }
+    document.getElementById('lightbox').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    // ── CMS CONTENT LOADER ────────────────────────────────────
+    // Fetches markdown files from /content/ and renders them on the page.
+    // Uses the GitHub API to list files — works after deployment to Netlify with GitHub.
+
+    async function loadContent(path) {
+      try {
+        const res = await fetch(path);
+        if (!res.ok) return null;
+        const text = await res.text();
+        // Simple front-matter parser (--- key: value --- format)
+        const fm = {};
+        const fmMatch = text.match(/^---\n([\s\S]*?)\n---/);
+        if (fmMatch) {
+          fmMatch[1].split('\n').forEach(line => {
+            const [k, ...v] = line.split(':');
+            if (k && v.length) fm[k.trim()] = v.join(':').trim().replace(/^["']|["']$/g, '');
+          });
+        }
+        const body = text.replace(/^---[\s\S]*?---\n/, '').trim();
+        fm._body = body;
+        return fm;
+      } catch { return null; }
+    }
+
+    async function loadCollection(folder, files) {
+      const results = [];
+      for (const file of files) {
+        const data = await loadContent(`/content/${folder}/${file}`);
+        if (data && data.published !== 'false') results.push(data);
+      }
+      return results;
+    }
+
+    // Fetch list of files in a content folder
+    async function listFiles(folder) {
+      try {
+        // During local dev or after Netlify deploy, files are accessible directly
+        const res = await fetch(`/content/${folder}/index.json`);
+        if (res.ok) return await res.json();
+      } catch {}
+      return [];
+    }
+
+    function badgeClass(status) {
+      const map = { 'Enrolling Now': 'badge-enrolling', 'Starting Soon': 'badge-soon', 'Full': 'badge-full', 'Coming Soon': 'badge-coming' };
+      return map[status] || 'badge-coming';
+    }
+
+    function formatDate(d) {
+      if (!d) return '';
+      try { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
+      catch { return d; }
+    }
+
+    async function renderCourses() {
+      const grid = document.getElementById('courses-grid');
+      const files = await listFiles('courses');
+      if (!files.length) {
+        grid.innerHTML = '<p class="empty-state">Courses will appear here once added in the admin panel.</p>';
+        return;
+      }
+      const courses = await loadCollection('courses', files);
+      if (!courses.length) { grid.innerHTML = '<p class="empty-state">No courses published yet.</p>'; return; }
+      grid.innerHTML = courses.map(c => `
+        <div class="course-card">
+          <div class="course-lang">${c.language || ''}</div>
+          <h3>${c.title || 'Untitled Course'}</h3>
+          <div class="course-meta">
+            <span>📅 ${c.schedule || 'TBC'}</span>
+            <span>⏱ ${c.duration || 'TBC'}</span>
+          </div>
+          <span class="course-badge ${badgeClass(c.status)}">${c.status || 'Coming Soon'}</span>
+          <div class="course-fee">${c.fee ? c.fee : ''}</div>
+        </div>
+      `).join('');
+    }
+
+    async function renderNews() {
+      const grid = document.getElementById('news-grid');
+      const files = await listFiles('news');
+      if (!files.length) {
+        grid.innerHTML = '<p class="empty-state">News will appear here once published from the admin panel.</p>';
+        return;
+      }
+      const items = await loadCollection('news', files);
+      const sorted = items.sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+      if (!sorted.length) { grid.innerHTML = '<p class="empty-state">No news published yet.</p>'; return; }
+      grid.innerHTML = sorted.map(n => `
+        <div class="news-card">
+          ${n.image ? `<img src="${n.image}" alt="${n.title}" loading="lazy" />` : ''}
+          <div class="news-card-body">
+            <div class="news-cat">${n.category || 'Update'}</div>
+            <h3>${n.title || ''}</h3>
+            <p class="news-summary">${n.summary || ''}</p>
+            <div class="news-date">${formatDate(n.date)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function renderGallery() {
+      const grid = document.getElementById('gallery-grid');
+      const files = await listFiles('gallery');
+      if (!files.length) {
+        grid.innerHTML = '<p class="empty-state">Photos will appear here once added in the admin panel.</p>';
+        return;
+      }
+      const albums = await loadCollection('gallery', files);
+      // Flatten all photos from all albums
+      const allPhotos = [];
+      albums.forEach(album => {
+        if (album.photos) {
+          try {
+            // Photos stored as yaml list — simple parse
+            const photoBlocks = album._body.match(/- image:(.*)/g) || [];
+            photoBlocks.forEach((block, i) => {
+              const imgMatch = block.match(/image:\s*(.*)/);
+              if (imgMatch) allPhotos.push({ src: imgMatch[1].trim(), caption: '' });
+            });
+          } catch {}
+        }
+      });
+      if (!allPhotos.length) { grid.innerHTML = '<p class="empty-state">No photos uploaded yet.</p>'; return; }
+      grid.innerHTML = allPhotos.map(p => `
+        <img src="${p.src}" alt="${p.caption}" loading="lazy" onclick="openLightbox('${p.src}','${p.caption}')" />
+        ${p.caption ? `<div class="gallery-caption">${p.caption}</div>` : ''}
+      `).join('');
+    }
+
+    async function renderDocuments() {
+      const list = document.getElementById('docs-list');
+      const files = await listFiles('documents');
+      if (!files.length) {
+        list.innerHTML = '<p class="empty-state">Documents will appear here once uploaded in the admin panel.</p>';
+        return;
+      }
+      const docs = await loadCollection('documents', files);
+      const sorted = docs.sort((a,b) => new Date(b.date) - new Date(a.date));
+      if (!sorted.length) { list.innerHTML = '<p class="empty-state">No documents uploaded yet.</p>'; return; }
+      list.innerHTML = sorted.map(d => `
+        <div class="doc-row">
+          <div class="doc-info">
+            <div class="doc-title">${d.title || 'Document'}</div>
+            <div class="doc-type">${d.type || ''}</div>
+          </div>
+          <div class="doc-date">${formatDate(d.date)}</div>
+          ${d.file ? `<a href="${d.file}" target="_blank" download>Download PDF</a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function renderTestimonials() {
+      const grid = document.getElementById('testi-grid');
+      const files = await listFiles('testimonials');
+      if (!files.length) {
+        grid.innerHTML = '<p class="empty-state" style="color:rgba(255,255,255,0.5);">Testimonials will appear here once added in the admin panel.</p>';
+        return;
+      }
+      const items = await loadCollection('testimonials', files);
+      if (!items.length) { grid.innerHTML = '<p class="empty-state" style="color:rgba(255,255,255,0.5);">No testimonials yet.</p>'; return; }
+      grid.innerHTML = items.map(t => `
+        <div class="testi-card">
+          <div class="testi-text">"${t._body || ''}"</div>
+          <div class="testi-footer">
+            ${t.photo
+              ? `<img src="${t.photo}" alt="${t.name}" />`
+              : `<div class="testi-avatar-placeholder">${(t.name||'?')[0]}</div>`}
+            <div>
+              <div class="testi-name">${t.name || ''}</div>
+              <div class="testi-course">${t.course || ''} ${t.year ? '· ' + t.year : ''}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Run all renderers
+    renderCourses();
+    renderNews();
+    renderGallery();
+    renderDocuments();
+    renderTestimonials();
+  </script>
+
+</body>
+</html>
