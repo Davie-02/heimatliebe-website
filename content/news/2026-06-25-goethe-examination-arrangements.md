@@ -1,7 +1,7 @@
 ---
 title: GOETHE EXAMINATION ARRANGEMENTS
-date: 2026-06-25T10:05:00.000+02:00
-category: Update
+date: 2026-06-25T10:11:00.000+02:00
+category: Announcement
 summary: GOETHE EXAMINATION DATES
 image: /uploads/images/goethe.jpeg
 published: true
