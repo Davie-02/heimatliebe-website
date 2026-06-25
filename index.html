@@ -697,6 +697,17 @@ function parsePhotoList(text) {
 }
 
 // ── CONTENT LOADER ────────────────────────────────────────────────
+// ── GITHUB CONFIG ─────────────────────────────────────────────────
+// Public repo — no token needed. GitHub API rate limit: 60 req/hr per IP.
+// Files are also served directly from Netlify (same origin), so we fetch
+// the raw content from Netlify and only use GitHub to list filenames.
+const GH_REPO  = 'Davie-02/heimatliebe-website';
+const GH_BRANCH = 'main';
+
+// Cache so repeated renders (e.g. courses + contact select) don't double-fetch
+const _listCache = {};
+const _itemCache = {};
+
 async function fetchText(url) {
   try {
     const r = await fetch(url);
@@ -705,19 +716,36 @@ async function fetchText(url) {
   } catch { return null; }
 }
 
+// List .md files in a content folder via GitHub Contents API
 async function listFiles(folder) {
-  const text = await fetchText(`/content/${folder}/index.json`);
-  if (!text) return [];
-  try { return JSON.parse(text); } catch { return []; }
+  if (_listCache[folder]) return _listCache[folder];
+  try {
+    const url = `https://api.github.com/repos/${GH_REPO}/contents/content/${folder}?ref=${GH_BRANCH}`;
+    const r = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+    if (!r.ok) return [];
+    const entries = await r.json();
+    if (!Array.isArray(entries)) return [];
+    const files = entries
+      .filter(e => e.type === 'file' && e.name.endsWith('.md'))
+      .map(e => e.name)
+      .sort()
+      .reverse(); // newest first for date-prefixed filenames
+    _listCache[folder] = files;
+    return files;
+  } catch { return []; }
 }
 
+// Fetch a single markdown file from Netlify (same origin, no rate limit)
 async function loadItem(folder, filename) {
+  const cacheKey = `${folder}/${filename}`;
+  if (_itemCache[cacheKey]) return _itemCache[cacheKey];
   const text = await fetchText(`/content/${folder}/${filename}`);
   if (!text) return null;
   const { fm, body } = parseFrontMatter(text);
-  if (fm.published === false) return null; // skip explicitly unpublished
+  if (fm.published === false) return null;
   fm._body = body;
   fm._file = filename;
+  _itemCache[cacheKey] = fm;
   return fm;
 }
 
