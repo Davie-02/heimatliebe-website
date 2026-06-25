@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library — Heimatliebe Institute</title>
+  <meta name="description" content="Free language learning resources for Heimatliebe Institute students — textbooks, grammar guides, exercise sheets, and more." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --green-deep:  #1B4332;
+      --green-mid:   #2D6A4F;
+      --green-light: #52B788;
+      --gold:        #C9A84C;
+      --gold-pale:   #EDD591;
+      --cream:       #F7F5EF;
+      --charcoal:    #1A1A1A;
+      --slate:       #4A6572;
+      --white:       #FFFFFF;
+      --rule:        rgba(201,168,76,0.35);
+      --font-display:'Playfair Display', Georgia, serif;
+      --font-body:   'Inter', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); background: var(--cream); color: var(--charcoal); line-height: 1.7; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 5vw;
+      background: rgba(27,67,50,0.96); backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--rule);
+    }
+    .nav-logo { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--gold); text-decoration: none; }
+    .nav-logo span { color: var(--white); font-weight: 400; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { color: rgba(255,255,255,0.82); text-decoration: none; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; transition: color 0.2s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--gold-pale); }
+    .nav-toggle { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; padding: 4px; }
+    .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--white); border-radius: 2px; transition: transform 0.25s, opacity 0.25s; }
+    .nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-toggle.open span:nth-child(2) { opacity: 0; }
+    .nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── HERO ── */
+    .lib-hero {
+      background: var(--green-deep); padding: 9rem 5vw 5rem;
+      position: relative; overflow: hidden;
+    }
+    .lib-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 80% 50%, rgba(82,183,136,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .lib-hero-inner { position: relative; z-index: 1; max-width: 700px; }
+    .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; display: block; }
+    .lib-hero h1 { font-family: var(--font-display); font-size: clamp(2.5rem,6vw,4.5rem); font-weight: 900; color: var(--white); line-height: 1.05; margin-bottom: 1.25rem; }
+    .lib-hero h1 em { color: var(--gold); font-style: normal; }
+    .lib-hero p { font-size: 1.05rem; color: rgba(255,255,255,0.68); max-width: 520px; font-weight: 300; }
+    .lib-stats { display: flex; gap: 3rem; margin-top: 2.5rem; flex-wrap: wrap; }
+    .lib-stat .num { font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: var(--gold); line-height: 1; }
+    .lib-stat .lbl { font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 0.2rem; letter-spacing: 0.06em; }
+
+    /* ── TOOLBAR ── */
+    .lib-toolbar {
+      background: var(--white); padding: 1.5rem 5vw;
+      border-bottom: 1px solid rgba(27,67,50,0.1);
+      position: sticky; top: 62px; z-index: 50;
+      display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+    }
+    .search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+    .search-wrap input {
+      width: 100%; padding: 0.65rem 1rem 0.65rem 2.4rem;
+      border: 1.5px solid rgba(27,67,50,0.18); border-radius: 2px;
+      font-family: var(--font-body); font-size: 0.88rem;
+      background: var(--cream); color: var(--charcoal); outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-wrap input:focus { border-color: var(--green-mid); background: var(--white); }
+    .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--slate); font-size: 0.9rem; pointer-events: none; }
+    .filter-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .filter-select {
+      padding: 0.6rem 0.9rem; border: 1.5px solid rgba(27,67,50,0.18); border-radius: 2px;
+      font-family: var(--font-body); font-size: 0.82rem; background: var(--cream);
+      color: var(--charcoal); outline: none; cursor: pointer; transition: border-color 0.2s; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234A6572' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 0.65rem center; padding-right: 2rem;
+    }
+    .filter-select:focus { border-color: var(--green-mid); }
+    .results-count { margin-left: auto; font-size: 0.8rem; color: var(--slate); white-space: nowrap; }
+
+    /* ── MAIN CONTENT ── */
+    .lib-main { padding: 3rem 5vw 5rem; }
+
+    /* Language section headers */
+    .lang-section { margin-bottom: 3rem; }
+    .lang-section-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding-bottom: 0.75rem; margin-bottom: 1.5rem;
+      border-bottom: 2px solid rgba(27,67,50,0.1);
+    }
+    .lang-section-header .lang-flag { font-size: 1.5rem; }
+    .lang-section-header h2 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--green-deep); }
+    .lang-section-header .lang-count { font-size: 0.75rem; color: var(--slate); background: rgba(27,67,50,0.08); padding: 0.2rem 0.6rem; border-radius: 20px; }
+
+    /* Resource grid */
+    .resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; }
+
+    /* Resource card */
+    .resource-card {
+      background: var(--white); border: 1.5px solid rgba(27,67,50,0.1);
+      display: flex; flex-direction: column;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .resource-card:hover { border-color: var(--green-light); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(27,67,50,0.09); }
+
+    .card-cover {
+      width: 100%; height: 140px; object-fit: cover; display: block;
+      background: var(--green-deep);
+    }
+    .card-cover-placeholder {
+      width: 100%; height: 140px;
+      background: var(--green-deep);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 0.5rem;
+    }
+    .card-cover-placeholder .ph-icon { font-size: 2.2rem; opacity: 0.45; }
+    .card-cover-placeholder .ph-lang { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.35); letter-spacing: 0.05em; }
+
+    .card-body { padding: 1.1rem; flex: 1; display: flex; flex-direction: column; }
+    .card-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+    .tag {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.18rem 0.5rem; border-radius: 2px;
+    }
+    .tag-lang  { background: rgba(27,67,50,0.1); color: var(--green-deep); }
+    .tag-level { background: rgba(201,168,76,0.15); color: #7a5900; border: 1px solid var(--rule); }
+    .tag-type  { background: rgba(82,183,136,0.12); color: #1a5c3a; }
+    .tag-free  { background: var(--gold); color: var(--green-deep); }
+    .tag-contact { background: rgba(74,101,114,0.1); color: var(--slate); }
+
+    .card-title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--green-deep); line-height: 1.3; margin-bottom: 0.3rem; }
+    .card-author { font-size: 0.78rem; color: var(--slate); margin-bottom: 0.5rem; }
+    .card-desc { font-size: 0.83rem; color: var(--slate); line-height: 1.55; flex: 1; }
+
+    .card-footer { padding: 0.85rem 1.1rem; border-top: 1px solid rgba(27,67,50,0.07); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .card-date { font-size: 0.72rem; color: rgba(74,101,114,0.6); }
+    .card-dl {
+      font-size: 0.78rem; font-weight: 600; color: var(--green-mid);
+      text-decoration: none; border: 1.5px solid var(--green-light);
+      padding: 0.3rem 0.8rem; border-radius: 2px; white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .card-dl:hover { background: var(--green-mid); color: var(--white); border-color: var(--green-mid); }
+    .card-contact {
+      font-size: 0.78rem; font-weight: 600; color: var(--slate);
+      border: 1.5px solid rgba(74,101,114,0.3);
+      padding: 0.3rem 0.8rem; border-radius: 2px; white-space: nowrap;
+      text-decoration: none; transition: border-color 0.15s, color 0.15s;
+    }
+    .card-contact:hover { border-color: var(--slate); color: var(--charcoal); }
+
+    /* Empty / loading states */
+    .skeleton { background: linear-gradient(90deg,#e8e8e8 25%,#f2f2f2 50%,#e8e8e8 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 2px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .skeleton-card { background: var(--white); border: 1.5px solid rgba(27,67,50,0.08); overflow: hidden; }
+
+    .empty-library { text-align: center; padding: 5rem 2rem; }
+    .empty-library .empty-icon { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
+    .empty-library p { color: var(--slate); font-size: 0.95rem; }
+    .no-results { grid-column: 1 / -1; text-align: center; padding: 3rem 1rem; color: var(--slate); font-size: 0.93rem; font-style: italic; opacity: 0.7; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--charcoal); color: rgba(255,255,255,0.5); padding: 3rem 5vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; font-size: 0.82rem; }
+    footer .footer-brand { font-family: var(--font-display); font-weight: 700; color: var(--gold); font-size: 1rem; }
+    footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+    footer a:hover { color: var(--gold-pale); }
+    footer .footer-links { display: flex; gap: 1.25rem; }
+
+    /* ── BACK TO TOP ── */
+    #back-top { position: fixed; bottom: 2rem; right: 2rem; width: 42px; height: 42px; background: var(--green-deep); color: var(--gold); border: none; border-radius: 2px; cursor: pointer; font-size: 1.1rem; opacity: 0; transition: opacity 0.3s, transform 0.2s; z-index: 50; display: flex; align-items: center; justify-content: center; }
+    #back-top.visible { opacity: 1; }
+    #back-top:hover { transform: translateY(-2px); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .nav-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: var(--green-deep); padding: 1.5rem 5vw; gap: 1.25rem; border-top: 1px solid var(--rule); }
+      .nav-links.open { display: flex; }
+      .nav-toggle { display: flex; }
+      .lib-stats { gap: 2rem; }
+      .lib-toolbar { top: 60px; }
+    }
+    @media (max-width: 560px) {
+      .results-count { display: none; }
+      .filter-select { font-size: 0.78rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+  </style>
+</head>
+<body>
+
+<button id="back-top" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">Heimatliebe <span>Institute</span></a>
+  <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <ul class="nav-links" id="nav-links" role="list">
+    <li><a href="index.html#about">About</a></li>
+    <li><a href="index.html#courses">Courses</a></li>
+    <li><a href="index.html#news">News</a></li>
+    <li><a href="index.html#gallery">Gallery</a></li>
+    <li><a href="library.html" class="active">Library</a></li>
+    <li><a href="index.html#documents">Downloads</a></li>
+    <li><a href="index.html#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="lib-hero">
+  <div class="lib-hero-inner">
+    <span class="eyebrow">Student Resources</span>
+    <h1>The <em>Library</em></h1>
+    <p>Textbooks, grammar guides, exercise sheets and more — free resources to support your language learning journey.</p>
+    <div class="lib-stats">
+      <div class="lib-stat"><div class="num" id="stat-total">—</div><div class="lbl">Resources</div></div>
+      <div class="lib-stat"><div class="num" id="stat-free">—</div><div class="lbl">Free to download</div></div>
+      <div class="lib-stat"><div class="num" id="stat-langs">—</div><div class="lbl">Languages</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="lib-toolbar">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="search" id="search-input" placeholder="Search resources…" oninput="applyFilters()" />
+  </div>
+  <div class="filter-group">
+    <select class="filter-select" id="filter-lang" onchange="applyFilters()">
+      <option value="">All Languages</option>
+      <option>German</option>
+      <option>French</option>
+      <option>Swahili</option>
+      <option>Spanish</option>
+      <option>Chinese</option>
+      <option>Latin</option>
+      <option>English</option>
+      <option>General</option>
+    </select>
+    <select class="filter-select" id="filter-level" onchange="applyFilters()">
+      <option value="">All Levels</option>
+      <option>A1</option><option>A2</option>
+      <option>B1</option><option>B2</option>
+      <option>C1</option><option>C2</option>
+      <option>Beginner</option>
+      <option>Intermediate</option>
+      <option>Advanced</option>
+      <option>All Levels</option>
+    </select>
+    <select class="filter-select" id="filter-type" onchange="applyFilters()">
+      <option value="">All Types</option>
+      <option>Textbook</option>
+      <option>Grammar Guide</option>
+      <option>Vocabulary List</option>
+      <option>Exercise Sheet</option>
+      <option>Audio Script</option>
+      <option>Reading Passage</option>
+      <option>Exam Prep</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div class="results-count" id="results-count"></div>
+</div>
+
+<!-- MAIN -->
+<main class="lib-main" id="lib-main">
+  <!-- Loading skeletons -->
+  <div class="resource-grid" id="loading-grid">
+    <div class="skeleton-card"><div class="skeleton" style="height:140px;"></div><div style="padding:1.1rem;"><div class="skeleton" style="height:12px;width:60%;margin-bottom:0.6rem;"></div><div class="skeleton" style="height:16px;margin-bottom:0.4rem;"></div><div class="skeleton" style="height:14px;width:40%;"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton" style="height:140px;"></div><div style="padding:1.1rem;"><div class="skeleton" style="height:12px;width:60%;margin-bottom:0.6rem;"></div><div class="skeleton" style="height:16px;margin-bottom:0.4rem;"></div><div class="skeleton" style="height:14px;width:40%;"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton" style="height:140px;"></div><div style="padding:1.1rem;"><div class="skeleton" style="height:12px;width:60%;margin-bottom:0.6rem;"></div><div class="skeleton" style="height:16px;margin-bottom:0.4rem;"></div><div class="skeleton" style="height:14px;width:40%;"></div></div></div>
+    <div class="skeleton-card"><div class="skeleton" style="height:140px;"></div><div style="padding:1.1rem;"><div class="skeleton" style="height:12px;width:60%;margin-bottom:0.6rem;"></div><div class="skeleton" style="height:16px;margin-bottom:0.4rem;"></div><div class="skeleton" style="height:14px;width:40%;"></div></div></div>
+  </div>
+  <div id="library-content" style="display:none;"></div>
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">Heimatliebe Institute</div>
+  <div>Karonga, Northern Malawi</div>
+  <div class="footer-links">
+    <a href="#">Facebook</a>
+    <a href="https://wa.me/265991383466">WhatsApp</a>
+    <a href="#">Instagram</a>
+    <a href="/admin/">Admin</a>
+  </div>
+  <div>© <span id="yr"></span> Heimatliebe Institute. All rights reserved.</div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// ── BACK TO TOP ────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('back-top').classList.toggle('visible', window.scrollY > 400);
+}, { passive: true });
+
+// ── NAV TOGGLE ─────────────────────────────────────────────────
+const navToggle = document.getElementById('nav-toggle');
+const navLinks  = document.getElementById('nav-links');
+navToggle.addEventListener('click', () => {
+  const open = navLinks.classList.toggle('open');
+  navToggle.classList.toggle('open', open);
+  navToggle.setAttribute('aria-expanded', open);
+});
+navLinks.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
+  navLinks.classList.remove('open');
+  navToggle.classList.remove('open');
+  navToggle.setAttribute('aria-expanded', 'false');
+}));
+
+// ── GITHUB / CONTENT LOADER ────────────────────────────────────
+const GH_REPO   = 'Davie-02/heimatliebe-website';
+const GH_BRANCH = 'main';
+
+async function listFiles(folder) {
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${GH_REPO}/contents/content/${folder}?ref=${GH_BRANCH}`,
+      { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+    );
+    if (!r.ok) return [];
+    const entries = await r.json();
+    if (!Array.isArray(entries)) return [];
+    return entries.filter(e => e.type === 'file' && e.name.endsWith('.md')).map(e => e.name);
+  } catch { return []; }
+}
+
+async function fetchText(url) {
+  try { const r = await fetch(url); return r.ok ? r.text() : null; }
+  catch { return null; }
+}
+
+function parseFrontMatter(text) {
+  const fm = {};
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return { fm, body: text.trim() };
+  const body = text.slice(match[0].length).trim();
+  for (const line of match[1].split(/\r?\n/)) {
+    const colon = line.indexOf(':');
+    if (colon === -1) continue;
+    const key = line.slice(0, colon).trim();
+    const val = line.slice(colon + 1).trim();
+    if (!key || val === '' || val.startsWith('-')) continue;
+    const clean = val.replace(/^['"]|['"]$/g, '');
+    if (clean === 'true')  { fm[key] = true;  continue; }
+    if (clean === 'false') { fm[key] = false; continue; }
+    fm[key] = clean;
+  }
+  return { fm, body };
+}
+
+async function loadLibrary() {
+  const files = await listFiles('library');
+  if (!files.length) return [];
+  const items = await Promise.all(files.map(async f => {
+    const text = await fetchText(`/content/library/${f}`);
+    if (!text) return null;
+    const { fm, body } = parseFrontMatter(text);
+    if (fm.published === false) return null;
+    fm._body = body;
+    fm._file = f;
+    return fm;
+  }));
+  return items.filter(Boolean).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(d) {
+  try { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  catch { return d || ''; }
+}
+
+const LANG_FLAGS = {
+  German:'🇩🇪', French:'🇫🇷', Swahili:'🌍', Spanish:'🇪🇸',
+  Chinese:'🇨🇳', Latin:'🏛️', English:'🇬🇧', General:'📚'
+};
+const TYPE_ICONS = {
+  Textbook:'📖', 'Grammar Guide':'📝', 'Vocabulary List':'🔤',
+  'Exercise Sheet':'✏️', 'Audio Script':'🎧', 'Reading Passage':'📄',
+  'Exam Prep':'🎯', Other:'📁'
+};
+
+function buildCard(item) {
+  const flag = LANG_FLAGS[item.language] || '📚';
+  const icon = TYPE_ICONS[item.type]     || '📁';
+  const isFree = item.free !== false; // default true
+
+  return `
+    <div class="resource-card"
+      data-lang="${esc(item.language || '')}"
+      data-level="${esc(item.level || '')}"
+      data-type="${esc(item.type || '')}"
+      data-title="${esc(item.title || '')}"
+      data-author="${esc(item.author || '')}"
+      data-desc="${esc(item.description || '')}">
+      ${item.cover
+        ? `<img class="card-cover" src="${esc(item.cover)}" alt="${esc(item.title)}" loading="lazy" />`
+        : `<div class="card-cover-placeholder">
+             <span class="ph-icon">${flag}</span>
+             <span class="ph-lang">${esc(item.language || '')}</span>
+           </div>`}
+      <div class="card-body">
+        <div class="card-tags">
+          ${item.language ? `<span class="tag tag-lang">${esc(item.language)}</span>` : ''}
+          ${item.level    ? `<span class="tag tag-level">${esc(item.level)}</span>` : ''}
+          ${item.type     ? `<span class="tag tag-type">${icon} ${esc(item.type)}</span>` : ''}
+          <span class="tag ${isFree ? 'tag-free' : 'tag-contact'}">${isFree ? 'Free' : 'On Request'}</span>
+        </div>
+        <div class="card-title">${esc(item.title || 'Untitled')}</div>
+        ${item.author ? `<div class="card-author">${esc(item.author)}</div>` : ''}
+        ${item.description ? `<div class="card-desc">${esc(item.description)}</div>` : ''}
+      </div>
+      <div class="card-footer">
+        <span class="card-date">${item.date ? formatDate(item.date) : ''}</span>
+        ${item.file
+          ? (isFree
+              ? `<a class="card-dl" href="${esc(item.file)}" target="_blank" rel="noopener" download>Download</a>`
+              : `<a class="card-contact" href="https://wa.me/265991383466?text=${encodeURIComponent('Hello, I would like to access: ' + (item.title || 'a resource') + ' from the Library.')}" target="_blank" rel="noopener">Request Access</a>`)
+          : ''}
+      </div>
+    </div>
+  `;
+}
+
+// ── ALL ITEMS (kept in memory for filtering) ───────────────────
+let _allItems = [];
+
+function applyFilters() {
+  const q     = document.getElementById('search-input').value.trim().toLowerCase();
+  const lang  = document.getElementById('filter-lang').value;
+  const level = document.getElementById('filter-level').value;
+  const type  = document.getElementById('filter-type').value;
+
+  const cards = document.querySelectorAll('#library-content .resource-card');
+  let visible = 0;
+
+  cards.forEach(card => {
+    const matchLang  = !lang  || card.dataset.lang  === lang;
+    const matchLevel = !level || card.dataset.level === level;
+    const matchType  = !type  || card.dataset.type  === type;
+    const matchQ     = !q
+      || card.dataset.title.toLowerCase().includes(q)
+      || card.dataset.author.toLowerCase().includes(q)
+      || card.dataset.desc.toLowerCase().includes(q);
+
+    const show = matchLang && matchLevel && matchType && matchQ;
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+
+  // Show/hide no-results messages per section
+  document.querySelectorAll('.lang-section').forEach(section => {
+    const anyVisible = [...section.querySelectorAll('.resource-card')].some(c => c.style.display !== 'none');
+    section.style.display = anyVisible ? '' : 'none';
+  });
+
+  document.getElementById('results-count').textContent =
+    visible === _allItems.length ? `${visible} resources` : `${visible} of ${_allItems.length} shown`;
+}
+
+// ── RENDER ─────────────────────────────────────────────────────
+async function renderLibrary() {
+  const items = await loadLibrary();
+  _allItems = items;
+
+  document.getElementById('loading-grid').style.display = 'none';
+  const content = document.getElementById('library-content');
+  content.style.display = 'block';
+
+  // Update hero stats
+  const langs = new Set(items.map(i => i.language).filter(Boolean));
+  const freeCount = items.filter(i => i.free !== false).length;
+  document.getElementById('stat-total').textContent = items.length;
+  document.getElementById('stat-free').textContent  = freeCount;
+  document.getElementById('stat-langs').textContent = langs.size;
+  document.getElementById('results-count').textContent = `${items.length} resources`;
+
+  if (!items.length) {
+    content.innerHTML = `
+      <div class="empty-library">
+        <div class="empty-icon">📚</div>
+        <p>No resources have been uploaded yet.<br>Check back soon — resources will appear here once added via the admin panel.</p>
+      </div>`;
+    return;
+  }
+
+  // Group by language, maintaining a sensible order
+  const langOrder = ['German','French','Swahili','Spanish','Chinese','Latin','English','General'];
+  const grouped = {};
+  items.forEach(item => {
+    const key = item.language || 'General';
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  });
+
+  const sortedLangs = [
+    ...langOrder.filter(l => grouped[l]),
+    ...Object.keys(grouped).filter(l => !langOrder.includes(l))
+  ];
+
+  content.innerHTML = sortedLangs.map(lang => `
+    <div class="lang-section">
+      <div class="lang-section-header">
+        <span class="lang-flag">${LANG_FLAGS[lang] || '📚'}</span>
+        <h2>${esc(lang)}</h2>
+        <span class="lang-count">${grouped[lang].length} item${grouped[lang].length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="resource-grid">
+        ${grouped[lang].map(buildCard).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+renderLibrary();
+</script>
+</body>
+</html>

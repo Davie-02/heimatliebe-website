@@ -121,3 +121,39 @@ collections:
         name: "published"
         widget: "boolean"
         default: true
+
+# ── LIBRARY ──────────────────────────────────────────────────
+  - name: "library"
+    label: "Library"
+    folder: "content/library"
+    create: true
+    slug: "{{slug}}"
+    media_folder: "/uploads/library"
+    public_folder: "/uploads/library"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Author / Source", name: "author", widget: "string", required: false }
+      - label: "Language"
+        name: "language"
+        widget: "select"
+        options: ["German", "French", "Swahili", "Spanish", "Chinese", "Latin", "English", "General"]
+      - label: "Level"
+        name: "level"
+        widget: "select"
+        options: ["A1", "A2", "B1", "B2", "C1", "C2", "Beginner", "Intermediate", "Advanced", "All Levels"]
+      - label: "Resource Type"
+        name: "type"
+        widget: "select"
+        options: ["Textbook", "Grammar Guide", "Vocabulary List", "Exercise Sheet", "Audio Script", "Reading Passage", "Exam Prep", "Other"]
+      - { label: "File (PDF, audio, etc.)", name: "file", widget: "file", allow_multiple: false }
+      - { label: "Cover Image (optional)", name: "cover", widget: "image", required: false }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Date Added", name: "date", widget: "datetime" }
+      - label: "Free to Access"
+        name: "free"
+        widget: "boolean"
+        default: true
+      - label: "Show on Website"
+        name: "published"
+        widget: "boolean"
+        default: true
