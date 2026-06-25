@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Admin — Heimatliebe Institute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --green-deep:#1B4332;--green-mid:#2D6A4F;--green-light:#52B788;
+      --gold:#C9A84C;--gold-pale:#EDD591;--cream:#F7F5EF;
+      --charcoal:#1A1A1A;--slate:#4A6572;--white:#FFFFFF;
+      --rule:rgba(201,168,76,0.35);--red:#c0392b;
+      --font-display:'Playfair Display',Georgia,serif;
+      --font-body:'Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-body);background:#f0f2f5;color:var(--charcoal);min-height:100vh}
+
+    /* LOGIN GATE */
+    #admin-gate{position:fixed;inset:0;background:var(--green-deep);display:flex;align-items:center;justify-content:center;z-index:999;padding:2rem}
+    .gate-card{background:var(--white);padding:2.5rem;width:100%;max-width:360px;text-align:center}
+    .gate-card h2{font-family:var(--font-display);font-size:1.5rem;color:var(--green-deep);margin-bottom:0.35rem}
+    .gate-card p{color:var(--slate);font-size:0.85rem;margin-bottom:1.5rem}
+    .gate-card input{width:100%;padding:0.82rem 1rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-family:var(--font-body);font-size:0.95rem;outline:none;margin-bottom:0.75rem;transition:border-color 0.2s}
+    .gate-card input:focus{border-color:var(--green-mid)}
+    .gate-err{color:var(--red);font-size:0.8rem;margin-bottom:0.75rem;display:none}
+    .gate-err.show{display:block}
+    .btn{padding:0.85rem 1.5rem;border-radius:2px;font-family:var(--font-body);font-size:0.85rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s}
+    .btn-primary{background:var(--gold);color:var(--green-deep);width:100%}
+    .btn-primary:hover{background:var(--gold-pale)}
+    .btn-sm{padding:0.45rem 1rem;font-size:0.75rem}
+    .btn-green{background:var(--green-mid);color:var(--white)}
+    .btn-green:hover{background:var(--green-deep)}
+    .btn-red{background:rgba(192,57,43,0.1);color:var(--red);border:1px solid rgba(192,57,43,0.25)}
+    .btn-red:hover{background:rgba(192,57,43,0.2)}
+    .btn-outline{background:transparent;color:var(--green-mid);border:1.5px solid var(--green-light)}
+    .btn-outline:hover{background:var(--green-mid);color:var(--white)}
+
+    /* LAYOUT */
+    #admin-app{display:none}
+    .admin-nav{background:var(--green-deep);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
+    .admin-nav .brand{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--gold)}
+    .admin-nav .brand span{color:rgba(255,255,255,0.7);font-weight:400;font-size:0.85rem}
+    .admin-nav-right{display:flex;align-items:center;gap:1rem}
+    .admin-nav-right a{color:rgba(255,255,255,0.65);font-size:0.8rem;text-decoration:none}
+    .admin-nav-right a:hover{color:var(--gold-pale)}
+
+    .admin-body{padding:2rem}
+    .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
+    .admin-header h1{font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--green-deep)}
+
+    /* STAT CARDS */
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:2rem}
+    .stat-card{background:var(--white);padding:1.25rem;border-left:3px solid var(--gold)}
+    .stat-card .num{font-family:var(--font-display);font-size:2rem;font-weight:900;color:var(--green-deep);line-height:1}
+    .stat-card .lbl{font-size:0.75rem;color:var(--slate);margin-top:0.25rem;text-transform:uppercase;letter-spacing:0.08em}
+
+    /* TABS */
+    .tabs{display:flex;gap:0;border-bottom:2px solid rgba(27,67,50,0.12);margin-bottom:1.5rem}
+    .tab-btn{padding:0.65rem 1.25rem;font-size:0.83rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--slate);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s}
+    .tab-btn.active{color:var(--green-deep);border-bottom-color:var(--green-deep)}
+    .tab-btn:hover{color:var(--green-mid)}
+    .tab-badge{display:inline-block;background:var(--gold);color:var(--green-deep);font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.35rem}
+
+    /* SEARCH */
+    .table-toolbar{display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+    .table-toolbar input{padding:0.6rem 0.9rem;border:1.5px solid rgba(27,67,50,0.15);border-radius:2px;font-family:var(--font-body);font-size:0.85rem;background:var(--white);outline:none;width:240px;transition:border-color 0.2s}
+    .table-toolbar input:focus{border-color:var(--green-mid)}
+
+    /* TABLE */
+    .table-wrap{background:var(--white);overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem}
+    th{padding:0.75rem 1rem;text-align:left;font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate);background:#fafafa;border-bottom:2px solid rgba(27,67,50,0.1);white-space:nowrap}
+    td{padding:0.85rem 1rem;border-bottom:1px solid rgba(27,67,50,0.07);vertical-align:middle}
+    tr:hover td{background:rgba(82,183,136,0.03)}
+    .td-name{font-weight:600;color:var(--green-deep)}
+    .td-id{font-family:monospace;font-size:0.8rem;color:var(--slate)}
+
+    /* BADGES */
+    .badge{display:inline-block;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.6rem;border-radius:2px}
+    .badge-pending{background:rgba(201,168,76,0.15);color:#7a5900;border:1px solid var(--rule)}
+    .badge-approved{background:rgba(82,183,136,0.12);color:#1a5c3a}
+    .badge-rejected{background:rgba(192,57,43,0.08);color:var(--red)}
+
+    /* ACTIONS */
+    .actions{display:flex;gap:0.5rem;flex-wrap:wrap}
+
+    /* MODAL */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:1.5rem}
+    .modal-overlay.open{display:flex}
+    .modal-box{background:var(--white);width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding:2rem;position:relative}
+    .modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--slate)}
+    .modal-title{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--green-deep);margin-bottom:1.25rem}
+    .detail-row{display:grid;grid-template-columns:130px 1fr;gap:0.5rem;padding:0.6rem 0;border-bottom:1px solid rgba(27,67,50,0.07);font-size:0.88rem}
+    .detail-row:last-child{border-bottom:none}
+    .detail-label{font-weight:600;color:var(--slate);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;padding-top:0.1rem}
+    .detail-value{color:var(--charcoal)}
+    .proof-img{max-width:100%;max-height:300px;display:block;margin:0.75rem 0;border:1px solid rgba(27,67,50,0.1)}
+    .approve-box{margin-top:1.5rem;padding:1.25rem;background:var(--cream);border-left:3px solid var(--gold)}
+    .approve-box h4{font-weight:600;color:var(--green-deep);margin-bottom:0.75rem;font-size:0.9rem}
+    .approve-box .gen-id{font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--gold);background:var(--green-deep);padding:0.4rem 1rem;display:inline-block;margin:0.4rem 0}
+    .approve-actions{display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap}
+    .approve-box textarea{width:100%;padding:0.65rem 0.85rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-family:var(--font-body);font-size:0.85rem;resize:vertical;height:80px;outline:none;margin-top:0.5rem}
+
+    /* Empty */
+    .empty-row td{text-align:center;padding:3rem;color:var(--slate);font-style:italic;opacity:0.7}
+
+    /* Toast */
+    .toast{position:fixed;bottom:2rem;right:2rem;background:var(--green-deep);color:var(--white);padding:0.85rem 1.5rem;border-radius:2px;font-size:0.88rem;font-weight:500;z-index:999;transform:translateY(100px);opacity:0;transition:all 0.3s}
+    .toast.show{transform:translateY(0);opacity:1}
+
+    @media(max-width:600px){.admin-body{padding:1rem}.detail-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<!-- ADMIN LOGIN GATE -->
+<div id="admin-gate">
+  <div class="gate-card">
+    <h2>Admin Access</h2>
+    <p>Enter the admin password to manage student applications.</p>
+    <div class="gate-err" id="gate-err">Incorrect password.</div>
+    <input type="password" id="gate-pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')checkAdminPw()" />
+    <button class="btn btn-primary" onclick="checkAdminPw()">Enter</button>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app">
+  <div class="admin-nav">
+    <div class="brand">Heimatliebe <span>/ Student Admin</span></div>
+    <div class="admin-nav-right">
+      <a href="index.html" target="_blank">← Main Site</a>
+      <a href="/admin/" target="_blank">CMS</a>
+      <a href="#" onclick="adminLogout()">Logout</a>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <div class="admin-header">
+      <h1>Student Management</h1>
+      <button class="btn btn-outline btn-sm" onclick="loadAll()">↻ Refresh</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card"><div class="num" id="s-total">—</div><div class="lbl">Total Applications</div></div>
+      <div class="stat-card"><div class="num" id="s-pending">—</div><div class="lbl">Pending Review</div></div>
+      <div class="stat-card"><div class="num" id="s-approved">—</div><div class="lbl">Approved</div></div>
+      <div class="stat-card"><div class="num" id="s-students">—</div><div class="lbl">Active Students</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('pending',this)">Pending <span class="tab-badge" id="badge-pending">0</span></button>
+      <button class="tab-btn" onclick="switchTab('approved',this)">Approved</button>
+      <button class="tab-btn" onclick="switchTab('rejected',this)">Rejected</button>
+      <button class="tab-btn" onclick="switchTab('students',this)">Active Students</button>
+    </div>
+
+    <!-- Table toolbar -->
+    <div class="table-toolbar">
+      <input type="search" placeholder="Search by name, email or ID…" oninput="filterTable(this.value)" id="table-search" />
+    </div>
+
+    <!-- Applications table -->
+    <div class="table-wrap" id="apps-table-wrap">
+      <table id="apps-table">
+        <thead>
+          <tr>
+            <th>Name</th><th>Course</th><th>Email</th><th>Phone</th><th>Submitted</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="apps-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate)">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Students table -->
+    <div class="table-wrap" id="students-table-wrap" style="display:none">
+      <table id="students-table">
+        <thead>
+          <tr><th>Student ID</th><th>Name</th><th>Course</th><th>Email</th><th>Phone</th><th>Enrolled</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="students-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate)">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- APPLICATION DETAIL MODAL -->
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('app-modal')">✕</button>
+    <div class="modal-title" id="modal-app-name">Application</div>
+    <div id="modal-app-details"></div>
+    <div class="approve-box" id="approve-box">
+      <h4>Review this Application</h4>
+      <p style="font-size:0.83rem;color:var(--slate);margin-bottom:0.5rem">Student ID that will be issued:</p>
+      <div class="gen-id" id="modal-gen-id">—</div>
+      <button class="btn btn-sm btn-outline" onclick="regenId()" style="margin-left:0.5rem;vertical-align:middle">↻ Regenerate</button>
+      <div style="margin-top:0.75rem">
+        <label style="font-size:0.75rem;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em">Notes (optional)</label>
+        <textarea id="admin-notes" placeholder="Any notes about this application…"></textarea>
+      </div>
+      <div class="approve-actions">
+        <button class="btn btn-sm btn-green" id="approve-btn" onclick="approveApplication()">✓ Confirm Payment &amp; Approve</button>
+        <button class="btn btn-sm btn-red"   id="reject-btn"  onclick="rejectApplication()">✗ Reject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="js/supabase.js"></script>
+<script>
+let _currentTab = 'pending';
+let _allApps    = [];
+let _allStudents = [];
+let _currentApp = null;
+let _generatedId = '';
+
+// ── ADMIN GATE ─────────────────────────────────────────────────
+function checkAdminPw() {
+  const pw = document.getElementById('gate-pw').value;
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById('admin-gate').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    sessionStorage.setItem('hmli_admin', '1');
+    loadAll();
+  } else {
+    document.getElementById('gate-err').classList.add('show');
+  }
+}
+function adminLogout() {
+  sessionStorage.removeItem('hmli_admin');
+  location.reload();
+}
+// Auto-login if session exists
+if (sessionStorage.getItem('hmli_admin') === '1') {
+  document.getElementById('admin-gate').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+}
+
+// ── TOAST ──────────────────────────────────────────────────────
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── TABS ───────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  _currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('table-search').value = '';
+
+  const isStudents = tab === 'students';
+  document.getElementById('apps-table-wrap').style.display     = isStudents ? 'none' : 'block';
+  document.getElementById('students-table-wrap').style.display = isStudents ? 'block' : 'none';
+
+  if (isStudents) renderStudents(_allStudents);
+  else renderApps(_allApps.filter(a => a.status === tab));
+}
+
+// ── LOAD DATA ──────────────────────────────────────────────────
+async function loadAll() {
+  // Load applications
+  const { ok: ok1, data: apps } = await sbAdmin('/rest/v1/applications?order=submitted_at.desc&select=*', { method: 'GET', headers: { 'Prefer': '' } });
+  if (ok1 && Array.isArray(apps)) {
+    _allApps = apps;
+    const pending  = apps.filter(a => a.status === 'pending').length;
+    const approved = apps.filter(a => a.status === 'approved').length;
+    document.getElementById('s-total').textContent   = apps.length;
+    document.getElementById('s-pending').textContent = pending;
+    document.getElementById('s-approved').textContent = approved;
+    document.getElementById('badge-pending').textContent = pending;
+  }
+
+  // Load students
+  const { ok: ok2, data: students } = await sbAdmin('/rest/v1/students?order=created_at.desc&select=*', { method: 'GET', headers: { 'Prefer': '' } });
+  if (ok2 && Array.isArray(students)) {
+    _allStudents = students;
+    document.getElementById('s-students').textContent = students.length;
+  }
+
+  // Render current tab
+  if (_currentTab === 'students') renderStudents(_allStudents);
+  else renderApps(_allApps.filter(a => a.status === _currentTab));
+}
+
+// ── RENDER APPS ────────────────────────────────────────────────
+function renderApps(apps) {
+  const tbody = document.getElementById('apps-tbody');
+  if (!apps.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No applications here yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = apps.map(a => `
+    <tr data-search="${esc(a.full_name + ' ' + a.email + ' ' + (a.student_id||'')).toLowerCase()}">
+      <td class="td-name">${esc(a.full_name)}</td>
+      <td>${esc(a.course)} ${esc(a.level)}</td>
+      <td>${esc(a.email)}</td>
+      <td>${esc(a.phone)}</td>
+      <td style="white-space:nowrap;font-size:0.78rem;color:var(--slate)">${formatDate(a.submitted_at)}</td>
+      <td><span class="badge badge-${a.status}">${a.status}</span>${a.student_id ? `<div class="td-id">${esc(a.student_id)}</div>` : ''}</td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-outline" onclick="openAppModal('${a.id}')">View</button>
+        ${a.status === 'pending' ? `<button class="btn btn-sm btn-green" onclick="quickApprove('${a.id}')">Quick Approve</button>` : ''}
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+// ── RENDER STUDENTS ────────────────────────────────────────────
+function renderStudents(students) {
+  const tbody = document.getElementById('students-tbody');
+  if (!students.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No active students yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = students.map(s => `
+    <tr data-search="${esc(s.full_name + ' ' + (s.email||'') + ' ' + s.student_id).toLowerCase()}">
+      <td class="td-id" style="font-weight:700;color:var(--green-deep)">${esc(s.student_id)}</td>
+      <td class="td-name">${esc(s.full_name)}</td>
+      <td>${esc(s.course || '')} ${esc(s.level || '')}</td>
+      <td>${esc(s.email || '—')}</td>
+      <td>${esc(s.phone || '—')}</td>
+      <td style="font-size:0.78rem;color:var(--slate)">${formatDate(s.created_at)}</td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-red" onclick="revokeStudent('${s.id}','${esc(s.student_id)}')">Revoke</button>
+      </div></td>
+    </tr>
+  `).join('');
+}
+
+// ── FILTER TABLE ───────────────────────────────────────────────
+function filterTable(q) {
+  const qLow = q.toLowerCase();
+  const rows = document.querySelectorAll('#apps-tbody tr[data-search], #students-tbody tr[data-search]');
+  rows.forEach(r => {
+    r.style.display = !q || r.dataset.search.includes(qLow) ? '' : 'none';
+  });
+}
+
+// ── APPLICATION DETAIL MODAL ───────────────────────────────────
+function openAppModal(id) {
+  const app = _allApps.find(a => a.id === id);
+  if (!app) return;
+  _currentApp = app;
+  _generatedId = app.student_id || generateStudentId();
+
+  document.getElementById('modal-app-name').textContent = app.full_name;
+  document.getElementById('modal-gen-id').textContent = _generatedId;
+  document.getElementById('admin-notes').value = app.notes || '';
+
+  // Show/hide approve box
+  document.getElementById('approve-box').style.display = app.status === 'pending' ? 'block' : 'none';
+
+  const proofHtml = app.payment_proof_url && app.payment_proof_url !== 'upload-failed'
+    ? (app.payment_proof_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+        ? `<img class="proof-img" src="${esc(app.payment_proof_url)}" alt="Payment proof" />`
+        : `<a href="${esc(app.payment_proof_url)}" target="_blank" style="color:var(--green-mid);font-weight:600">View Payment Proof →</a>`)
+    : '<span style="color:var(--slate);font-style:italic">No file uploaded</span>';
+
+  document.getElementById('modal-app-details').innerHTML = `
+    <div class="detail-row"><div class="detail-label">Full Name</div><div class="detail-value">${esc(app.full_name)}</div></div>
+    <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${esc(app.email)}</div></div>
+    <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">${esc(app.phone)}</div></div>
+    <div class="detail-row"><div class="detail-label">Course</div><div class="detail-value">${esc(app.course)} — ${esc(app.level)}</div></div>
+    <div class="detail-row"><div class="detail-label">Submitted</div><div class="detail-value">${formatDate(app.submitted_at)}</div></div>
+    <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value"><span class="badge badge-${app.status}">${app.status}</span></div></div>
+    ${app.student_id ? `<div class="detail-row"><div class="detail-label">Student ID</div><div class="detail-value td-id" style="font-weight:700;color:var(--green-deep);font-size:1rem">${esc(app.student_id)}</div></div>` : ''}
+    ${app.notes ? `<div class="detail-row"><div class="detail-label">Notes</div><div class="detail-value">${esc(app.notes)}</div></div>` : ''}
+    <div class="detail-row"><div class="detail-label">Payment Proof</div><div class="detail-value">${proofHtml}</div></div>
+  `;
+
+  document.getElementById('app-modal').classList.add('open');
+}
+
+function regenId() {
+  _generatedId = generateStudentId();
+  document.getElementById('modal-gen-id').textContent = _generatedId;
+}
+
+async function approveApplication() {
+  if (!_currentApp) return;
+  const btn = document.getElementById('approve-btn');
+  btn.disabled = true; btn.textContent = 'Approving…';
+
+  const studentId = _generatedId || generateStudentId();
+  const notes     = document.getElementById('admin-notes').value;
+
+  try {
+    // 1. Update application status
+    await sbAdmin(`/rest/v1/applications?id=eq.${_currentApp.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'approved', student_id: studentId, notes, reviewed_at: new Date().toISOString() })
+    });
+
+    // 2. Create student record (copy password_hash from application)
+    await sbAdmin('/rest/v1/students', {
+      method: 'POST',
+      body: JSON.stringify({
+        student_id:    studentId,
+        full_name:     _currentApp.full_name,
+        email:         _currentApp.email,
+        phone:         _currentApp.phone,
+        course:        _currentApp.course,
+        level:         _currentApp.level,
+        password_hash: _currentApp.password_hash
+      })
+    });
+
+    showToast(`✓ Approved! Student ID: ${studentId}`);
+    closeModal('app-modal');
+    await loadAll();
+
+  } catch (err) {
+    console.error(err);
+    showToast('Error approving. Check console.');
+    btn.disabled = false;
+    btn.textContent = '✓ Confirm Payment & Approve';
+  }
+}
+
+async function rejectApplication() {
+  if (!_currentApp) return;
+  if (!confirm(`Reject application from ${_currentApp.full_name}?`)) return;
+  const notes = document.getElementById('admin-notes').value;
+  await sbAdmin(`/rest/v1/applications?id=eq.${_currentApp.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'rejected', notes, reviewed_at: new Date().toISOString() })
+  });
+  showToast('Application rejected.');
+  closeModal('app-modal');
+  await loadAll();
+}
+
+async function quickApprove(id) {
+  const app = _allApps.find(a => a.id === id);
+  if (!app || !confirm(`Quick approve ${app.full_name}?`)) return;
+  _currentApp  = app;
+  _generatedId = generateStudentId();
+  await approveApplication();
+}
+
+async function revokeStudent(id, studentId) {
+  if (!confirm(`Revoke access for Student ID ${studentId}? They will no longer be able to log in.`)) return;
+  await sbAdmin(`/rest/v1/students?id=eq.${id}`, { method: 'DELETE', headers: { 'Prefer': '' } });
+  showToast(`Student ${studentId} revoked.`);
+  await loadAll();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── HELPERS ────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
+  catch { return d; }
+}
+
+// Load on startup if already logged in
+if (sessionStorage.getItem('hmli_admin') === '1') loadAll();
+</script>
+</body>
+</html>

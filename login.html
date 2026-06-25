@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Login — Heimatliebe Institute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep:#1B4332; --green-mid:#2D6A4F; --green-light:#52B788;
+      --gold:#C9A84C; --gold-pale:#EDD591; --cream:#F7F5EF;
+      --charcoal:#1A1A1A; --slate:#4A6572; --white:#FFFFFF;
+      --rule:rgba(201,168,76,0.35); --red:#c0392b;
+      --font-display:'Playfair Display',Georgia,serif;
+      --font-body:'Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-body);background:var(--green-deep);color:var(--charcoal);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(82,183,136,0.12),transparent 65%);pointer-events:none}
+
+    .login-wrap{width:100%;max-width:420px;position:relative;z-index:1}
+    .login-brand{text-align:center;margin-bottom:2.5rem}
+    .login-brand a{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--gold);text-decoration:none}
+    .login-brand a span{color:rgba(255,255,255,0.8);font-weight:400}
+    .login-brand .sub{color:rgba(255,255,255,0.45);font-size:0.8rem;margin-top:0.3rem;letter-spacing:0.12em;text-transform:uppercase}
+
+    .login-card{background:var(--white);padding:2.5rem}
+    .login-card h1{font-family:var(--font-display);font-size:1.75rem;font-weight:700;color:var(--green-deep);margin-bottom:0.35rem}
+    .login-card .sub2{color:var(--slate);font-size:0.88rem;margin-bottom:2rem}
+
+    .form-group{margin-bottom:1.1rem}
+    .form-group label{display:block;font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--green-deep);margin-bottom:0.4rem}
+    .form-group input{width:100%;padding:0.85rem 1rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-family:var(--font-body);font-size:0.95rem;background:var(--cream);color:var(--charcoal);outline:none;transition:border-color 0.2s;letter-spacing:0.04em}
+    .form-group input:focus{border-color:var(--green-mid);background:var(--white)}
+    .form-group .hint{font-size:0.74rem;color:var(--slate);margin-top:0.3rem}
+
+    .btn{width:100%;padding:0.9rem;border-radius:2px;font-family:var(--font-body);font-size:0.88rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s}
+    .btn-primary{background:var(--gold);color:var(--green-deep)}
+    .btn-primary:hover{background:var(--gold-pale)}
+    .btn-primary:disabled{opacity:0.55;cursor:not-allowed}
+
+    .alert{padding:0.9rem 1rem;border-radius:2px;font-size:0.85rem;margin-bottom:1.25rem;display:none}
+    .alert.show{display:block}
+    .alert-error{background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.3);color:var(--red)}
+    .alert-info{background:rgba(201,168,76,0.1);border:1px solid var(--rule);color:#7a5900}
+
+    .login-footer{text-align:center;margin-top:1.5rem;font-size:0.83rem;color:rgba(255,255,255,0.5)}
+    .login-footer a{color:var(--gold-pale);text-decoration:none}
+    .login-footer a:hover{color:var(--gold)}
+    .divider{border:none;border-top:1px solid rgba(27,67,50,0.1);margin:1.25rem 0}
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="login-brand">
+    <a href="index.html">Heimatliebe <span>Institute</span></a>
+    <div class="sub">Student Portal</div>
+  </div>
+
+  <div class="login-card">
+    <h1>Welcome back</h1>
+    <p class="sub2">Log in with your Student ID and password to access the library.</p>
+
+    <div class="alert alert-error" id="alert-error"></div>
+    <div class="alert alert-info" id="alert-info"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label>Student ID</label>
+        <input type="text" name="student_id" id="student-id-input" required placeholder="HMLI-2025-XXXX" autocomplete="username" />
+        <div class="hint">Issued by Heimatliebe Institute after payment confirmation</div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="login-btn">Log In</button>
+    </form>
+
+    <hr class="divider" />
+    <p style="font-size:0.83rem;color:var(--slate);text-align:center">
+      Don't have an account yet?<br>
+      <a href="apply.html" style="color:var(--green-mid);font-weight:600;">Submit an application →</a>
+    </p>
+    <p style="font-size:0.8rem;color:var(--slate);text-align:center;margin-top:0.75rem">
+      Questions? <a href="https://wa.me/265991383466" style="color:var(--green-mid)">Contact us on WhatsApp</a>
+    </p>
+  </div>
+
+  <div class="login-footer">
+    <a href="index.html">← Back to main site</a>
+  </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script>
+// Show message if redirected from library
+const params = new URLSearchParams(window.location.search);
+if (params.get('next')) {
+  const info = document.getElementById('alert-info');
+  info.textContent = 'Please log in to access the student library.';
+  info.classList.add('show');
+}
+
+// Pre-fill student ID if passed in URL (e.g. from admin approval email link)
+if (params.get('id')) {
+  document.getElementById('student-id-input').value = params.get('id');
+}
+
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f   = e.target;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('alert-error');
+  errEl.classList.remove('show');
+
+  const studentId = f.student_id.value.trim().toUpperCase();
+  const password  = f.password.value;
+
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+
+  try {
+    const pwHash = await hashPassword(password);
+
+    // Look up student by student_id and password_hash
+    const { ok, data } = await sbAdmin(
+      `/rest/v1/students?student_id=eq.${encodeURIComponent(studentId)}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`,
+      { method: 'GET', headers: { 'Prefer': '' } }
+    );
+
+    if (!ok || !data || !Array.isArray(data) || data.length === 0) {
+      errEl.textContent = 'Invalid Student ID or password. Please check your credentials.';
+      errEl.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = 'Log In';
+      return;
+    }
+
+    // Save session
+    saveStudentSession(data[0]);
+
+    // Redirect
+    const next = params.get('next') || 'library.html';
+    window.location.href = next;
+
+  } catch (err) {
+    console.error(err);
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Log In';
+  }
+});
+</script>
+</body>
+</html>

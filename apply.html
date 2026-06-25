@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apply — Heimatliebe Institute</title>
+  <meta name="description" content="Apply to Heimatliebe Institute and gain access to our student library and resources." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep:#1B4332; --green-mid:#2D6A4F; --green-light:#52B788;
+      --gold:#C9A84C; --gold-pale:#EDD591; --cream:#F7F5EF;
+      --charcoal:#1A1A1A; --slate:#4A6572; --white:#FFFFFF;
+      --rule:rgba(201,168,76,0.35); --red:#c0392b;
+      --font-display:'Playfair Display',Georgia,serif;
+      --font-body:'Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-body);background:var(--cream);color:var(--charcoal);line-height:1.7;min-height:100vh}
+
+    /* NAV */
+    nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1.1rem 5vw;background:rgba(27,67,50,0.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--rule)}
+    .nav-logo{font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:var(--gold);text-decoration:none}
+    .nav-logo span{color:var(--white);font-weight:400}
+    .nav-right{display:flex;gap:1rem;align-items:center}
+    .nav-right a{color:rgba(255,255,255,0.8);text-decoration:none;font-size:0.83rem;font-weight:500;letter-spacing:0.06em;text-transform:uppercase}
+    .nav-right a:hover{color:var(--gold-pale)}
+
+    /* LAYOUT */
+    .page{display:grid;grid-template-columns:1fr 1fr;min-height:100vh;padding-top:62px}
+    .side-info{background:var(--green-deep);padding:4rem 3.5rem;display:flex;flex-direction:column;justify-content:center;position:sticky;top:62px;height:calc(100vh - 62px)}
+    .side-info h1{font-family:var(--font-display);font-size:clamp(2rem,3.5vw,3rem);font-weight:900;color:var(--white);line-height:1.1;margin-bottom:1.25rem}
+    .side-info h1 em{color:var(--gold);font-style:normal}
+    .side-info p{color:rgba(255,255,255,0.65);font-size:0.97rem;margin-bottom:2rem}
+    .steps{display:flex;flex-direction:column;gap:1.25rem}
+    .step{display:flex;gap:1rem;align-items:flex-start}
+    .step-num{width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--green-deep);font-size:0.78rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:0.15rem}
+    .step-body strong{display:block;color:var(--white);font-size:0.88rem;font-weight:600}
+    .step-body span{color:rgba(255,255,255,0.5);font-size:0.8rem}
+    .payment-info{margin-top:2.5rem;padding:1.25rem;border:1px solid var(--rule);background:rgba(201,168,76,0.08)}
+    .payment-info .pi-label{font-size:0.68rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem}
+    .payment-info p{font-size:0.85rem;color:rgba(255,255,255,0.7);line-height:1.6}
+
+    /* FORM SIDE */
+    .form-side{padding:4rem 3.5rem;overflow-y:auto}
+    .form-side h2{font-family:var(--font-display);font-size:1.75rem;font-weight:700;color:var(--green-deep);margin-bottom:0.35rem}
+    .form-side .sub{color:var(--slate);font-size:0.9rem;margin-bottom:2rem}
+    .form-group{margin-bottom:1.1rem}
+    .form-group label{display:block;font-size:0.78rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green-deep);margin-bottom:0.4rem}
+    .form-group input,.form-group select,.form-group textarea{
+      width:100%;padding:0.82rem 1rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;
+      font-family:var(--font-body);font-size:0.92rem;background:var(--white);
+      color:var(--charcoal);outline:none;transition:border-color 0.2s;appearance:none
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--green-mid)}
+    .form-group .hint{font-size:0.75rem;color:var(--slate);margin-top:0.3rem}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+    /* File upload */
+    .file-zone{border:2px dashed rgba(27,67,50,0.25);border-radius:2px;padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;background:var(--white);position:relative}
+    .file-zone:hover,.file-zone.drag{border-color:var(--green-mid);background:rgba(82,183,136,0.04)}
+    .file-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .file-zone .fz-icon{font-size:1.75rem;margin-bottom:0.5rem;display:block}
+    .file-zone .fz-text{font-size:0.88rem;color:var(--slate)}
+    .file-zone .fz-text strong{color:var(--green-mid)}
+    .file-zone .fz-chosen{font-size:0.82rem;color:var(--green-deep);font-weight:600;margin-top:0.5rem;display:none}
+
+    /* Password strength */
+    .pw-strength{height:3px;border-radius:2px;margin-top:0.4rem;background:#e0e0e0;overflow:hidden}
+    .pw-strength-bar{height:100%;width:0;transition:width 0.3s,background 0.3s;border-radius:2px}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.9rem 2rem;border-radius:2px;font-family:var(--font-body);font-size:0.88rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s;width:100%}
+    .btn-primary{background:var(--gold);color:var(--green-deep)}
+    .btn-primary:hover{background:var(--gold-pale)}
+    .btn-primary:disabled{opacity:0.55;cursor:not-allowed}
+
+    .alert{padding:1rem 1.1rem;border-radius:2px;font-size:0.88rem;margin-bottom:1.25rem;display:none}
+    .alert.show{display:block}
+    .alert-error{background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);color:var(--red)}
+    .alert-success{background:rgba(82,183,136,0.1);border:1px solid var(--green-light);color:var(--green-deep)}
+
+    /* Success state */
+    .success-card{text-align:center;padding:3rem 2rem;display:none}
+    .success-card.show{display:block}
+    .success-icon{font-size:3rem;margin-bottom:1rem}
+    .success-card h3{font-family:var(--font-display);font-size:1.75rem;color:var(--green-deep);margin-bottom:0.75rem}
+    .success-card p{color:var(--slate);font-size:0.95rem;max-width:400px;margin:0 auto 1.5rem}
+    .success-id{font-family:var(--font-display);font-size:1.5rem;font-weight:900;color:var(--gold);background:var(--green-deep);padding:0.75rem 2rem;display:inline-block;letter-spacing:0.08em;margin:0.5rem 0 1.5rem}
+
+    @media(max-width:860px){
+      .page{grid-template-columns:1fr}
+      .side-info{position:static;height:auto}
+      .form-side{padding:2.5rem 5vw}
+      .form-row{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Heimatliebe <span>Institute</span></a>
+  <div class="nav-right">
+    <a href="login.html">Student Login</a>
+    <a href="index.html#contact">Contact</a>
+  </div>
+</nav>
+
+<div class="page">
+  <!-- LEFT: Info -->
+  <div class="side-info">
+    <h1>Apply &amp; unlock the <em>Library</em></h1>
+    <p>Submit your application below. Once your payment is confirmed by our team, you'll receive a Student ID and gain full access to our resource library.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Fill in your details</strong><span>Name, contact, and the course you're enrolling in</span></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Upload proof of payment</strong><span>Screenshot or scan of your payment receipt</span></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Wait for confirmation</strong><span>We review within 1–2 business days</span></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Get your Student ID</strong><span>Use it to log in and access the library</span></div></div>
+    </div>
+    <div class="payment-info">
+      <div class="pi-label">Payment Details</div>
+      <p>Pay your course fee via Airtel Money or TNM Mpamba to <strong style="color:var(--gold-pale)">+265 991 383 466</strong> (Heimatliebe Institute). Screenshot the confirmation and upload it below.</p>
+    </div>
+  </div>
+
+  <!-- RIGHT: Form -->
+  <div class="form-side">
+    <h2>Student Application</h2>
+    <p class="sub">All fields marked * are required.</p>
+
+    <div class="alert alert-error" id="alert-error"></div>
+    <div class="alert alert-success" id="alert-success"></div>
+
+    <form id="apply-form" style="display:block">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="full_name" required placeholder="e.g. Chisomo Banda" />
+        </div>
+        <div class="form-group">
+          <label>Phone / WhatsApp *</label>
+          <input type="tel" name="phone" required placeholder="+265 9XX XXX XXX" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email Address *</label>
+        <input type="email" name="email" required placeholder="you@example.com" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Course *</label>
+          <select name="course" required>
+            <option value="" disabled selected>Select course</option>
+            <option>German</option>
+            <option>French</option>
+            <option>Swahili</option>
+            <option>Spanish</option>
+            <option>Chinese</option>
+            <option>Latin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Level *</label>
+          <select name="level" required>
+            <option value="" disabled selected>Select level</option>
+            <option>A1</option><option>A2</option>
+            <option>B1</option><option>B2</option>
+            <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Create Password *</label>
+        <input type="password" name="password" id="pw-input" required placeholder="Minimum 8 characters" minlength="8" oninput="checkPwStrength(this.value)" />
+        <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
+        <div class="hint">Must be at least 8 characters. You'll use this with your Student ID to log in.</div>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password *</label>
+        <input type="password" name="password2" required placeholder="Re-enter password" />
+      </div>
+
+      <div class="form-group">
+        <label>Proof of Payment *</label>
+        <div class="file-zone" id="file-zone">
+          <input type="file" id="payment-file" name="payment_file" accept="image/*,.pdf" required />
+          <span class="fz-icon">📎</span>
+          <div class="fz-text"><strong>Click to upload</strong> or drag and drop<br>JPG, PNG or PDF — max 5MB</div>
+          <div class="fz-chosen" id="fz-chosen"></div>
+        </div>
+        <div class="hint">Upload a screenshot or scan of your Airtel Money / TNM Mpamba payment confirmation.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        <span id="btn-text">Submit Application</span>
+      </button>
+    </form>
+
+    <!-- Success card (shown after submission) -->
+    <div class="success-card" id="success-card">
+      <div class="success-icon">🎉</div>
+      <h3>Application Submitted!</h3>
+      <p>Your application is now under review. Once your payment is confirmed, you will receive your Student ID. Check back here or contact us on WhatsApp.</p>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--slate)">Your application reference:</p>
+      <div class="success-id" id="success-ref"></div>
+      <p>We typically confirm within <strong>1–2 business days</strong>.</p>
+      <a href="login.html" style="display:inline-block;margin-top:1.5rem;padding:0.75rem 2rem;background:var(--green-deep);color:var(--white);text-decoration:none;font-weight:600;font-size:0.85rem;letter-spacing:0.08em;text-transform:uppercase;border-radius:2px">Go to Login</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script>
+// File zone feedback
+const fileInput = document.getElementById('payment-file');
+const fileZone  = document.getElementById('file-zone');
+const fzChosen  = document.getElementById('fz-chosen');
+
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0];
+  if (f) { fzChosen.textContent = `✓ ${f.name}`; fzChosen.style.display = 'block'; }
+});
+fileZone.addEventListener('dragover', e => { e.preventDefault(); fileZone.classList.add('drag'); });
+fileZone.addEventListener('dragleave', () => fileZone.classList.remove('drag'));
+fileZone.addEventListener('drop', e => {
+  e.preventDefault(); fileZone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) {
+    fileInput.files = e.dataTransfer.files;
+    fzChosen.textContent = `✓ ${e.dataTransfer.files[0].name}`;
+    fzChosen.style.display = 'block';
+  }
+});
+
+// Password strength
+function checkPwStrength(pw) {
+  const bar = document.getElementById('pw-bar');
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const colors = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#27ae60'];
+  bar.style.width  = (score * 20) + '%';
+  bar.style.background = colors[score - 1] || '#e0e0e0';
+}
+
+function showError(msg) {
+  const el = document.getElementById('alert-error');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+// Form submit
+document.getElementById('apply-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  const btn = document.getElementById('submit-btn');
+  const btnText = document.getElementById('btn-text');
+
+  // Validate passwords
+  if (f.password.value !== f.password2.value) { showError('Passwords do not match.'); return; }
+  if (f.password.value.length < 8) { showError('Password must be at least 8 characters.'); return; }
+
+  // Validate file size
+  const file = fileInput.files[0];
+  if (!file) { showError('Please upload your proof of payment.'); return; }
+  if (file.size > 5 * 1024 * 1024) { showError('File must be under 5MB.'); return; }
+
+  btn.disabled = true;
+  btnText.textContent = 'Uploading payment proof…';
+
+  try {
+    // 1. Upload payment proof to Supabase Storage
+    const ext  = file.name.split('.').pop();
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    let paymentUrl = '';
+    try {
+      paymentUrl = await uploadFile('payment-proofs', path, file);
+    } catch (uploadErr) {
+      // Continue even if upload fails — admin can request manually
+      console.warn('Upload failed:', uploadErr);
+      paymentUrl = 'upload-failed';
+    }
+
+    btnText.textContent = 'Hashing password…';
+
+    // 2. Hash password
+    const pwHash = await hashPassword(f.password.value);
+
+    btnText.textContent = 'Submitting application…';
+
+    // 3. Insert application record
+    const payload = {
+      full_name:         f.full_name.value.trim(),
+      email:             f.email.value.trim().toLowerCase(),
+      phone:             f.phone.value.trim(),
+      course:            f.course.value,
+      level:             f.level.value,
+      payment_proof_url: paymentUrl,
+      password_hash:     pwHash,
+      status:            'pending'
+    };
+
+    const { ok, data } = await sbAdmin('/rest/v1/applications', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if (!ok) throw new Error(JSON.stringify(data));
+
+    // 4. Show success
+    const ref = data && data[0] ? data[0].id.slice(0,8).toUpperCase() : 'HMLI-APP';
+    document.getElementById('apply-form').style.display = 'none';
+    document.getElementById('success-ref').textContent = ref;
+    document.getElementById('success-card').classList.add('show');
+
+  } catch (err) {
+    console.error(err);
+    showError('Something went wrong. Please try again or contact us on WhatsApp.');
+    btn.disabled = false;
+    btnText.textContent = 'Submit Application';
+  }
+});
+</script>
+</body>
+</html>
