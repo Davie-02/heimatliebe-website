@@ -647,53 +647,68 @@ function filterGallery(cat, btn) {
 }
 
 // ── FRONT-MATTER PARSER ───────────────────────────────────────────
-// Parses YAML front-matter from markdown files.
-// Handles: string, boolean, quoted strings, and simple single-line values.
 function parseFrontMatter(text) {
-  const fm = {};
-  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (!match) return { fm, body: text.trim() };
 
-  const raw = match[1];
-  const body = text.slice(match[0].length).trim();
+    const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 
-  // Split lines, handle basic YAML scalars
-  const lines = raw.split(/\r?\n/);
-  for (const line of lines) {
-    const colon = line.indexOf(':');
-    if (colon === -1) continue;
-    const key = line.slice(0, colon).trim();
-    const val = line.slice(colon + 1).trim();
-    if (!key || val.startsWith('-') || val === '') continue;
-    // Strip surrounding quotes
-    const clean = val.replace(/^['"]|['"]$/g, '');
-    // Booleans
-    if (clean === 'true')  { fm[key] = true;  continue; }
-    if (clean === 'false') { fm[key] = false; continue; }
-    fm[key] = clean;
-  }
+    if (!match) {
+        return {
+            fm: {},
+            body: text.trim()
+        };
+    }
 
-  // Parse list fields (photos, etc.) from the body — handled separately
-  return { fm, body };
-}
+    const yaml = match[1];
+    const body = text.slice(match[0].length).trim();
 
-// ── PHOTO LIST PARSER ─────────────────────────────────────────────
-// Extracts photo entries from the markdown body of gallery files.
-// CMS writes them as YAML-style list blocks above the markdown.
-function parsePhotoList(text) {
-  const photos = [];
-  // Match repeated blocks of:
-  // - image: /path/to/img.jpg
-  //   caption: "Some caption"
-  const re = /^\s*-\s+image:\s*(.+?)(?:\n\s+caption:\s*(.+))?$/gm;
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    photos.push({
-      src: m[1].trim().replace(/^['"]|['"]$/g, ''),
-      caption: m[2] ? m[2].trim().replace(/^['"]|['"]$/g, '') : ''
-    });
-  }
-  return photos;
+    const fm = {};
+
+    const lines = yaml.split(/\r?\n/);
+
+    let currentList = null;
+
+    for (const line of lines) {
+
+        if (/^\s*-\s*/.test(line) && currentList) {
+
+            const item = {};
+
+            line.replace(/-\s*([^:]+):\s*(.+)/, (_, key, value) => {
+                item[key.trim()] = value.trim().replace(/^['"]|['"]$/g, "");
+            });
+
+            fm[currentList].push(item);
+
+            continue;
+        }
+
+        const m = line.match(/^([^:]+):\s*(.*)$/);
+
+        if (!m) continue;
+
+        const key = m[1].trim();
+        let value = m[2].trim();
+
+        if (value === "") {
+            fm[key] = [];
+            currentList = key;
+            continue;
+        }
+
+        currentList = null;
+
+        value = value.replace(/^['"]|['"]$/g, "");
+
+        if (value === "true") value = true;
+        else if (value === "false") value = false;
+
+        fm[key] = value;
+    }
+
+    return {
+        fm,
+        body
+    };
 }
 
 // ── CONTENT LOADER ────────────────────────────────────────────────
@@ -846,11 +861,12 @@ async function renderGallery() {
 
   albums.sort((a,b) => new Date(b.date) - new Date(a.date));
   albums.forEach(album => {
-    const photos = parsePhotoList(album._body || '');
-    photos.forEach(p => {
-      allPhotos.push({ ...p, albumTitle: album.title, category: album.category });
-      if (album.category) cats.add(album.category);
-    });
+const photos = (album.photos || []).map(photo => ({
+    src: photo.image,
+    caption: photo.caption || ""
+}));
+    allPhotos.push(...photos);
+    if (album.category) cats.add(album.category);
   });
 
   _galleryAllItems = allPhotos;
