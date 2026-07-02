@@ -307,6 +307,11 @@
 </footer>
 
 <script>
+// Load runtime Supabase helper (inserts /supabase.js)
+(function(){
+  const s = document.createElement('script'); s.src = '/js/supabase.js'; document.head.appendChild(s);
+})();
+
 document.getElementById('yr').textContent = new Date().getFullYear();
 
 // ── BACK TO TOP ────────────────────────────────────────────────
@@ -382,6 +387,41 @@ async function loadLibrary() {
     return fm;
   }));
   return items.filter(Boolean).sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+// Try to load library entries from Supabase first. If that fails, fall back to GitHub Markdown files.
+async function loadLibraryFromSupabase() {
+  // wait until supabase.js is loaded and runtime config is available
+  if (typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') {
+    // wait up to ~1s for the loader to attach
+    const start = Date.now();
+    while ((typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') && Date.now() - start < 1000) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+  }
+  if (typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') return null;
+  try {
+    await loadRuntimeConfig();
+    const res = await sbFetch('/rest/v1/library?select=*&order=created_at.desc');
+    if (!res || !res.ok || !Array.isArray(res.data)) return null;
+    // map rows to the internal item shape expected by renderLibrary
+    const items = res.data.map(r => ({
+      id: r.id,
+      title: r.title,
+      author: r.author,
+      language: r.language,
+      level: r.level,
+      type: r.type,
+      file: r.file_url || (r.file_metadata && r.file_metadata.path) || null,
+      cover: r.cover_url || null,
+      description: r.description,
+      free: r.free,
+      date: r.created_at || r.date
+    }));
+    return items;
+  } catch (e) {
+    return null;
+  }
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
@@ -483,7 +523,9 @@ function applyFilters() {
 
 // ── RENDER ─────────────────────────────────────────────────────
 async function renderLibrary() {
-  const items = await loadLibrary();
+  // Try Supabase first, then fallback to GitHub-based content
+  let items = await loadLibraryFromSupabase();
+  if (!items) items = await loadLibrary();
   _allItems = items;
 
   document.getElementById('loading-grid').style.display = 'none';

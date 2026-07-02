@@ -724,6 +724,28 @@ const GH_BRANCH = 'main';
 const _listCache = {};
 const _itemCache = {};
 
+// Load supabase runtime helper so we can prefer DB-backed content
+(function(){
+  const s = document.createElement('script'); s.src = '/js/supabase.js'; document.head.appendChild(s);
+})();
+
+// Try to load a collection from Supabase (table name same as folder)
+async function loadCollectionFromSupabase(folder) {
+  if (typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') {
+    const start = Date.now();
+    while ((typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') && Date.now() - start < 1000) {
+      await new Promise(r => setTimeout(r, 50));
+    }
+  }
+  if (typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') return null;
+  try {
+    await loadRuntimeConfig();
+    const resp = await sbFetch(`/rest/v1/${folder}?select=*&order=created_at.desc`);
+    if (!resp || !resp.ok || !Array.isArray(resp.data)) return null;
+    return resp.data.map(r => ({ ...r, _fromDB: true }));
+  } catch (e) { return null; }
+}
+
 async function fetchText(url) {
   try {
     const r = await fetch(url);
@@ -789,7 +811,8 @@ function esc(str) {
 // ── RENDER: COURSES ───────────────────────────────────────────────
 async function renderCourses() {
   const grid = document.getElementById('courses-grid');
-  const items = await loadCollection('courses');
+  let items = await loadCollectionFromSupabase('courses');
+  if (!items) items = await loadCollection('courses');
   if (!items.length) {
     grid.innerHTML = '<p class="empty-state">Courses will appear here once added via the admin panel.</p>';
     return;
@@ -814,7 +837,8 @@ async function renderCourses() {
 // ── RENDER: NEWS ──────────────────────────────────────────────────
 async function renderNews() {
   const grid = document.getElementById('news-grid');
-  const items = await loadCollection('news');
+  let items = await loadCollectionFromSupabase('news');
+  if (!items) items = await loadCollection('news');
   if (!items.length) {
     grid.innerHTML = '<p class="empty-state">News will appear here once published from the admin panel.</p>';
     return;
