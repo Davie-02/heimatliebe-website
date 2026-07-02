@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Assignments</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="/js/supabase.js"></script>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px} .a{margin-bottom:1rem;padding:1rem;border:1px solid #eee}</style>
+</head>
+<body>
+  <h1>Open Assignments</h1>
+  <div id="assignments"></div>
+
+  <div id="submitArea" style="display:none">
+    <h2 id="assignTitle"></h2>
+    <form id="submitForm">
+      <div><label>Attach file: <input type="file" id="fileInput"></label></div>
+      <div><label>Notes: <textarea id="notes" rows="4" style="width:100%"></textarea></label></div>
+      <button type="submit">Submit Assignment</button>
+    </form>
+  </div>
+
+  <script>
+  (async ()=>{
+    await loadRuntimeConfig();
+    const client = sbFetch();
+    const { data: assignments } = await client.from('assignments').select('*').order('due_date', { ascending: true });
+    const el = document.getElementById('assignments');
+    if (!assignments || assignments.length===0) { el.textContent='No assignments'; return }
+    assignments.forEach(a=>{
+      const d = document.createElement('div'); d.className='a'; d.innerHTML = `<strong>${a.title}</strong><div>${a.description || ''}</div><div>Due: ${a.due_date}</div>`;
+      const btn = document.createElement('button'); btn.textContent='Submit'; btn.onclick = ()=>openSubmit(a); d.appendChild(btn); el.appendChild(d);
+    });
+
+    window.openSubmit = (a) => {
+      document.getElementById('submitArea').style.display=''; document.getElementById('assignTitle').textContent = a.title;
+      const fileInput = document.getElementById('fileInput');
+      document.getElementById('submitForm').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const f = fileInput.files[0];
+        const notes = document.getElementById('notes').value;
+        const user = await client.auth.getUser();
+        const student_id = user?.data?.user?.id;
+        if (!student_id) { alert('Please sign in'); return }
+        let attachment = null;
+        if (f) {
+          const key = `${student_id}/${Date.now()}_${f.name}`;
+          const { data, error: upError } = await client.storage.from('library').upload(key, f, { upsert: false });
+          if (upError) return alert('Upload failed: '+upError.message);
+          attachment = data.path;
+        }
+        const payload = { assignment_id: a.id, student_id, notes, attachment, submitted_at: new Date().toISOString() };
+        const { error } = await client.from('submissions').insert(payload);
+        if (error) return alert('Submit failed: '+error.message);
+        alert('Submitted');
+      };
+    };
+  })();
+  </script>
+</body>
+</html>

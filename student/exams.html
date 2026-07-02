@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Take Exam</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="/js/supabase.js"></script>
+  <style>body{font-family:system-ui,Segoe UI,Roboto,Arial;margin:20px} .q{margin-bottom:1rem;padding:1rem;border:1px solid #eee}</style>
+</head>
+<body>
+  <h1>Available Exams</h1>
+  <div id="exams"></div>
+
+  <div id="examArea" style="display:none">
+    <h2 id="examTitle"></h2>
+    <form id="examForm">
+      <div id="questions"></div>
+      <button type="submit">Submit Answers</button>
+    </form>
+  </div>
+
+  <script>
+  (async ()=>{
+    await loadRuntimeConfig();
+    const client = sbFetch();
+    const examsEl = document.getElementById('exams');
+    const { data: exams } = await client.from('exams').select('*').eq('published', true).order('created_at', { ascending: false });
+    if (!exams) { examsEl.textContent = 'No exams available'; return }
+    exams.forEach(e=>{
+      const btn = document.createElement('button'); btn.textContent = e.title; btn.onclick = ()=>openExam(e); examsEl.appendChild(btn);
+    });
+
+    window.openExam = async (exam) => {
+      document.getElementById('examArea').style.display = '';
+      document.getElementById('examTitle').textContent = exam.title;
+      const qs = exam.questions || [];
+      const qWrap = document.getElementById('questions'); qWrap.innerHTML = '';
+      qs.forEach((q,i)=>{
+        const div = document.createElement('div'); div.className='q';
+        div.innerHTML = `<strong>Q${i+1}:</strong> ${q.text}`;
+        if (q.type === 'mcq') {
+          q.options.forEach((opt,j)=>{
+            const id = `q${i}_opt${j}`;
+            const input = `<div><label><input name="q${i}" type="radio" value="${j}"> ${opt}</label></div>`;
+            div.insertAdjacentHTML('beforeend', input);
+          });
+        } else if (q.type === 'text') {
+          div.insertAdjacentHTML('beforeend', `<div><textarea name="q${i}" rows="3" style="width:100%"></textarea></div>`);
+        }
+        qWrap.appendChild(div);
+      });
+
+      document.getElementById('examForm').onsubmit = async (ev) => {
+        ev.preventDefault();
+        const form = new FormData(ev.target);
+        const answers = {};
+        for (let i=0;i<qs.length;i++) answers[i] = form.get(`q${i}`);
+        const user = await client.auth.getUser();
+        const student_id = user?.data?.user?.id;
+        if (!student_id) { alert('Please sign in to submit'); return }
+        const payload = { exam_id: exam.id, student_id, answers: JSON.stringify(answers), submitted_at: new Date().toISOString() };
+        const { error } = await client.from('submissions').insert(payload);
+        if (error) return alert('Submit failed: '+error.message);
+        alert('Submitted');
+      };
+    };
+  })();
+  </script>
+</body>
+</html>

@@ -5,7 +5,7 @@ backend:
 media_folder: "uploads/images"
 public_folder: "/uploads/images"
 
-site_url: https://hmli.netlify.app
+site_url: https://your-site.example
 
 collections:
 

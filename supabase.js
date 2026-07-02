@@ -1,18 +1,47 @@
-// ── SUPABASE CONFIG ───────────────────────────────────────────
-const SUPABASE_URL  = 'https://mcdcwrwzmifmouutpubn.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jZGN3cnd6bWlmbW91dXRwdWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDY1MjUsImV4cCI6MjA5Nzk4MjUyNX0.Xv_CrVMigI0nibRVa03NvPWgJQ9vVoJ1_T1xiRJWqTs';
+// ── RUNTIME CONFIG (loaded from /config.json or window.__APP_CONFIG__) ─
+let SUPABASE_URL = null;
+let SUPABASE_ANON = null;
+// Default admin password (used only if not overridden by config.json or injected config)
+let ADMIN_PASSWORD = 'HMLI@Admin2025';
 
-// ── ADMIN PASSWORD (change this!) ─────────────────────────────
-// This protects the admin-students.html page on the client side.
-// For stronger security later, move to Supabase Edge Functions.
-const ADMIN_PASSWORD = 'HMLI@Admin2025';
+let __configPromise = null;
+function loadRuntimeConfig() {
+  if (__configPromise) return __configPromise;
+  // Prefer explicit global injected config
+  if (window.__APP_CONFIG__) {
+    const c = window.__APP_CONFIG__;
+    SUPABASE_URL = c.SUPABASE_URL || null;
+    SUPABASE_ANON = c.SUPABASE_ANON || null;
+    ADMIN_PASSWORD = c.ADMIN_PASSWORD || null;
+    return (__configPromise = Promise.resolve());
+  }
+  // Fallback: fetch /config.json (not checked into repo)
+  __configPromise = fetch('/config.json').then(async r => {
+    if (!r.ok) return;
+    try {
+      const c = await r.json();
+      SUPABASE_URL = c.SUPABASE_URL || null;
+      SUPABASE_ANON = c.SUPABASE_ANON || null;
+      ADMIN_PASSWORD = c.ADMIN_PASSWORD || null;
+    } catch (e) {
+      // ignore
+    }
+  }).catch(() => {});
+  return __configPromise;
+}
+
+// Backwards-compatible default for local dev if ADMIN_PASSWORD not set
+function getAdminPassword() {
+  return ADMIN_PASSWORD || 'HMLI@Admin2025';
+}
 
 // ── LOW-LEVEL FETCH WRAPPER ───────────────────────────────────
 async function sbFetch(path, options = {}) {
+  await loadRuntimeConfig();
   const url = `${SUPABASE_URL}${path}`;
   const headers = {
-    'apikey': SUPABASE_ANON,
-    'Authorization': `Bearer ${getStudentToken() || SUPABASE_ANON}`,
+    'apikey': SUPABASE_ANON || '',
+    'Authorization': `Bearer ${getStudentToken() || SUPABASE_ANON || ''}`,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
     ...options.headers
@@ -27,10 +56,11 @@ async function sbFetch(path, options = {}) {
 // Admin uses service role via edge function proxy — for now uses anon
 // with RLS policies set appropriately in Supabase dashboard.
 async function sbAdmin(path, options = {}) {
+  await loadRuntimeConfig();
   const url = `${SUPABASE_URL}${path}`;
   const headers = {
-    'apikey': SUPABASE_ANON,
-    'Authorization': `Bearer ${SUPABASE_ANON}`,
+    'apikey': SUPABASE_ANON || '',
+    'Authorization': `Bearer ${SUPABASE_ANON || ''}`,
     'Content-Type': 'application/json',
     'Prefer': 'return=representation',
     ...options.headers
@@ -44,12 +74,13 @@ async function sbAdmin(path, options = {}) {
 
 // ── STORAGE UPLOAD ────────────────────────────────────────────
 async function uploadFile(bucket, path, file) {
+  await loadRuntimeConfig();
   const url = `${SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'apikey': SUPABASE_ANON,
-      'Authorization': `Bearer ${SUPABASE_ANON}`,
+      'apikey': SUPABASE_ANON || '',
+      'Authorization': `Bearer ${SUPABASE_ANON || ''}`,
     },
     body: file
   });

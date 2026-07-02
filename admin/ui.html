@@ -1,0 +1,393 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Heimatliebe — Admin UI</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>body{font-family:Inter,system-ui,Segoe UI,Arial;padding:1rem;background:#f7f7f8;color:#222}h1{margin-bottom:0.5rem}nav{display:flex;gap:0.5rem;margin-bottom:1rem}button{padding:0.5rem 0.75rem;border-radius:4px;border:1px solid #ddd;background:#fff;cursor:pointer}section{background:#fff;padding:1rem;border:1px solid #e6e6e6;border-radius:6px;margin-bottom:1rem}label{display:block;margin-top:0.6rem;font-size:0.9rem}input,textarea,select{width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:4px;margin-top:0.25rem}table{width:100%;border-collapse:collapse;margin-top:0.75rem}th,td{padding:0.5rem;border-bottom:1px solid #f0f0f0;text-align:left;font-size:0.9rem}img.thumb{max-width:120px;display:block}</style>
+</head>
+<body>
+  <h1>Admin — Content</h1>
+  <nav>
+    <button id="btn-news">News</button>
+    <button id="btn-courses">Courses</button>
+    <button id="btn-assignments">Assignments</button>
+    <button id="btn-submissions">Submissions</button>
+    <button id="btn-students">Students</button>
+    <button id="btn-exams">Exams</button>
+    <button id="btn-payments">Payments</button>
+    <button id="btn-library">Library</button>
+    <button id="btn-logout">Logout</button>
+  </nav>
+
+  <section id="panel">
+    <p>Choose a collection to manage.</p>
+  </section>
+
+  <script>
+  (async function(){
+    // Ensure Supabase client is available
+    if (!window.__SUPABASE_CLIENT__) {
+      // Try to create client from injected config
+      if (window.__APP_CONFIG__) {
+        await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.mjs').then(m => {
+          window.__SUPABASE_CLIENT__ = m.createClient(window.__APP_CONFIG__.SUPABASE_URL, window.__APP_CONFIG__.SUPABASE_ANON);
+        }).catch(() => {});
+      }
+    }
+    const client = window.__SUPABASE_CLIENT__;
+    if (!client) {
+      document.getElementById('panel').innerHTML = '<p style="color:#a00">Supabase client not initialized. Ensure you signed in via /admin/ or configured `config.json`.</p>';
+      return;
+    }
+
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+      await client.auth.signOut();
+      window.location.href = '/admin/';
+    });
+
+    document.getElementById('btn-news').addEventListener('click', () => renderNews());
+    document.getElementById('btn-courses').addEventListener('click', () => renderCourses());
+    document.getElementById('btn-assignments').addEventListener('click', () => renderAssignments());
+    document.getElementById('btn-submissions').addEventListener('click', () => renderSubmissions());
+    document.getElementById('btn-students').addEventListener('click', () => renderStudents());
+    document.getElementById('btn-exams').addEventListener('click', () => renderExams());
+    document.getElementById('btn-payments').addEventListener('click', () => renderPayments());
+    document.getElementById('btn-library').addEventListener('click', () => renderLibrary());
+
+    // NEWS management
+    async function renderNews() {
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>News</h2><div id="news-list">Loading…</div><div id="news-form"></div>';
+      const listEl = document.getElementById('news-list');
+      const { data: items, error } = await client.from('news').select('*').order('date', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading news: '+error.message+'</p>';
+      listEl.innerHTML = `<button id="create-news">Create News</button><table><thead><tr><th>Title</th><th>Date</th><th>Category</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(i.title||'')}</td><td>${i.date?new Date(i.date).toLocaleDateString():''}</td><td>${escapeHtml(i.category||'')}</td><td><button class="edit">Edit</button> <button class="del">Delete</button></td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('create-news').addEventListener('click', () => showNewsForm());
+      listEl.querySelectorAll('.edit').forEach(btn=>btn.addEventListener('click', e=>{
+        const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); showNewsForm(item);
+      }));
+      listEl.querySelectorAll('.del').forEach(btn=>btn.addEventListener('click', async e=>{
+        if (!confirm('Delete this item?')) return; const id = e.target.closest('tr').dataset.id; await client.from('news').delete().eq('id', id); renderNews();
+      }));
+    }
+
+    // LIBRARY management with file uploads (supports any file type)
+    async function renderLibrary() {
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Library</h2><div id="library-list">Loading…</div><div id="library-form"></div>';
+      const listEl = document.getElementById('library-list');
+      const { data: items, error } = await client.from('library').select('*').order('created_at', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading library: '+error.message+'</p>';
+      listEl.innerHTML = `<button id="create-lib">Upload Resource</button><table><thead><tr><th>Title</th><th>Type</th><th>Free</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(i.title||'')}</td><td>${escapeHtml(i.type||'')}</td><td>${i.free? 'Yes':'No'}</td><td><button class="download">Open</button> <button class="edit">Edit</button> <button class="del">Delete</button></td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('create-lib').addEventListener('click', () => showLibraryForm());
+      listEl.querySelectorAll('.download').forEach(btn=>btn.addEventListener('click', e=>{
+        const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); if (item && item.file_url) window.open(item.file_url, '_blank');
+      }));
+      listEl.querySelectorAll('.edit').forEach(btn=>btn.addEventListener('click', e=>{
+        const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); showLibraryForm(item);
+      }));
+      listEl.querySelectorAll('.del').forEach(btn=>btn.addEventListener('click', async e=>{
+        if (!confirm('Delete this resource?')) return; const id = e.target.closest('tr').dataset.id; await client.from('library').delete().eq('id', id); renderLibrary();
+      }));
+    }
+
+    function showLibraryForm(item={}) {
+      const form = document.getElementById('library-form');
+      form.innerHTML = `<h3>${item.id?'Edit':'Upload'} Resource</h3>
+        <label>Title<input id="l-title" value="${escapeHtml(item.title||'')}"></label>
+        <label>Author<input id="l-author" value="${escapeHtml(item.author||'')}"></label>
+        <label>Language<input id="l-language" value="${escapeHtml(item.language||'')}"></label>
+        <label>Level<input id="l-level" value="${escapeHtml(item.level||'')}"></label>
+        <label>Type<input id="l-type" value="${escapeHtml(item.type||'')}"></label>
+        <label>Description<textarea id="l-desc">${escapeHtml(item.description||'')}</textarea></label>
+        <label>File<input id="l-file" type="file"></label>
+        <label>Free<select id="l-free"><option value="1">Yes</option><option value="0">No</option></select></label>
+        <div style="margin-top:0.6rem"><button id="save-lib">Save</button> <button id="cancel-lib">Cancel</button></div>`;
+      if (item.free === false) document.getElementById('l-free').value = '0';
+      document.getElementById('cancel-lib').addEventListener('click', ()=>{ form.innerHTML=''; renderLibrary(); });
+      document.getElementById('save-lib').addEventListener('click', async ()=>{
+        const title = document.getElementById('l-title').value;
+        const author = document.getElementById('l-author').value;
+        const language = document.getElementById('l-language').value;
+        const level = document.getElementById('l-level').value;
+        const type = document.getElementById('l-type').value;
+        const description = document.getElementById('l-desc').value;
+        const free = document.getElementById('l-free').value === '1';
+        const fileInput = document.getElementById('l-file');
+        let file_url = item.file_url || null;
+        let file_meta = item.file_metadata || null;
+        if (fileInput.files && fileInput.files[0]) {
+          const f = fileInput.files[0];
+          // upload to Supabase Storage in 'library' bucket
+          try {
+            const path = `library/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9_.-]/g,'_')}`;
+            const up = await client.storage.from('library').upload(path, f, { upsert: false });
+            if (up.error) throw up.error;
+            const publicUrl = client.storage.from('library').getPublicUrl(path).data.publicUrl;
+            file_url = publicUrl;
+            file_meta = { name: f.name, size: f.size, type: f.type, path };
+          } catch (err) {
+            alert('Upload failed: ' + (err.message || err));
+            return;
+          }
+        }
+        const payload = { title, author, language, level, type, description, free, file_url, file_metadata: file_meta };
+        if (item.id) await client.from('library').update(payload).eq('id', item.id);
+        else await client.from('library').insert([payload]);
+        form.innerHTML=''; renderLibrary();
+      });
+    }
+
+    function showNewsForm(item={}) {
+      const form = document.getElementById('news-form');
+      form.innerHTML = `<h3>${item.id?'Edit':'Create'} News</h3>
+        <label>Title<input id="n-title" value="${escapeHtml(item.title||'')}"></label>
+        <label>Date<input id="n-date" type="date" value="${item.date?formatDateInput(item.date):''}"></label>
+        <label>Category<select id="n-cat"><option>Announcement</option><option>Event</option><option>Achievement</option><option>Update</option></select></label>
+        <label>Summary<textarea id="n-summary">${escapeHtml(item.summary||'')}</textarea></label>
+        <label>Body<textarea id="n-body">${escapeHtml(item.body||'')}</textarea></label>
+        <label>Image (public URL)<input id="n-image" value="${escapeHtml(item.image||'')}"></label>
+        <div style="margin-top:0.6rem"><button id="save-news">Save</button> <button id="cancel-news">Cancel</button></div>`;
+      if (item.category) document.getElementById('n-cat').value = item.category;
+      document.getElementById('cancel-news').addEventListener('click', ()=>{ form.innerHTML=''; renderNews(); });
+      document.getElementById('save-news').addEventListener('click', async ()=>{
+        const payload = { title: document.getElementById('n-title').value, date: document.getElementById('n-date').value || null, category: document.getElementById('n-cat').value, summary: document.getElementById('n-summary').value, body: document.getElementById('n-body').value, image: document.getElementById('n-image').value };
+        if (item.id) await client.from('news').update(payload).eq('id', item.id);
+        else await client.from('news').insert([payload]);
+        form.innerHTML=''; renderNews();
+      });
+    }
+
+    // COURSES management
+    async function renderCourses() {
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Courses</h2><div id="courses-list">Loading…</div><div id="courses-form"></div>';
+      const listEl = document.getElementById('courses-list');
+      const { data: items, error } = await client.from('courses').select('*').order('title', { ascending: true });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading courses: '+error.message+'</p>';
+      listEl.innerHTML = `<button id="create-course">Create Course</button><table><thead><tr><th>Title</th><th>Language</th><th>Level</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(i.title||'')}</td><td>${escapeHtml(i.language||'')}</td><td>${escapeHtml(i.level||'')}</td><td><button class="edit">Edit</button> <button class="del">Delete</button></td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('create-course').addEventListener('click', () => showCourseForm());
+      listEl.querySelectorAll('.edit').forEach(btn=>btn.addEventListener('click', e=>{
+        const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); showCourseForm(item);
+      }));
+      listEl.querySelectorAll('.del').forEach(btn=>btn.addEventListener('click', async e=>{
+        if (!confirm('Delete this course?')) return; const id = e.target.closest('tr').dataset.id; await client.from('courses').delete().eq('id', id); renderCourses();
+      }));
+    }
+
+    function showCourseForm(item={}) {
+      const form = document.getElementById('courses-form');
+      form.innerHTML = `<h3>${item.id?'Edit':'Create'} Course</h3>
+        <label>Title<input id="c-title" value="${escapeHtml(item.title||'')}"></label>
+        <label>Language<input id="c-language" value="${escapeHtml(item.language||'')}"></label>
+        <label>Level<input id="c-level" value="${escapeHtml(item.level||'')}"></label>
+        <label>Schedule<input id="c-schedule" value="${escapeHtml(item.schedule||'')}"></label>
+        <label>Duration<input id="c-duration" value="${escapeHtml(item.duration||'')}"></label>
+        <label>Fee<input id="c-fee" value="${escapeHtml(item.fee||'')}"></label>
+        <label>Description<textarea id="c-body">${escapeHtml(item.body||'')}</textarea></label>
+        <div style="margin-top:0.6rem"><button id="save-course">Save</button> <button id="cancel-course">Cancel</button></div>`;
+      document.getElementById('cancel-course').addEventListener('click', ()=>{ form.innerHTML=''; renderCourses(); });
+      document.getElementById('save-course').addEventListener('click', async ()=>{
+        const payload = { title: document.getElementById('c-title').value, language: document.getElementById('c-language').value, level: document.getElementById('c-level').value, schedule: document.getElementById('c-schedule').value, duration: document.getElementById('c-duration').value, fee: document.getElementById('c-fee').value, body: document.getElementById('c-body').value };
+        if (item.id) await client.from('courses').update(payload).eq('id', item.id);
+        else await client.from('courses').insert([payload]);
+        form.innerHTML=''; renderCourses();
+      });
+    }
+
+    // ASSIGNMENTS management
+    async function renderAssignments() {
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Assignments</h2><div id="assign-list">Loading…</div><div id="assign-form"></div>';
+      const listEl = document.getElementById('assign-list');
+      const { data: items, error } = await client.from('assignments').select('*').order('created_at', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading assignments: '+error.message+'</p>';
+      listEl.innerHTML = `<button id="create-assign">Create Assignment</button><table><thead><tr><th>Title</th><th>Course</th><th>Due</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(i.title||'')}</td><td>${escapeHtml(String(i.course_id||''))}</td><td>${i.due_date?new Date(i.due_date).toLocaleString():''}</td><td><button class="edit">Edit</button> <button class="del">Delete</button></td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('create-assign').addEventListener('click', ()=> showAssignmentForm());
+      listEl.querySelectorAll('.edit').forEach(btn=>btn.addEventListener('click', e=>{ const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); showAssignmentForm(item); }));
+      listEl.querySelectorAll('.del').forEach(btn=>btn.addEventListener('click', async e=>{ if(!confirm('Delete assignment?')) return; const id = e.target.closest('tr').dataset.id; await client.from('assignments').delete().eq('id', id); renderAssignments(); }));
+    }
+
+    function showAssignmentForm(item={}){
+      const form = document.getElementById('assign-form');
+      form.innerHTML = `<h3>${item.id?'Edit':'Create'} Assignment</h3>
+        <label>Title<input id="a-title" value="${escapeHtml(item.title||'')}"></label>
+        <label>Course ID<input id="a-course" value="${escapeHtml(item.course_id||'')}"></label>
+        <label>Due Date<input id="a-due" type="datetime-local" value="${item.due_date?new Date(item.due_date).toISOString().slice(0,16):''}"></label>
+        <label>Description<textarea id="a-desc">${escapeHtml(item.description||'')}</textarea></label>
+        <div style="margin-top:0.6rem"><button id="save-assign">Save</button> <button id="cancel-assign">Cancel</button></div>`;
+      document.getElementById('cancel-assign').addEventListener('click', ()=>{ form.innerHTML=''; renderAssignments(); });
+      document.getElementById('save-assign').addEventListener('click', async ()=>{
+        const payload = { title: document.getElementById('a-title').value, course_id: document.getElementById('a-course').value || null, due_date: document.getElementById('a-due').value || null, description: document.getElementById('a-desc').value };
+        if(item.id) await client.from('assignments').update(payload).eq('id', item.id);
+        else await client.from('assignments').insert([payload]);
+        form.innerHTML=''; renderAssignments();
+      });
+    }
+
+    // SUBMISSIONS management
+    async function renderSubmissions() {
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Submissions</h2><div id="subs-list">Loading…</div><div id="subs-detail"></div>';
+      const listEl = document.getElementById('subs-list');
+      const { data: items, error } = await client.from('submissions').select('*').order('submitted_at', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading submissions: '+error.message+'</p>';
+      listEl.innerHTML = `<table><thead><tr><th>Assignment</th><th>Student</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(String(i.assignment_id||''))}</td><td>${escapeHtml(String(i.student_id||''))}</td><td>${i.submitted_at?new Date(i.submitted_at).toLocaleString():''}</td><td><button class="view">View</button> <button class="grade">Grade</button></td></tr>`).join('')}</tbody></table>`;
+      listEl.querySelectorAll('.view').forEach(btn=>btn.addEventListener('click', e=>{ const id = e.target.closest('tr').dataset.id; showSubmissionDetail(id); }));
+      listEl.querySelectorAll('.grade').forEach(btn=>btn.addEventListener('click', e=>{ const id = e.target.closest('tr').dataset.id; gradeSubmission(id); }));
+    }
+
+    async function showSubmissionDetail(id){
+      const { data: item, error } = await client.from('submissions').select('*').eq('id', id).single();
+      const detail = document.getElementById('subs-detail');
+      if (error) return detail.innerHTML = '<p style="color:#a00">Error: '+error.message+'</p>';
+      detail.innerHTML = `<h3>Submission ${item.id}</h3><p>Student: ${escapeHtml(String(item.student_id))}</p><p>Files:</p><ul>${(item.files||[]).map(f=>`<li><a href="${f.url||''}" target="_blank">${escapeHtml(f.name||f.path||'file')}</a></li>`).join('')}</ul><p>Grade: ${item.grade||'—'}</p><p>Feedback:</p><div>${escapeHtml(item.feedback||'')}</div>`;
+    }
+
+    async function gradeSubmission(id){
+      const score = prompt('Enter score (numeric)');
+      if (score === null) return;
+      const feedback = prompt('Enter feedback (optional)');
+      await client.from('submissions').update({ grade: parseFloat(score), feedback }).eq('id', id);
+      alert('Saved'); renderSubmissions();
+    }
+
+    // STUDENTS management
+    async function renderStudents() {
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Students</h2><div id="students-list">Loading…</div><div id="students-form"></div>';
+      const listEl = document.getElementById('students-list');
+      const { data: items, error } = await client.from('profiles').select('*').order('created_at', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading students: '+error.message+'</p>';
+      listEl.innerHTML = `<button id="create-student">Create Student</button><table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(i.full_name||'')}</td><td>${escapeHtml(i.role||'')}</td><td>${escapeHtml(i.phone||'')}</td><td><button class="edit">Edit</button> <button class="pw">Reset PW</button></td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('create-student').addEventListener('click', () => showStudentForm());
+      listEl.querySelectorAll('.edit').forEach(btn=>btn.addEventListener('click', e=>{ const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); showStudentForm(item); }));
+      listEl.querySelectorAll('.pw').forEach(btn=>btn.addEventListener('click', async e=>{ const id = e.target.closest('tr').dataset.id; const item = items.find(x=>String(x.id)===String(id)); if(!item) return; if(!confirm('Send password reset email to '+(item.full_name||item.id)+'?')) return; try{ await client.auth.resetPasswordForEmail(item.email); alert('Password reset email sent'); }catch(err){ alert('Error: '+(err.message||err)); } }));
+    }
+
+    function showStudentForm(item={}){
+      const form = document.getElementById('students-form');
+      form.innerHTML = `<h3>${item.id?'Edit':'Create'} Student</h3>
+        <label>Full Name<input id="s-name" value="${escapeHtml(item.full_name||'')}"></label>
+        <label>Email<input id="s-email" value="${escapeHtml(item.email||'')}"></label>
+        <label>Phone<input id="s-phone" value="${escapeHtml(item.phone||'')}"></label>
+        <label>Role<select id="s-role"><option value="student">student</option><option value="staff">staff</option><option value="admin">admin</option><option value="superadmin">superadmin</option></select></label>
+        <div style="margin-top:0.6rem"><button id="save-student">Save</button> <button id="cancel-student">Cancel</button></div>`;
+      if (item.role) document.getElementById('s-role').value = item.role;
+      document.getElementById('cancel-student').addEventListener('click', ()=>{ form.innerHTML=''; renderStudents(); });
+      document.getElementById('save-student').addEventListener('click', async ()=>{
+        const payload = { full_name: document.getElementById('s-name').value, email: document.getElementById('s-email').value, phone: document.getElementById('s-phone').value, role: document.getElementById('s-role').value };
+        if (item.id) await client.from('profiles').update(payload).eq('id', item.id);
+        else await client.from('profiles').insert([payload]);
+        form.innerHTML=''; renderStudents();
+      });
+    }
+
+    // EXAMS & RESULTS management
+    async function renderExams(){
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Exams</h2><div id="exams-list">Loading…</div><div id="exams-form"></div>';
+      const listEl = document.getElementById('exams-list');
+      const { data: items, error } = await client.from('exams').select('*').order('date', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading exams: '+error.message+'</p>';
+      listEl.innerHTML = `<button id="create-exam">Create Exam</button><table><thead><tr><th>Title</th><th>Course</th><th>Date</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(i.title||'')}</td><td>${escapeHtml(String(i.course_id||''))}</td><td>${i.date?new Date(i.date).toLocaleString():''}</td><td><button class="view">View</button> <button class="del">Delete</button></td></tr>`).join('')}</tbody></table>`;
+      document.getElementById('create-exam').addEventListener('click', ()=> showExamForm());
+      listEl.querySelectorAll('.view').forEach(btn=>btn.addEventListener('click', e=>{ const id = e.target.closest('tr').dataset.id; showExamDetail(id); }));
+      listEl.querySelectorAll('.del').forEach(btn=>btn.addEventListener('click', async e=>{ if(!confirm('Delete exam?')) return; const id = e.target.closest('tr').dataset.id; await client.from('exams').delete().eq('id', id); renderExams(); }));
+    }
+
+    function showExamForm(item={}){
+      const form = document.getElementById('exams-form');
+      form.innerHTML = `<h3>${item.id?'Edit':'Create'} Exam</h3>
+        <label>Title<input id="e-title" value="${escapeHtml(item.title||'')}"></label>
+        <label>Course ID<input id="e-course" value="${escapeHtml(item.course_id||'')}"></label>
+        <label>Date<input id="e-date" type="datetime-local" value="${item.date?new Date(item.date).toISOString().slice(0,16):''}"></label>
+        <label>Duration (minutes)<input id="e-duration" value="${escapeHtml(item.duration_minutes||'')}"></label>
+        <label>Description<textarea id="e-desc">${escapeHtml(item.description||'')}</textarea></label>
+        <div style="margin-top:0.6rem"><button id="save-exam">Save</button> <button id="cancel-exam">Cancel</button></div>`;
+      document.getElementById('cancel-exam').addEventListener('click', ()=>{ form.innerHTML=''; renderExams(); });
+      document.getElementById('save-exam').addEventListener('click', async ()=>{
+        const payload = { title: document.getElementById('e-title').value, course_id: document.getElementById('e-course').value||null, date: document.getElementById('e-date').value||null, duration_minutes: parseInt(document.getElementById('e-duration').value||0), description: document.getElementById('e-desc').value };
+        if(item.id) await client.from('exams').update(payload).eq('id', item.id);
+        else await client.from('exams').insert([payload]);
+        form.innerHTML=''; renderExams();
+      });
+    }
+
+    async function showExamDetail(id){
+      const { data: exam, error } = await client.from('exams').select('*').eq('id', id).single();
+      const panel = document.getElementById('panel');
+      if(error) return panel.innerHTML = '<p style="color:#a00">Error: '+error.message+'</p>';
+      panel.innerHTML = `<h3>${escapeHtml(exam.title)}</h3><p>${escapeHtml(exam.description||'')}</p><h4>Results</h4><div id="exam-results">Loading…</div>`;
+      const { data: results } = await client.from('results').select('*').eq('exam_id', id).order('created_at', { ascending: false });
+      document.getElementById('exam-results').innerHTML = `<table><thead><tr><th>Student</th><th>Score</th><th>Passed</th></tr></thead><tbody>${(results||[]).map(r=>`<tr><td>${escapeHtml(String(r.student_id))}</td><td>${r.score||''}</td><td>${r.passed? 'Yes':'No'}</td></tr>`).join('')}</tbody></table>`;
+    }
+
+    // PAYMENTS management (scaffolding)
+    async function renderPayments(){
+      const panel = document.getElementById('panel');
+      panel.innerHTML = '<h2>Payments</h2><div id="payments-list">Loading…</div><div id="payments-detail"></div>';
+      const listEl = document.getElementById('payments-list');
+      const { data: items, error } = await client.from('payments').select('*').order('created_at', { ascending: false });
+      if (error) return listEl.innerHTML = '<p style="color:#a00">Error loading payments: '+error.message+'</p>';
+      listEl.innerHTML = `<table><thead><tr><th>Student</th><th>Amount</th><th>Method</th><th>Status</th><th>Actions</th></tr></thead><tbody>${items.map(i=>`<tr data-id="${i.id}"><td>${escapeHtml(String(i.student_id||''))}</td><td>${i.amount||''}</td><td>${escapeHtml(i.method||'')}</td><td>${escapeHtml(i.status||'')}</td><td><button class="view">View</button> <button class="confirm">Confirm</button> <button class="remind">Remind</button></td></tr>`).join('')}</tbody></table>`;
+      listEl.querySelectorAll('.view').forEach(btn=>btn.addEventListener('click', e=>{ const id = e.target.closest('tr').dataset.id; showPayment(id); }));
+      listEl.querySelectorAll('.confirm').forEach(btn=>btn.addEventListener('click', async e=>{ const id = e.target.closest('tr').dataset.id; await client.from('payments').update({ status: 'confirmed' }).eq('id', id); renderPayments(); }));
+      listEl.querySelectorAll('.remind').forEach(btn=>btn.addEventListener('click', async e=>{ const id = e.target.closest('tr').dataset.id; await client.from('payments').update({ meta: { reminder_sent: true } }).eq('id', id); alert('Reminder recorded (implement actual notification via Edge Function)'); }));
+    }
+
+    async function showPayment(id){
+      const { data: p, error } = await client.from('payments').select('*').eq('id', id).single();
+      const detail = document.getElementById('payments-detail');
+      if (error) return detail.innerHTML = '<p style="color:#a00">Error: '+error.message+'</p>';
+      detail.innerHTML = `<h3>Payment ${p.id}</h3><p>Student: ${escapeHtml(String(p.student_id))}</p><p>Amount: ${p.amount}</p><p>Method: ${escapeHtml(p.method||'')}</p><p>Status: ${escapeHtml(p.status||'')}</p><p>Receipt: ${p.receipt_url?`<a href="${p.receipt_url}" target="_blank">View</a>`:'—'}</p>`;
+    }
+
+    // Library preview modal
+    const previewModal = document.createElement('div');
+    previewModal.id = 'preview-modal';
+    previewModal.style = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;align-items:center;justify-content:center;padding:1rem';
+    previewModal.innerHTML = '<div id="preview-box" style="background:#fff;max-width:1000px;width:100%;max-height:90vh;overflow:auto;padding:1rem;position:relative;border-radius:6px"><button id="preview-close" style="position:absolute;right:0.5rem;top:0.5rem">✕</button><div id="preview-content"></div></div>';
+    document.body.appendChild(previewModal);
+    document.getElementById('preview-close').addEventListener('click', ()=>{ previewModal.style.display='none'; document.getElementById('preview-content').innerHTML=''; });
+
+    function previewResource(item){
+      if(!item || !item.file_url) return alert('No file to preview');
+      const url = item.file_url;
+      const lc = url.toLowerCase();
+      const content = document.getElementById('preview-content');
+      if(lc.endsWith('.pdf')){
+        content.innerHTML = `<iframe src="${url}" style="width:100%;height:80vh;border:none"></iframe>`;
+        previewModal.style.display='flex';
+        return;
+      }
+      if(lc.endsWith('.epub')){
+        // try to load EPUB.js
+        if(!window.ePub){
+          const s = document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js'; document.head.appendChild(s);
+          s.onload = ()=>{ openEpub(url); };
+        } else openEpub(url);
+        previewModal.style.display='flex';
+        return;
+      }
+      // fallback: open in new tab
+      window.open(url,'_blank');
+    }
+
+    function openEpub(url){
+      try{
+        const book = ePub(url);
+        const rendition = book.renderTo('preview-content',{width:'100%',height:'80vh'});
+        rendition.display();
+      }catch(e){ document.getElementById('preview-content').innerHTML = '<p>Unable to load EPUB preview.</p>'; }
+    }
+
+    // Helpers
+    function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function formatDateInput(d){ try{ const dt = new Date(d); return dt.toISOString().slice(0,10);}catch{return ''} }
+
+  })();
+  </script>
+</body>
+</html>

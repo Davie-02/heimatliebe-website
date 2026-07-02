@@ -6,7 +6,7 @@
 
   <link rel="icon" href="./logo.png">
 
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <!-- Identity widget (Netlify) removed — auth managed via Supabase -->
 
   <style>
     :root{
@@ -17,19 +17,7 @@
 </head>
 <body>
 
-<script src="https://unpkg.com/decap-cms@^3/dist/decap-cms.js"></script>
-
-<script>
-if (window.netlifyIdentity) {
-  window.netlifyIdentity.on("init", user => {
-    if (!user) {
-      window.netlifyIdentity.on("login", () => {
-        document.location.href = "/admin/";
-      });
-    }
-  });
-}
-</script>
+<script src="/admin/auth.js"></script>
 
 </body>
 </html>

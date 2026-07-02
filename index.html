@@ -8,7 +8,7 @@
   <meta property="og:title" content="Heimatliebe Institute — Language Connects!" />
   <meta property="og:description" content="A private international language school in Karonga, Northern Malawi." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://hmli.netlify.app" />
+  <meta property="og:url" content="/" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -715,8 +715,8 @@ function parseFrontMatter(text) {
 // ── CONTENT LOADER ────────────────────────────────────────────────
 // ── GITHUB CONFIG ─────────────────────────────────────────────────
 // Public repo — no token needed. GitHub API rate limit: 60 req/hr per IP.
-// Files are also served directly from Netlify (same origin), so we fetch
-// the raw content from Netlify and only use GitHub to list filenames.
+// Files are served from the same origin (static /content folder), so we fetch
+// raw markdown directly and use GitHub to list filenames.
 const GH_REPO  = 'Davie-02/heimatliebe-website';
 const GH_BRANCH = 'main';
 
@@ -751,7 +751,7 @@ async function listFiles(folder) {
   } catch { return []; }
 }
 
-// Fetch a single markdown file from Netlify (same origin, no rate limit)
+// Fetch a single markdown file from the site's /content folder (same origin)
 async function loadItem(folder, filename) {
   const cacheKey = `${folder}/${filename}`;
   if (_itemCache[cacheKey]) return _itemCache[cacheKey];
@@ -962,18 +962,9 @@ renderDocuments();
 renderTestimonials();
 populateCourseSelect();
 
-// Netlify Identity widget redirect
-if (window.netlifyIdentity) {
-  window.netlifyIdentity.on('init', user => {
-    if (!user) {
-      window.netlifyIdentity.on('login', () => { document.location.href = '/admin/'; });
-    }
-  });
-}
+// Admin auth is handled separately (Supabase / Railway). Netlify Identity
+// integration removed to keep the frontend deployment platform-agnostic.
 </script>
-
-<!-- Netlify Identity (for CMS login redirect) -->
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 
 </body>
 </html>
