@@ -4,6 +4,7 @@
   "description": "Helper scripts for Heimatliebe site",
   "type": "module",
   "scripts": {
+    "start": "node server.js",
     "import:content": "node scripts/import_markdown_to_supabase.js"
   },
   "dependencies": {
