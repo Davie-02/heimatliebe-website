@@ -37,13 +37,27 @@
   (async function(){
     await loadAppConfig();
 
+    async function ensureSupabaseClient() {
+      if (window.__SUPABASE_CLIENT__) return;
+      if (!window.supabase) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = '/js/supabase.umd.js';
+          script.async = false;
+          script.onload = resolve;
+          script.onerror = () => reject(new Error('Failed to load local Supabase bundle.'));
+          document.head.appendChild(script);
+        });
+      }
+      if (!window.supabase) throw new Error('Supabase bundle failed to initialize.');
+      window.__SUPABASE_CLIENT__ = window.supabase.createClient(window.__APP_CONFIG__.SUPABASE_URL, window.__APP_CONFIG__.SUPABASE_ANON);
+    }
+
     // Ensure Supabase client is available
     if (!window.__SUPABASE_CLIENT__) {
       if (window.__APP_CONFIG__ && window.__APP_CONFIG__.SUPABASE_URL && window.__APP_CONFIG__.SUPABASE_ANON) {
         try {
-          const module = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-          const supabase = module.default && !module.createClient ? module.default : module;
-          window.__SUPABASE_CLIENT__ = supabase.createClient(window.__APP_CONFIG__.SUPABASE_URL, window.__APP_CONFIG__.SUPABASE_ANON);
+          await ensureSupabaseClient();
         } catch (err) {
           document.getElementById('panel').innerHTML = `<p style="color:#a00">Failed to load Supabase client: ${err.message}</p>`;
           return;
@@ -379,13 +393,9 @@
         return;
       }
       if(lc.endsWith('.epub')){
-        // try to load EPUB.js
-        if(!window.ePub){
-          const s = document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js'; document.head.appendChild(s);
-          s.onload = ()=>{ openEpub(url); };
-        } else openEpub(url);
+        content.innerHTML = '<p>EPUB preview is not available in this offline build. Opening the file in a new tab instead.</p>';
         previewModal.style.display='flex';
-        return;
+        return window.open(url, '_blank');
       }
       // fallback: open in new tab
       window.open(url,'_blank');

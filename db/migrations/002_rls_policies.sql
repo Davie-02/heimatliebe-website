@@ -9,6 +9,8 @@ ALTER TABLE IF EXISTS assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS library ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS students ENABLE ROW LEVEL SECURITY;
 
 -- Allow authenticated users to insert their profile (on sign up)
 CREATE POLICY "profiles_insert" ON profiles
@@ -49,5 +51,23 @@ CREATE POLICY "payments_insert" ON payments
   FOR INSERT USING (auth.role() = 'authenticated');
 CREATE POLICY "payments_select" ON payments
   FOR SELECT USING (auth.role() = 'staff' OR auth.role() = 'admin' OR auth.uid() = student_id);
+
+-- Applications: public read and insert for anonymous application submissions
+CREATE POLICY "applications_select" ON applications
+  FOR SELECT USING (true);
+CREATE POLICY "applications_insert" ON applications
+  FOR INSERT USING (true);
+CREATE POLICY "applications_update" ON applications
+  FOR UPDATE USING (true);
+
+-- Students: public select for admin view, insert/update via frontend control
+CREATE POLICY "students_select" ON students
+  FOR SELECT USING (true);
+CREATE POLICY "students_insert" ON students
+  FOR INSERT USING (true);
+CREATE POLICY "students_update" ON students
+  FOR UPDATE USING (true);
+CREATE POLICY "students_delete" ON students
+  FOR DELETE USING (true);
 
 -- Note: Adjust policies to match your auth setup and roles. Consider using custom claims for roles.

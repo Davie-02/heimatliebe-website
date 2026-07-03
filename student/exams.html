@@ -22,10 +22,11 @@
   <script>
   (async ()=>{
     await loadRuntimeConfig();
-    const client = sbFetch();
+    const student = requireStudent();
+    const client = await getSupabaseClient();
     const examsEl = document.getElementById('exams');
-    const { data: exams } = await client.from('exams').select('*').eq('published', true).order('created_at', { ascending: false });
-    if (!exams) { examsEl.textContent = 'No exams available'; return }
+    const { data: exams, error } = await client.from('exams').select('*').eq('published', true).order('created_at', { ascending: false });
+    if (error || !exams || exams.length === 0) { examsEl.textContent = 'No exams available'; return }
     exams.forEach(e=>{
       const btn = document.createElement('button'); btn.textContent = e.title; btn.onclick = ()=>openExam(e); examsEl.appendChild(btn);
     });
@@ -55,9 +56,7 @@
         const form = new FormData(ev.target);
         const answers = {};
         for (let i=0;i<qs.length;i++) answers[i] = form.get(`q${i}`);
-        const user = await client.auth.getUser();
-        const student_id = user?.data?.user?.id;
-        if (!student_id) { alert('Please sign in to submit'); return }
+        const student_id = student.student_id;
         const payload = { exam_id: exam.id, student_id, answers: JSON.stringify(answers), submitted_at: new Date().toISOString() };
         const { error } = await client.from('submissions').insert(payload);
         if (error) return alert('Submit failed: '+error.message);

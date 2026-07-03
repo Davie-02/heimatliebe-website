@@ -31,13 +31,55 @@ const server = createServer(async (req, res) => {
     const url = decodeURIComponent(new URL(req.url, `http://localhost`).pathname);
 
     if (url === '/config.json') {
+      let fileConfig = {};
+      try {
+        const raw = await fs.readFile(path.join(root, 'config.json'), 'utf8');
+        const trimmed = raw.trim();
+        if (trimmed.startsWith('{')) {
+          fileConfig = JSON.parse(trimmed);
+        } else {
+          raw.split(/\r?\n/).forEach(line => {
+            const match = line.match(/^\s*export\s+(\w+)=(?:"([^"]*)"|'([^']*)'|(.*))$/);
+            if (match) {
+              fileConfig[match[1]] = match[2] ?? match[3] ?? match[4] ?? '';
+            }
+          });
+        }
+      } catch (e) {
+        fileConfig = {};
+      }
+
       const config = {
-        SUPABASE_URL: process.env.SUPABASE_URL || '',
-        SUPABASE_ANON: process.env.SUPABASE_ANON || '',
-        ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || ''
+        SUPABASE_URL: process.env.SUPABASE_URL || fileConfig.SUPABASE_URL || '',
+        SUPABASE_ANON: process.env.SUPABASE_ANON || fileConfig.SUPABASE_ANON || '',
+        ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || fileConfig.ADMIN_PASSWORD || ''
       };
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(config));
+      return;
+    }
+
+    if (url.startsWith('/content-list')) {
+      const params = new URL(req.url, `http://localhost`).searchParams;
+      const folder = params.get('folder') || '';
+      if (!/^[a-zA-Z0-9_-]+$/.test(folder)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid folder name' }));
+        return;
+      }
+      const listDir = path.join(root, 'content', folder);
+      try {
+        const entries = await fs.readdir(listDir, { withFileTypes: true });
+        const files = entries
+          .filter(e => e.isFile() && e.name.endsWith('.md'))
+          .map(e => e.name)
+          .sort();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(files));
+      } catch (err) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Folder not found' }));
+      }
       return;
     }
 

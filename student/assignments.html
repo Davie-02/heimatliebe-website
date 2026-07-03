@@ -23,10 +23,11 @@
   <script>
   (async ()=>{
     await loadRuntimeConfig();
-    const client = sbFetch();
-    const { data: assignments } = await client.from('assignments').select('*').order('due_date', { ascending: true });
+    const student = requireStudent();
+    const client = await getSupabaseClient();
+    const { data: assignments, error } = await client.from('assignments').select('*').order('due_date', { ascending: true });
     const el = document.getElementById('assignments');
-    if (!assignments || assignments.length===0) { el.textContent='No assignments'; return }
+    if (error || !assignments || assignments.length===0) { el.textContent='No assignments'; return }
     assignments.forEach(a=>{
       const d = document.createElement('div'); d.className='a'; d.innerHTML = `<strong>${a.title}</strong><div>${a.description || ''}</div><div>Due: ${a.due_date}</div>`;
       const btn = document.createElement('button'); btn.textContent='Submit'; btn.onclick = ()=>openSubmit(a); d.appendChild(btn); el.appendChild(d);
@@ -39,9 +40,7 @@
         ev.preventDefault();
         const f = fileInput.files[0];
         const notes = document.getElementById('notes').value;
-        const user = await client.auth.getUser();
-        const student_id = user?.data?.user?.id;
-        if (!student_id) { alert('Please sign in'); return }
+        const student_id = student.student_id;
         let attachment = null;
         if (f) {
           const key = `${student_id}/${Date.now()}_${f.name}`;

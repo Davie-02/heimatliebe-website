@@ -26,6 +26,38 @@ CREATE TABLE IF NOT EXISTS news (
   created_at timestamptz DEFAULT now()
 );
 
+-- Applications
+CREATE TABLE IF NOT EXISTS applications (
+  id bigserial PRIMARY KEY,
+  full_name text,
+  email text,
+  phone text,
+  course text,
+  level text,
+  payment_proof_url text,
+  password_hash text,
+  status text DEFAULT 'pending',
+  student_id text,
+  notes text,
+  reviewed_at timestamptz,
+  submitted_at timestamptz DEFAULT now(),
+  created_at timestamptz DEFAULT now()
+);
+
+-- Students
+CREATE TABLE IF NOT EXISTS students (
+  id bigserial PRIMARY KEY,
+  student_id text UNIQUE,
+  full_name text,
+  email text,
+  phone text,
+  course text,
+  level text,
+  password_hash text,
+  status text DEFAULT 'active',
+  created_at timestamptz DEFAULT now()
+);
+
 -- Courses
 CREATE TABLE IF NOT EXISTS courses (
   id bigserial PRIMARY KEY,

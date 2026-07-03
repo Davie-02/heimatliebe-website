@@ -6,9 +6,6 @@
   <title>Library — Heimatliebe Institute</title>
   <meta name="description" content="Free language learning resources for Heimatliebe Institute students — textbooks, grammar guides, exercise sheets, and more." />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
   <style>
     :root {
       --green-deep:  #1B4332;
@@ -333,20 +330,14 @@ navLinks.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
   navToggle.setAttribute('aria-expanded', 'false');
 }));
 
-// ── GITHUB / CONTENT LOADER ────────────────────────────────────
-const GH_REPO   = 'Davie-02/heimatliebe-website';
-const GH_BRANCH = 'main';
-
+// ── CONTENT LOADER ────────────────────────────────────
 async function listFiles(folder) {
   try {
-    const r = await fetch(
-      `https://api.github.com/repos/${GH_REPO}/contents/content/${folder}?ref=${GH_BRANCH}`,
-      { headers: { 'Accept': 'application/vnd.github.v3+json' } }
-    );
+    const r = await fetch(`/content-list?folder=${encodeURIComponent(folder)}`);
     if (!r.ok) return [];
-    const entries = await r.json();
-    if (!Array.isArray(entries)) return [];
-    return entries.filter(e => e.type === 'file' && e.name.endsWith('.md')).map(e => e.name);
+    const files = await r.json();
+    if (!Array.isArray(files)) return [];
+    return files.filter(name => name.endsWith('.md'));
   } catch { return []; }
 }
 
@@ -389,7 +380,7 @@ async function loadLibrary() {
   return items.filter(Boolean).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-// Try to load library entries from Supabase first. If that fails, fall back to GitHub Markdown files.
+// Try to load library entries from Supabase first. If that fails, fall back to local markdown files.
 async function loadLibraryFromSupabase() {
   // wait until supabase.js is loaded and runtime config is available
   if (typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') {

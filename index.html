@@ -10,11 +10,61 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="/" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    function parseMarkdown(text) {
+      if (!text) return '';
+      const lines = text.replace(/\r\n/g, '\n').split('\n');
+      let html = '';
+      let inList = false;
+      let inParagraph = false;
 
-  <!-- marked: render markdown body content -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      const closeParagraph = () => { if (inParagraph) { html += '</p>'; inParagraph = false; } };
+      const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+
+      const inline = (str) => {
+        return str
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+          .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/__(.*?)__/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/_(.*?)_/g, '<em>$1</em>');
+      };
+
+      for (let rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) {
+          closeList();
+          closeParagraph();
+          continue;
+        }
+        const headerMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headerMatch) {
+          closeList();
+          closeParagraph();
+          html += `<h${headerMatch[1].length}>${inline(headerMatch[2])}</h${headerMatch[1].length}>`;
+          continue;
+        }
+        const listMatch = line.match(/^[-*+]\s+(.*)$/);
+        if (listMatch) {
+          closeParagraph();
+          if (!inList) { html += '<ul>'; inList = true; }
+          html += `<li>${inline(listMatch[1])}</li>`;
+          continue;
+        }
+        if (!inParagraph) {
+          html += '<p>'; inParagraph = true;
+        } else {
+          html += ' ';
+        }
+        html += inline(line);
+      }
+      closeList();
+      closeParagraph();
+      return html;
+    }
+    window.marked = { parse: parseMarkdown };
+  </script>
 
   <style>
     :root {
@@ -713,14 +763,8 @@ function parseFrontMatter(text) {
 }
 
 // ── CONTENT LOADER ────────────────────────────────────────────────
-// ── GITHUB CONFIG ─────────────────────────────────────────────────
-// Public repo — no token needed. GitHub API rate limit: 60 req/hr per IP.
-// Files are served from the same origin (static /content folder), so we fetch
-// raw markdown directly and use GitHub to list filenames.
-const GH_REPO  = 'Davie-02/heimatliebe-website';
-const GH_BRANCH = 'main';
-
-// Cache so repeated renders (e.g. courses + contact select) don't double-fetch
+// Files are served from the same origin from /content, with a local directory
+// listing endpoint to avoid GitHub API dependencies.
 const _listCache = {};
 const _itemCache = {};
 
@@ -754,22 +798,17 @@ async function fetchText(url) {
   } catch { return null; }
 }
 
-// List .md files in a content folder via GitHub Contents API
+// List .md files in a content folder via local content listing endpoint
 async function listFiles(folder) {
   if (_listCache[folder]) return _listCache[folder];
   try {
-    const url = `https://api.github.com/repos/${GH_REPO}/contents/content/${folder}?ref=${GH_BRANCH}`;
-    const r = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+    const r = await fetch(`/content-list?folder=${encodeURIComponent(folder)}`);
     if (!r.ok) return [];
-    const entries = await r.json();
-    if (!Array.isArray(entries)) return [];
-    const files = entries
-      .filter(e => e.type === 'file' && e.name.endsWith('.md'))
-      .map(e => e.name)
-      .sort()
-      .reverse(); // newest first for date-prefixed filenames
-    _listCache[folder] = files;
-    return files;
+    const files = await r.json();
+    if (!Array.isArray(files)) return [];
+    const sorted = files.filter(name => name.endsWith('.md')).sort().reverse();
+    _listCache[folder] = sorted;
+    return sorted;
   } catch { return []; }
 }
 

@@ -13,21 +13,34 @@
     return;
   }
 
-  // Load supabase-js if not present using the supported ESM CDN entrypoint.
+  // Load local Supabase JS bundle if not already available.
   if (!window.supabase) {
     try {
-      const module = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
-      window.supabase = module.default && !module.createClient ? module.default : module;
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = '/js/supabase.umd.js';
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load local Supabase bundle.'));
+        document.head.appendChild(script);
+      });
     } catch (err) {
-      document.body.innerHTML = `<p style="padding:2rem;font-family:system-ui;color:#a00;">Failed to load Supabase client. Check network access and that /config.json is available.<br>${err.message}</p>`;
+      document.body.innerHTML = `<p style="padding:2rem;font-family:system-ui;color:#a00;">Failed to load Supabase client. Check that /js/supabase.umd.js is available and /config.json is accessible.<br>${err.message}</p>`;
       return;
     }
   }
 
   // Initialize client
   window.__SUPABASE_CLIENT__ = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON);
+  const adminPassword = cfg.ADMIN_PASSWORD || '';
 
-  // Check for existing session
+  // Allow local admin password fallback if configured
+  if (adminPassword && sessionStorage.getItem('hmli_admin_auth') === '1') {
+    window.location.href = '/admin/ui.html';
+    return;
+  }
+
+  // Check for existing Supabase session
   try {
     const { data } = await window.__SUPABASE_CLIENT__.auth.getSession();
     const session = data?.session;
@@ -60,12 +73,13 @@
     const email = f.email.value;
     const password = f.password.value;
     const client = window.__SUPABASE_CLIENT__;
-    try {
-      const { data, error } = await client.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      // On success, reload to let CMS load
-      window.location.reload();
-    } catch (err) {
+
+      if (adminPassword && password === adminPassword) {
+        sessionStorage.setItem('hmli_admin_auth', '1');
+        window.location.href = '/admin/ui.html';
+        return;
+      }
+
       document.getElementById('login-msg').textContent = err.message || String(err);
     }
   });

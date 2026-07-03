@@ -3,6 +3,7 @@
   window.__SUPABASE_WRAPPER_LOADED__ = true;
   const s = document.createElement('script');
   s.src = '/supabase.js';
+  s.async = false;
   s.defer = false;
   document.head.appendChild(s);
 })();

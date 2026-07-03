@@ -13,6 +13,7 @@ function loadRuntimeConfig() {
     SUPABASE_URL = c.SUPABASE_URL || null;
     SUPABASE_ANON = c.SUPABASE_ANON || null;
     ADMIN_PASSWORD = c.ADMIN_PASSWORD || null;
+    window.ADMIN_PASSWORD = ADMIN_PASSWORD || '';
     return (__configPromise = Promise.resolve());
   }
   // Fallback: fetch /config.json (not checked into repo)
@@ -23,6 +24,7 @@ function loadRuntimeConfig() {
       SUPABASE_URL = c.SUPABASE_URL || null;
       SUPABASE_ANON = c.SUPABASE_ANON || null;
       ADMIN_PASSWORD = c.ADMIN_PASSWORD || null;
+      window.ADMIN_PASSWORD = ADMIN_PASSWORD || '';
     } catch (e) {
       // ignore
     }
@@ -32,6 +34,27 @@ function loadRuntimeConfig() {
 
 function getAdminPassword() {
   return ADMIN_PASSWORD || '';
+}
+
+async function loadLocalSupabaseBundle() {
+  if (window.supabase) return;
+  await new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = '/js/supabase.umd.js';
+    script.async = false;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load local Supabase bundle at /js/supabase.umd.js'));
+    document.head.appendChild(script);
+  });
+}
+
+async function getSupabaseClient() {
+  await loadRuntimeConfig();
+  if (window.__SUPABASE_CLIENT__) return window.__SUPABASE_CLIENT__;
+  await loadLocalSupabaseBundle();
+  if (!window.supabase) throw new Error('Supabase client not available.');
+  window.__SUPABASE_CLIENT__ = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  return window.__SUPABASE_CLIENT__;
 }
 
 // ── LOW-LEVEL FETCH WRAPPER ───────────────────────────────────
