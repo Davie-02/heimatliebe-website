@@ -8,6 +8,7 @@
     "import:content": "node scripts/import_markdown_to_supabase.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.0.0"
+    "@supabase/supabase-js": "^2.0.0",
+    "nodemailer": "^6.9.4"
   }
 }

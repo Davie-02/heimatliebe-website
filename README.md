@@ -140,7 +140,7 @@ The previous Netlify Identity integration has been removed. For a CMS/admin work
 Two Edge Functions are included in `functions/edge/`:
 
 - `password-reset/index.js` — triggers Supabase password reset using the service_role key. Set `SUPABASE_SERVICE_ROLE` and `SUPABASE_URL` in the function environment.
-- `notifications/index.js` — sends email via SendGrid or SMS via Twilio. Configure `SENDGRID_API_KEY`, `TWILIO_*` env vars.
+- `notifications/index.js` — sends email via Gmail SMTP or SendGrid, and SMS via Twilio. Configure `GMAIL_USER`, `GMAIL_PASS`, `EMAIL_FROM`, or `SENDGRID_API_KEY`, plus `TWILIO_*` env vars if using SMS.
 
 Security: both functions require a shared secret header `x-fn-secret` (value set via `FUNCTION_SECRET` env) to prevent public abuse.
 

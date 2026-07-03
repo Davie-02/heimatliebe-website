@@ -16,8 +16,16 @@ supabase link --project-ref your-project-ref
 Set required secrets (example):
 
 ```bash
-supabase secrets set FUNCTION_SECRET="your-secret" SUPABASE_SERVICE_ROLE="<service_role_key>" SENDGRID_API_KEY="<key>" TWILIO_SID="..." TWILIO_TOKEN="..." TWILIO_FROM="+1234" EMAIL_FROM="no-reply@yourdomain.com"
+supabase secrets set FUNCTION_SECRET="your-secret" SUPABASE_SERVICE_ROLE="<service_role_key>" \
+  GMAIL_USER="your@gmail.com" \
+  GMAIL_PASS="<your-app-password>" \
+  EMAIL_FROM="your@gmail.com" \
+  TWILIO_SID="..." \
+  TWILIO_TOKEN="..." \
+  TWILIO_FROM="+1234"
 ```
+
+If you prefer SendGrid instead of Gmail, set `SENDGRID_API_KEY` and `EMAIL_FROM` instead of `GMAIL_USER`/`GMAIL_PASS`.
 
 Deploy functions:
 

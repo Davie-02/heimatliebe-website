@@ -1,40 +1,63 @@
 // Edge Function: notifications
-// Supports sending email/SMS notifications using providers configured via env vars.
+// Supports sending email via Gmail SMTP, SendGrid, or SMS via Twilio.
 // Example payload: { type: 'email'|'sms', to: 'recipient', subject, body }
 
-const fetch = require('node-fetch');
-const { createClient } = require('@supabase/supabase-js');
+import nodemailer from 'nodemailer';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
   try {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
-    // verify shared secret header
+
     const FN_SECRET = process.env.FUNCTION_SECRET;
     const provided = req.headers['x-fn-secret'] || req.headers['x-function-secret'];
     if (!FN_SECRET || !provided || provided !== FN_SECRET) return res.status(403).json({ error: 'Forbidden' });
+
     const payload = await getRequestBody(req);
     if (!payload || !payload.type) return res.status(400).json({ error: 'type required' });
 
     if (payload.type === 'email') {
-      // Use SendGrid if SENDGRID_API_KEY set
+      const gmailUser = process.env.GMAIL_USER;
+      const gmailPass = process.env.GMAIL_PASS;
+      const emailFrom = process.env.EMAIL_FROM || gmailUser || 'no-reply@example.com';
+
+      if (gmailUser && gmailPass) {
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 587,
+          secure: false,
+          auth: { user: gmailUser, pass: gmailPass }
+        });
+
+        await transporter.sendMail({
+          from: emailFrom,
+          to: payload.to,
+          subject: payload.subject || '',
+          html: payload.html || payload.body || '',
+          text: payload.body || payload.text || ''
+        });
+
+        return res.status(200).json({ ok: true });
+      }
+
       const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-      if (!SENDGRID_API_KEY) return res.status(500).json({ error: 'SendGrid not configured' });
+      if (!SENDGRID_API_KEY) return res.status(500).json({ error: 'Email provider not configured' });
+
       const resp = await fetch('https://api.sendgrid.com/v3/mail/send', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${SENDGRID_API_KEY}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           personalizations: [{ to: [{ email: payload.to }] }],
-          from: { email: process.env.EMAIL_FROM || 'no-reply@example.com' },
+          from: { email: emailFrom },
           subject: payload.subject || '',
           content: [{ type: 'text/html', value: payload.html || payload.body || '' }]
         })
       });
+
       if (!resp.ok) return res.status(500).json({ error: 'SendGrid error', status: resp.status });
       return res.status(200).json({ ok: true });
     }
 
     if (payload.type === 'sms') {
-      // Example: Twilio
       const TWILIO_SID = process.env.TWILIO_SID;
       const TWILIO_TOKEN = process.env.TWILIO_TOKEN;
       const TWILIO_FROM = process.env.TWILIO_FROM;
