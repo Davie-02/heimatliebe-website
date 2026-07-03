@@ -13,27 +13,14 @@
     return;
   }
 
-  // Load supabase-js if not present
+  // Load supabase-js if not present using the supported ESM CDN entrypoint.
   if (!window.supabase) {
-    const loadScript = () => new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js';
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error('Failed to load Supabase JS from CDN'));
-      document.head.appendChild(s);
-      setTimeout(() => reject(new Error('Supabase JS load timed out')), 7000);
-    });
-
     try {
-      await loadScript();
+      const module = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+      window.supabase = module.default && !module.createClient ? module.default : module;
     } catch (err) {
-      try {
-        const m = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.mjs');
-        window.supabase = m;
-      } catch (innerErr) {
-        document.body.innerHTML = `<p style="padding:2rem;font-family:system-ui;color:#a00;">Failed to load Supabase client. Check network access and that /config.json is available.<br>${err.message}</p>`;
-        return;
-      }
+      document.body.innerHTML = `<p style="padding:2rem;font-family:system-ui;color:#a00;">Failed to load Supabase client. Check network access and that /config.json is available.<br>${err.message}</p>`;
+      return;
     }
   }
 
