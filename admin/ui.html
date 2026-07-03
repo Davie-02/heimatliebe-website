@@ -25,19 +25,34 @@
   </section>
 
   <script>
+  async function loadAppConfig() {
+    if (window.__APP_CONFIG__) return;
+    try {
+      window.__APP_CONFIG__ = await (await fetch('/config.json')).json();
+    } catch (err) {
+      window.__APP_CONFIG__ = {};
+    }
+  }
+
   (async function(){
+    await loadAppConfig();
+
     // Ensure Supabase client is available
     if (!window.__SUPABASE_CLIENT__) {
-      // Try to create client from injected config
-      if (window.__APP_CONFIG__) {
-        await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.mjs').then(m => {
+      if (window.__APP_CONFIG__ && window.__APP_CONFIG__.SUPABASE_URL && window.__APP_CONFIG__.SUPABASE_ANON) {
+        try {
+          const m = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.mjs');
           window.__SUPABASE_CLIENT__ = m.createClient(window.__APP_CONFIG__.SUPABASE_URL, window.__APP_CONFIG__.SUPABASE_ANON);
-        }).catch(() => {});
+        } catch (err) {
+          document.getElementById('panel').innerHTML = `<p style="color:#a00">Failed to load Supabase client: ${err.message}</p>`;
+          return;
+        }
       }
     }
+
     const client = window.__SUPABASE_CLIENT__;
     if (!client) {
-      document.getElementById('panel').innerHTML = '<p style="color:#a00">Supabase client not initialized. Ensure you signed in via /admin/ or configured `config.json`.</p>';
+      document.getElementById('panel').innerHTML = '<p style="color:#a00">Supabase client not initialized. Ensure /config.json is accessible and contains valid Supabase config.</p>';
       return;
     }
 

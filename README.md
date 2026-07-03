@@ -149,6 +149,32 @@ In production, this keeps runtime config out of source control while allowing th
 
 ---
 
+## Railway deployment
+
+For Railway, set these environment variables on your service:
+
+- `SUPABASE_URL` — your Supabase project URL, e.g. `https://xyzcompany.supabase.co`
+- `SUPABASE_ANON` — your Supabase anonymous key
+- `ADMIN_PASSWORD` — the admin password used by local admin pages and student-facing admin flows
+
+If you are also deploying the Edge Functions from this repo, set these additional vars on Railway or the appropriate function environment:
+
+- `FUNCTION_SECRET` — shared secret value for `x-fn-secret`
+- `SUPABASE_SERVICE_ROLE` — Supabase service role key for password reset or admin operations
+- `GMAIL_USER` / `GMAIL_PASS` — Gmail SMTP credentials if using Gmail notifications
+- `EMAIL_FROM` — sender address for email notifications
+- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_FROM` — if using Twilio SMS notifications
+
+To verify the deployment, run:
+
+```bash
+curl https://hmli.up.railway.app/config.json
+```
+
+You should see a JSON object with non-empty `SUPABASE_URL`, `SUPABASE_ANON`, and `ADMIN_PASSWORD` values. If they are blank, the Railway environment variables are not configured correctly.
+
+---
+
 ## Edge Functions & Notifications
 
 Two Edge Functions are included in `functions/edge/`:
