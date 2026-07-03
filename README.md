@@ -135,6 +135,20 @@ The previous Netlify Identity integration has been removed. For a CMS/admin work
 
 ---
 
+## Production runtime config
+For commercial production, the app should not rely on a local `config.json` file checked into source control.
+
+- `server.js` now serves `/config.json` dynamically from environment variables.
+- Set the following environment variables in your deployment platform (Railway, Vercel, etc.):
+  - `SUPABASE_URL`
+  - `SUPABASE_ANON`
+  - `ADMIN_PASSWORD`
+- Do not commit `config.json` to git. It is intentionally ignored by `.gitignore`.
+
+In production, this keeps runtime config out of source control while allowing the frontend and admin panel to initialize safely.
+
+---
+
 ## Edge Functions & Notifications
 
 Two Edge Functions are included in `functions/edge/`:

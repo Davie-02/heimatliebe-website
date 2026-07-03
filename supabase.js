@@ -1,8 +1,8 @@
 // ── RUNTIME CONFIG (loaded from /config.json or window.__APP_CONFIG__) ─
 let SUPABASE_URL = null;
 let SUPABASE_ANON = null;
-// Default admin password (used only if not overridden by config.json or injected config)
-let ADMIN_PASSWORD = 'HMLI@Admin2025';
+// Admin password must be provided via runtime config.
+let ADMIN_PASSWORD = '';
 
 let __configPromise = null;
 function loadRuntimeConfig() {
@@ -30,9 +30,8 @@ function loadRuntimeConfig() {
   return __configPromise;
 }
 
-// Backwards-compatible default for local dev if ADMIN_PASSWORD not set
 function getAdminPassword() {
-  return ADMIN_PASSWORD || 'HMLI@Admin2025';
+  return ADMIN_PASSWORD || '';
 }
 
 // ── LOW-LEVEL FETCH WRAPPER ───────────────────────────────────

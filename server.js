@@ -29,6 +29,18 @@ function contentType(filePath) {
 const server = createServer(async (req, res) => {
   try {
     const url = decodeURIComponent(new URL(req.url, `http://localhost`).pathname);
+
+    if (url === '/config.json') {
+      const config = {
+        SUPABASE_URL: process.env.SUPABASE_URL || '',
+        SUPABASE_ANON: process.env.SUPABASE_ANON || '',
+        ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || ''
+      };
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(config));
+      return;
+    }
+
     let filePath = path.join(root, url);
     let stat;
     try { stat = await fs.stat(filePath); } catch (e) { stat = null; }
