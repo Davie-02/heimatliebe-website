@@ -1246,7 +1246,43 @@ Loading...
 
             <!-- COURSES -->
 
-            <section class="page" id="courses"></section>
+            <section class="page" id="courses">
+
+<div class="page-toolbar">
+
+    <div>
+
+        <h2>Courses</h2>
+
+        <p>Manage all institute programmes</p>
+
+    </div>
+
+    <div class="toolbar-right">
+
+        <input
+            id="courseSearch"
+            placeholder="Search course...">
+
+        <button
+            class="btn btn-primary"
+            onclick="newCourse()">
+
+            + New Course
+
+        </button>
+
+    </div>
+
+</div>
+
+<div id="coursesTable">
+
+Loading...
+
+</div>
+
+</section>
 
             <!-- LIBRARY -->
 
@@ -1512,11 +1548,29 @@ document
 
 };
 
-document.getElementById(
+document
+
+.getElementById(
 
 "statCourses"
 
-).textContent=courses.length;
+)
+
+.parentElement
+
+.onclick=()=>{
+
+document
+
+.querySelector(
+
+'[data-page="courses"]'
+
+)
+
+.click();
+
+};
 
 const totalRevenue=
 
@@ -2650,6 +2704,718 @@ hideLoading();
 case "students":
 
 loadStudents();
+
+break;
+
+let courses=[];
+
+async function loadCourses(){
+
+showLoading();
+
+courses=await CMS.load(
+
+"courses",
+
+"&order=title.asc"
+
+);
+
+renderCourses(courses);
+
+hideLoading();
+
+}
+
+function renderCourses(data){
+
+document.getElementById(
+
+"coursesTable"
+
+).innerHTML=
+
+renderTable(
+
+[
+
+{
+
+label:"Title",
+
+field:"title"
+
+},
+
+{
+
+label:"Language",
+
+field:"language"
+
+},
+
+{
+
+label:"Level",
+
+field:"level"
+
+},
+
+{
+
+label:"Duration",
+
+field:"duration"
+
+},
+
+{
+
+label:"Fee",
+
+field:"fee"
+
+},
+
+{
+
+label:"Schedule",
+
+field:"schedule"
+
+}
+
+],
+
+data,
+
+[
+
+{
+
+label:"View",
+
+class:"btn btn-primary",
+
+onclick:"viewCourse"
+
+},
+
+{
+
+label:"Edit",
+
+class:"btn btn-warning",
+
+onclick:"editCourse"
+
+},
+
+{
+
+label:"Delete",
+
+class:"btn btn-danger",
+
+onclick:"deleteCourse"
+
+}
+
+]
+
+);
+
+}
+
+document
+
+.getElementById(
+
+"courseSearch"
+
+)
+
+.oninput=function(){
+
+const q=this.value.toLowerCase();
+
+renderCourses(
+
+courses.filter(c=>
+
+(c.title||"")
+
+.toLowerCase()
+
+.includes(q)
+
+||
+
+(c.language||"")
+
+.toLowerCase()
+
+.includes(q)
+
+||
+
+(c.level||"")
+
+.toLowerCase()
+
+.includes(q)
+
+)
+
+);
+
+};
+
+function newCourse(){
+
+openModal(
+
+"Create Course",
+
+`
+
+<div class="form-group">
+
+<label>
+
+Title
+
+</label>
+
+<input id="courseTitle">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Language
+
+</label>
+
+<input id="courseLanguage">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Level
+
+</label>
+
+<input id="courseLevel">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Duration
+
+</label>
+
+<input id="courseDuration">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Fee
+
+</label>
+
+<input id="courseFee">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Schedule
+
+</label>
+
+<input id="courseSchedule">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Description
+
+</label>
+
+<textarea
+
+id="courseBody"
+
+rows="8"></textarea>
+
+</div>
+
+<button
+
+class="btn btn-primary"
+
+onclick="saveNewCourse()">
+
+Save Course
+
+</button>
+
+`
+
+);
+
+}
+
+async function saveNewCourse(){
+
+showLoading();
+
+await CMS.create(
+
+"courses",
+
+{
+
+title:
+
+courseTitle.value,
+
+language:
+
+courseLanguage.value,
+
+level:
+
+courseLevel.value,
+
+duration:
+
+courseDuration.value,
+
+fee:
+
+courseFee.value,
+
+schedule:
+
+courseSchedule.value,
+
+body:
+
+courseBody.value,
+
+published:true
+
+}
+
+);
+
+closeModal();
+
+await loadCourses();
+
+await loadDashboard();
+
+hideLoading();
+
+}
+
+function viewCourse(id){
+
+const c=
+
+courses.find(
+
+x=>x.id==id
+
+);
+
+if(!c)return;
+
+const studentCount=
+
+students.filter(
+
+s=>
+
+s.course===c.title
+
+).length;
+
+openModal(
+
+c.title,
+
+`
+
+<div class="form-group">
+
+<label>
+
+Language
+
+</label>
+
+<input
+
+readonly
+
+value="${c.language}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Level
+
+</label>
+
+<input
+
+readonly
+
+value="${c.level}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Duration
+
+</label>
+
+<input
+
+readonly
+
+value="${c.duration}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Fee
+
+</label>
+
+<input
+
+readonly
+
+value="${c.fee}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Schedule
+
+</label>
+
+<input
+
+readonly
+
+value="${c.schedule}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Enrolled Students
+
+</label>
+
+<input
+
+readonly
+
+value="${studentCount}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Description
+
+</label>
+
+<textarea
+
+readonly
+
+rows="8">${c.body}</textarea>
+
+</div>
+
+`
+
+);
+
+}
+
+function editCourse(id){
+
+const c=
+
+courses.find(
+
+x=>x.id==id
+
+);
+
+if(!c)return;
+
+openModal(
+
+"Edit Course",
+
+`
+
+<div class="form-group">
+
+<label>
+
+Title
+
+</label>
+
+<input
+
+id="editCourseTitle"
+
+value="${c.title}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Language
+
+</label>
+
+<input
+
+id="editCourseLanguage"
+
+value="${c.language}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Level
+
+</label>
+
+<input
+
+id="editCourseLevel"
+
+value="${c.level}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Duration
+
+</label>
+
+<input
+
+id="editCourseDuration"
+
+value="${c.duration}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Fee
+
+</label>
+
+<input
+
+id="editCourseFee"
+
+value="${c.fee}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Schedule
+
+</label>
+
+<input
+
+id="editCourseSchedule"
+
+value="${c.schedule}">
+
+</div>
+
+<div class="form-group">
+
+<label>
+
+Description
+
+</label>
+
+<textarea
+
+id="editCourseBody"
+
+rows="8">${c.body}</textarea>
+
+</div>
+
+<button
+
+class="btn btn-primary"
+
+onclick="saveCourse('${c.id}')">
+
+Save Changes
+
+</button>
+
+`
+
+);
+
+}
+
+async function saveCourse(id){
+
+showLoading();
+
+await CMS.update(
+
+"courses",
+
+id,
+
+{
+
+title:
+
+editCourseTitle.value,
+
+language:
+
+editCourseLanguage.value,
+
+level:
+
+editCourseLevel.value,
+
+duration:
+
+editCourseDuration.value,
+
+fee:
+
+editCourseFee.value,
+
+schedule:
+
+editCourseSchedule.value,
+
+body:
+
+editCourseBody.value
+
+}
+
+);
+
+closeModal();
+
+await loadCourses();
+
+hideLoading();
+
+}
+
+async function deleteCourse(id){
+
+if(
+
+!confirm(
+
+"Delete this course?"
+
+)
+
+)return;
+
+showLoading();
+
+await CMS.delete(
+
+"courses",
+
+id
+
+);
+
+await loadCourses();
+
+await loadDashboard();
+
+hideLoading();
+
+}
+
+case "courses":
+
+loadCourses();
 
 break;
 
