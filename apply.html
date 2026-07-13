@@ -208,7 +208,7 @@
   </div>
 </div>
 
-<script src="js/supabase.js"></script>
+<script src="/supabase.js"></script>
 <script>
 // File zone feedback
 const fileInput = document.getElementById('payment-file');
@@ -270,6 +270,7 @@ document.getElementById('apply-form').addEventListener('submit', async e => {
   btnText.textContent = 'Uploading payment proof…';
 
   try {
+    await configReady(); // ensure config loaded before Supabase calls
     // 1. Upload payment proof to Supabase Storage
     const ext  = file.name.split('.').pop();
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;

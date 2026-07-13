@@ -92,8 +92,10 @@
   </div>
 </div>
 
-<script src="js/supabase.js"></script>
+<script src="/supabase.js"></script>
 <script>
+// Wait for config before any Supabase calls
+document.addEventListener("DOMContentLoaded", () => configReady());
 // Show message if redirected from library
 const params = new URLSearchParams(window.location.search);
 if (params.get('next')) {
@@ -121,6 +123,7 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   btn.textContent = 'Checking…';
 
   try {
+    await configReady(); // ensure config loaded before DB call
     const pwHash = await hashPassword(password);
 
     // Look up student by student_id and password_hash

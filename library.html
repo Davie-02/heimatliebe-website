@@ -303,11 +303,9 @@
   <div>© <span id="yr"></span> Heimatliebe Institute. All rights reserved.</div>
 </footer>
 
+<script src="/supabase.js"></script>
 <script>
-// Load runtime Supabase helper (inserts /supabase.js)
-(function(){
-  const s = document.createElement('script'); s.src = '/js/supabase.js'; document.head.appendChild(s);
-})();
+// supabase.js loaded above
 
 document.getElementById('yr').textContent = new Date().getFullYear();
 

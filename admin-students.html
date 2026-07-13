@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Admin — Heimatliebe Institute</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root{
       --green-deep:#1B4332;--green-mid:#2D6A4F;--green-light:#52B788;
@@ -16,244 +18,410 @@
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--font-body);background:#f0f2f5;color:var(--charcoal);min-height:100vh}
 
-    /* LOGIN GATE */
-    #admin-gate{position:fixed;inset:0;background:var(--green-deep);display:flex;align-items:center;justify-content:center;z-index:999;padding:2rem}
-    .gate-card{background:var(--white);padding:2.5rem;width:100%;max-width:360px;text-align:center}
-    .gate-card h2{font-family:var(--font-display);font-size:1.5rem;color:var(--green-deep);margin-bottom:0.35rem}
+    /* ── GATE ── */
+    #admin-gate{
+      position:fixed;inset:0;background:var(--green-deep);
+      display:flex;align-items:center;justify-content:center;z-index:999;padding:2rem;
+      flex-direction:column;gap:0;
+    }
+    #admin-gate::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 50% 40%,rgba(82,183,136,0.12),transparent 65%);
+      pointer-events:none;
+    }
+    .gate-brand{text-align:center;margin-bottom:2rem;position:relative;z-index:1}
+    .gate-brand .logo{font-family:var(--font-display);font-size:1.6rem;font-weight:900;color:var(--gold)}
+    .gate-brand .logo span{color:rgba(255,255,255,0.75);font-weight:400}
+    .gate-brand .sub{font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-top:0.35rem}
+    .gate-card{
+      background:var(--white);padding:2.5rem;width:100%;max-width:380px;
+      text-align:center;position:relative;z-index:1;
+      border-top:3px solid var(--gold);
+    }
+    .gate-card .gate-icon{font-size:2rem;margin-bottom:0.75rem}
+    .gate-card h2{font-family:var(--font-display);font-size:1.5rem;color:var(--green-deep);margin-bottom:0.3rem}
     .gate-card p{color:var(--slate);font-size:0.85rem;margin-bottom:1.5rem}
-    .gate-card input{width:100%;padding:0.82rem 1rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-family:var(--font-body);font-size:0.95rem;outline:none;margin-bottom:0.75rem;transition:border-color 0.2s}
-    .gate-card input:focus{border-color:var(--green-mid)}
-    .gate-err{color:var(--red);font-size:0.8rem;margin-bottom:0.75rem;display:none}
+    .gate-card input{
+      width:100%;padding:0.85rem 1rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;
+      font-family:var(--font-body);font-size:0.95rem;outline:none;margin-bottom:0.75rem;
+      transition:border-color 0.2s;background:var(--cream);
+    }
+    .gate-card input:focus{border-color:var(--green-mid);background:var(--white)}
+    .gate-err{color:var(--red);font-size:0.82rem;margin-bottom:0.75rem;display:none;padding:0.6rem;background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.2);border-radius:2px}
     .gate-err.show{display:block}
+    .gate-loading{color:rgba(255,255,255,0.5);font-size:0.82rem;margin-top:1.25rem;position:relative;z-index:1;display:none}
+
+    /* ── BUTTONS ── */
     .btn{padding:0.85rem 1.5rem;border-radius:2px;font-family:var(--font-body);font-size:0.85rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;border:none;transition:all 0.2s}
     .btn-primary{background:var(--gold);color:var(--green-deep);width:100%}
     .btn-primary:hover{background:var(--gold-pale)}
-    .btn-sm{padding:0.45rem 1rem;font-size:0.75rem}
+    .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+    .btn-sm{padding:0.42rem 0.9rem;font-size:0.73rem}
     .btn-green{background:var(--green-mid);color:var(--white)}
     .btn-green:hover{background:var(--green-deep)}
-    .btn-red{background:rgba(192,57,43,0.1);color:var(--red);border:1px solid rgba(192,57,43,0.25)}
-    .btn-red:hover{background:rgba(192,57,43,0.2)}
+    .btn-red{background:rgba(192,57,43,0.08);color:var(--red);border:1px solid rgba(192,57,43,0.2)}
+    .btn-red:hover{background:rgba(192,57,43,0.16)}
     .btn-outline{background:transparent;color:var(--green-mid);border:1.5px solid var(--green-light)}
     .btn-outline:hover{background:var(--green-mid);color:var(--white)}
+    .btn-gold{background:var(--gold);color:var(--green-deep)}
+    .btn-gold:hover{background:var(--gold-pale)}
 
-    /* LAYOUT */
+    /* ── APP ── */
     #admin-app{display:none}
-    .admin-nav{background:var(--green-deep);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between}
-    .admin-nav .brand{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--gold)}
-    .admin-nav .brand span{color:rgba(255,255,255,0.7);font-weight:400;font-size:0.85rem}
-    .admin-nav-right{display:flex;align-items:center;gap:1rem}
-    .admin-nav-right a{color:rgba(255,255,255,0.65);font-size:0.8rem;text-decoration:none}
-    .admin-nav-right a:hover{color:var(--gold-pale)}
 
-    .admin-body{padding:2rem}
-    .admin-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
-    .admin-header h1{font-family:var(--font-display);font-size:1.6rem;font-weight:700;color:var(--green-deep)}
+    /* NAV */
+    .admin-nav{
+      background:var(--green-deep);padding:0 2rem;
+      display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid var(--rule);height:60px;
+    }
+    .admin-nav .brand{display:flex;align-items:center;gap:0.75rem}
+    .admin-nav .brand-logo{font-family:var(--font-display);font-size:1.1rem;font-weight:700;color:var(--gold)}
+    .admin-nav .brand-logo span{color:rgba(255,255,255,0.65);font-weight:400}
+    .admin-nav .brand-divider{width:1px;height:20px;background:rgba(255,255,255,0.15)}
+    .admin-nav .brand-section{font-size:0.75rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5)}
+    .admin-nav-right{display:flex;align-items:center;gap:0.5rem}
+    .nav-link{color:rgba(255,255,255,0.6);font-size:0.78rem;text-decoration:none;padding:0.35rem 0.75rem;border-radius:2px;transition:all 0.15s;font-weight:500}
+    .nav-link:hover{color:var(--white);background:rgba(255,255,255,0.08)}
+    .nav-link-logout{color:rgba(255,255,255,0.5);font-size:0.75rem;text-decoration:none;padding:0.32rem 0.75rem;border:1px solid rgba(255,255,255,0.18);border-radius:2px;transition:all 0.15s;cursor:pointer;background:none;font-family:var(--font-body);font-weight:500;letter-spacing:0.06em;text-transform:uppercase}
+    .nav-link-logout:hover{color:var(--white);border-color:rgba(255,255,255,0.35)}
 
-    /* STAT CARDS */
-    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:2rem}
-    .stat-card{background:var(--white);padding:1.25rem;border-left:3px solid var(--gold)}
-    .stat-card .num{font-family:var(--font-display);font-size:2rem;font-weight:900;color:var(--green-deep);line-height:1}
-    .stat-card .lbl{font-size:0.75rem;color:var(--slate);margin-top:0.25rem;text-transform:uppercase;letter-spacing:0.08em}
+    /* BODY */
+    .admin-body{padding:2rem;max-width:1400px;margin:0 auto}
+
+    /* PAGE HEADER */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+    .page-header-left .eyebrow{font-size:0.68rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);margin-bottom:0.4rem}
+    .page-header-left h1{font-family:var(--font-display);font-size:1.75rem;font-weight:700;color:var(--green-deep)}
+    .page-header-left .sub{color:var(--slate);font-size:0.85rem;margin-top:0.25rem}
+
+    /* STATS */
+    .stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1rem;margin-bottom:2rem}
+    .stat-card{background:var(--white);padding:1.25rem 1.5rem;border-left:3px solid var(--gold);transition:box-shadow 0.15s}
+    .stat-card:hover{box-shadow:0 4px 16px rgba(27,67,50,0.08)}
+    .stat-card .num{font-family:var(--font-display);font-size:2.2rem;font-weight:900;color:var(--green-deep);line-height:1}
+    .stat-card .lbl{font-size:0.72rem;color:var(--slate);margin-top:0.3rem;text-transform:uppercase;letter-spacing:0.1em}
+    .stat-card.accent .num{color:var(--gold)}
 
     /* TABS */
-    .tabs{display:flex;gap:0;border-bottom:2px solid rgba(27,67,50,0.12);margin-bottom:1.5rem}
-    .tab-btn{padding:0.65rem 1.25rem;font-size:0.83rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--slate);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s}
+    .tabs-wrap{background:var(--white);border-bottom:2px solid rgba(27,67,50,0.1);margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;padding:0 0.5rem}
+    .tabs{display:flex;gap:0}
+    .tab-btn{padding:0.85rem 1.25rem;font-size:0.8rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;background:none;border:none;cursor:pointer;color:var(--slate);border-bottom:2.5px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;white-space:nowrap}
     .tab-btn.active{color:var(--green-deep);border-bottom-color:var(--green-deep)}
-    .tab-btn:hover{color:var(--green-mid)}
-    .tab-badge{display:inline-block;background:var(--gold);color:var(--green-deep);font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:10px;margin-left:0.35rem}
+    .tab-btn:hover:not(.active){color:var(--green-mid)}
+    .tab-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--gold);color:var(--green-deep);font-size:0.62rem;font-weight:700;padding:0.1rem 0.42rem;border-radius:10px;margin-left:0.4rem;min-width:18px}
 
-    /* SEARCH */
+    /* TOOLBAR */
     .table-toolbar{display:flex;gap:0.75rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
-    .table-toolbar input{padding:0.6rem 0.9rem;border:1.5px solid rgba(27,67,50,0.15);border-radius:2px;font-family:var(--font-body);font-size:0.85rem;background:var(--white);outline:none;width:240px;transition:border-color 0.2s}
+    .table-toolbar input{
+      padding:0.6rem 0.9rem;border:1.5px solid rgba(27,67,50,0.15);border-radius:2px;
+      font-family:var(--font-body);font-size:0.85rem;background:var(--white);
+      outline:none;min-width:240px;transition:border-color 0.2s;
+    }
     .table-toolbar input:focus{border-color:var(--green-mid)}
 
     /* TABLE */
-    .table-wrap{background:var(--white);overflow-x:auto}
-    table{width:100%;border-collapse:collapse;font-size:0.85rem}
-    th{padding:0.75rem 1rem;text-align:left;font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--slate);background:#fafafa;border-bottom:2px solid rgba(27,67,50,0.1);white-space:nowrap}
-    td{padding:0.85rem 1rem;border-bottom:1px solid rgba(27,67,50,0.07);vertical-align:middle}
+    .table-wrap{background:var(--white);overflow-x:auto;border:1px solid rgba(27,67,50,0.08)}
+    table{width:100%;border-collapse:collapse;font-size:0.84rem}
+    th{padding:0.7rem 1rem;text-align:left;font-size:0.67rem;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--slate);background:#fafafa;border-bottom:2px solid rgba(27,67,50,0.08);white-space:nowrap}
+    td{padding:0.85rem 1rem;border-bottom:1px solid rgba(27,67,50,0.06);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
     tr:hover td{background:rgba(82,183,136,0.03)}
     .td-name{font-weight:600;color:var(--green-deep)}
-    .td-id{font-family:monospace;font-size:0.8rem;color:var(--slate)}
+    .td-id{font-family:'Courier New',monospace;font-size:0.82rem;color:var(--slate);font-weight:700}
+    .td-id.issued{color:var(--green-deep)}
 
     /* BADGES */
-    .badge{display:inline-block;font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.2rem 0.6rem;border-radius:2px}
+    .badge{display:inline-block;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:0.22rem 0.6rem;border-radius:2px}
     .badge-pending{background:rgba(201,168,76,0.15);color:#7a5900;border:1px solid var(--rule)}
     .badge-approved{background:rgba(82,183,136,0.12);color:#1a5c3a}
     .badge-rejected{background:rgba(192,57,43,0.08);color:var(--red)}
 
-    /* ACTIONS */
-    .actions{display:flex;gap:0.5rem;flex-wrap:wrap}
+    .actions{display:flex;gap:0.4rem;flex-wrap:wrap}
+    .empty-row td{text-align:center;padding:3.5rem;color:var(--slate);font-style:italic;opacity:0.6}
 
     /* MODAL */
-    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;padding:1.5rem}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;align-items:center;justify-content:center;padding:1.5rem}
     .modal-overlay.open{display:flex}
-    .modal-box{background:var(--white);width:100%;max-width:600px;max-height:88vh;overflow-y:auto;padding:2rem;position:relative}
-    .modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--slate)}
-    .modal-title{font-family:var(--font-display);font-size:1.3rem;font-weight:700;color:var(--green-deep);margin-bottom:1.25rem}
-    .detail-row{display:grid;grid-template-columns:130px 1fr;gap:0.5rem;padding:0.6rem 0;border-bottom:1px solid rgba(27,67,50,0.07);font-size:0.88rem}
+    .modal-box{background:var(--white);width:100%;max-width:620px;max-height:90vh;overflow-y:auto;position:relative;border-top:3px solid var(--gold)}
+    .modal-header{padding:1.5rem 1.75rem 1rem;border-bottom:1px solid rgba(27,67,50,0.08);display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    .modal-header-left .modal-eyebrow{font-size:0.65rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:0.3rem}
+    .modal-header-left .modal-title{font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--green-deep)}
+    .modal-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--slate);padding:0.25rem;line-height:1;flex-shrink:0}
+    .modal-close:hover{color:var(--charcoal)}
+    .modal-body{padding:1.5rem 1.75rem}
+    .detail-row{display:grid;grid-template-columns:120px 1fr;gap:0.5rem;padding:0.65rem 0;border-bottom:1px solid rgba(27,67,50,0.06);font-size:0.88rem}
     .detail-row:last-child{border-bottom:none}
-    .detail-label{font-weight:600;color:var(--slate);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;padding-top:0.1rem}
+    .detail-label{font-weight:600;color:var(--slate);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.09em;padding-top:0.1rem}
     .detail-value{color:var(--charcoal)}
-    .proof-img{max-width:100%;max-height:300px;display:block;margin:0.75rem 0;border:1px solid rgba(27,67,50,0.1)}
-    .approve-box{margin-top:1.5rem;padding:1.25rem;background:var(--cream);border-left:3px solid var(--gold)}
-    .approve-box h4{font-weight:600;color:var(--green-deep);margin-bottom:0.75rem;font-size:0.9rem}
-    .approve-box .gen-id{font-family:monospace;font-size:1.1rem;font-weight:700;color:var(--gold);background:var(--green-deep);padding:0.4rem 1rem;display:inline-block;margin:0.4rem 0}
+    .proof-img{max-width:100%;max-height:280px;display:block;margin:0.6rem 0;border:1px solid rgba(27,67,50,0.1)}
+
+    /* APPROVE BOX */
+    .approve-box{margin-top:1.5rem;padding:1.25rem 1.5rem;background:var(--cream);border-left:3px solid var(--gold)}
+    .approve-box h4{font-family:var(--font-display);font-weight:700;color:var(--green-deep);margin-bottom:0.6rem;font-size:1rem}
+    .approve-box .id-display{
+      font-family:'Courier New',monospace;font-size:1.15rem;font-weight:700;
+      color:var(--gold);background:var(--green-deep);padding:0.5rem 1.1rem;
+      display:inline-block;margin:0.25rem 0;letter-spacing:0.06em;
+    }
+    .approve-box .id-row{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem}
+    .approve-box textarea{
+      width:100%;padding:0.65rem 0.85rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;
+      font-family:var(--font-body);font-size:0.85rem;resize:vertical;height:75px;
+      outline:none;background:var(--white);margin-top:0.5rem;
+    }
     .approve-actions{display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap}
-    .approve-box textarea{width:100%;padding:0.65rem 0.85rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-family:var(--font-body);font-size:0.85rem;resize:vertical;height:80px;outline:none;margin-top:0.5rem}
 
-    /* Empty */
-    .empty-row td{text-align:center;padding:3rem;color:var(--slate);font-style:italic;opacity:0.7}
-
-    /* Toast */
-    .toast{position:fixed;bottom:2rem;right:2rem;background:var(--green-deep);color:var(--white);padding:0.85rem 1.5rem;border-radius:2px;font-size:0.88rem;font-weight:500;z-index:999;transform:translateY(100px);opacity:0;transition:all 0.3s}
+    /* TOAST */
+    .toast{
+      position:fixed;bottom:2rem;right:2rem;
+      background:var(--green-deep);color:var(--white);
+      padding:0.85rem 1.5rem;border-left:3px solid var(--gold);
+      font-size:0.88rem;font-weight:500;z-index:999;
+      transform:translateY(100px);opacity:0;transition:all 0.3s;
+      max-width:340px;
+    }
     .toast.show{transform:translateY(0);opacity:1}
+    .toast.toast-error{background:var(--red);border-left-color:rgba(255,255,255,0.3)}
 
-    @media(max-width:600px){.admin-body{padding:1rem}.detail-row{grid-template-columns:1fr}}
+    @media(max-width:700px){
+      .admin-body{padding:1rem}
+      .detail-row{grid-template-columns:1fr}
+      .detail-label{margin-bottom:0}
+      .stats-row{grid-template-columns:1fr 1fr}
+    }
   </style>
 </head>
 <body>
 
-<!-- ADMIN LOGIN GATE -->
+<!-- ── GATE ── -->
 <div id="admin-gate">
-  <div class="gate-card">
-    <h2>Admin Access</h2>
-    <p>Enter the admin password to manage student applications.</p>
-    <div class="gate-err" id="gate-err">Incorrect password.</div>
-    <input type="password" id="gate-pw" placeholder="Admin password" onkeydown="if(event.key==='Enter')checkAdminPw()" />
-    <button class="btn btn-primary" onclick="checkAdminPw()">Enter</button>
+  <div class="gate-brand">
+    <div class="logo">Heimatliebe <span>Institute</span></div>
+    <div class="sub">Administration Portal</div>
   </div>
+  <div class="gate-card">
+    <div class="gate-icon">🔐</div>
+    <h2>Admin Access</h2>
+    <p>Enter the admin password to manage student applications and enrolments.</p>
+    <div class="gate-err" id="gate-err">Incorrect password. Please try again.</div>
+    <input type="password" id="gate-pw" placeholder="Admin password"
+      onkeydown="if(event.key==='Enter')checkAdminPw()" autocomplete="current-password" />
+    <button class="btn btn-primary" id="gate-btn" onclick="checkAdminPw()">Enter Admin Panel</button>
+  </div>
+  <div class="gate-loading" id="gate-loading">Loading configuration…</div>
 </div>
 
-<!-- ADMIN APP -->
+<!-- ── APP ── -->
 <div id="admin-app">
-  <div class="admin-nav">
-    <div class="brand">Heimatliebe <span>/ Student Admin</span></div>
-    <div class="admin-nav-right">
-      <a href="index.html" target="_blank">← Main Site</a>
-      <a href="/admin/" target="_blank">CMS</a>
-      <a href="#" onclick="adminLogout()">Logout</a>
+
+  <!-- NAV -->
+  <nav class="admin-nav">
+    <div class="brand">
+      <span class="brand-logo">Heimatliebe <span>Institute</span></span>
+      <span class="brand-divider"></span>
+      <span class="brand-section">Student Admin</span>
     </div>
-  </div>
+    <div class="admin-nav-right">
+      <a href="index.html" target="_blank" class="nav-link">← Main Site</a>
+      <a href="/admin/" target="_blank" class="nav-link">CMS</a>
+      <a href="library.html" target="_blank" class="nav-link">Library</a>
+      <button class="nav-link-logout" onclick="adminLogout()">Logout</button>
+    </div>
+  </nav>
 
   <div class="admin-body">
-    <div class="admin-header">
-      <h1>Student Management</h1>
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="eyebrow">Administration</div>
+        <h1>Student Management</h1>
+        <div class="sub">Review applications, confirm payments, issue Student IDs</div>
+      </div>
       <button class="btn btn-outline btn-sm" onclick="loadAll()">↻ Refresh</button>
     </div>
 
-    <!-- Stats -->
+    <!-- STATS -->
     <div class="stats-row">
+      <div class="stat-card accent"><div class="num" id="s-pending">—</div><div class="lbl">Awaiting Review</div></div>
       <div class="stat-card"><div class="num" id="s-total">—</div><div class="lbl">Total Applications</div></div>
-      <div class="stat-card"><div class="num" id="s-pending">—</div><div class="lbl">Pending Review</div></div>
       <div class="stat-card"><div class="num" id="s-approved">—</div><div class="lbl">Approved</div></div>
       <div class="stat-card"><div class="num" id="s-students">—</div><div class="lbl">Active Students</div></div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('pending',this)">Pending <span class="tab-badge" id="badge-pending">0</span></button>
-      <button class="tab-btn" onclick="switchTab('approved',this)">Approved</button>
-      <button class="tab-btn" onclick="switchTab('rejected',this)">Rejected</button>
-      <button class="tab-btn" onclick="switchTab('students',this)">Active Students</button>
+    <!-- TABS -->
+    <div class="tabs-wrap">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('pending',this)">
+          Pending <span class="tab-badge" id="badge-pending">0</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('approved',this)">Approved</button>
+        <button class="tab-btn" onclick="switchTab('rejected',this)">Rejected</button>
+        <button class="tab-btn" onclick="switchTab('students',this)">Active Students</button>
+      </div>
     </div>
 
-    <!-- Table toolbar -->
+    <!-- TOOLBAR -->
     <div class="table-toolbar">
-      <input type="search" placeholder="Search by name, email or ID…" oninput="filterTable(this.value)" id="table-search" />
+      <input type="search" id="table-search" placeholder="Search by name, email or Student ID…"
+        oninput="filterTable(this.value)" />
     </div>
 
-    <!-- Applications table -->
+    <!-- APPLICATIONS TABLE -->
     <div class="table-wrap" id="apps-table-wrap">
-      <table id="apps-table">
-        <thead>
-          <tr>
-            <th>Name</th><th>Course</th><th>Email</th><th>Phone</th><th>Submitted</th><th>Status</th><th>Actions</th>
-          </tr>
-        </thead>
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Course</th><th>Email</th><th>Phone</th>
+          <th>Submitted</th><th>Status</th><th>Actions</th>
+        </tr></thead>
         <tbody id="apps-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate)">Loading…</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--slate)">Loading…</td></tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Students table -->
+    <!-- STUDENTS TABLE -->
     <div class="table-wrap" id="students-table-wrap" style="display:none">
-      <table id="students-table">
-        <thead>
-          <tr><th>Student ID</th><th>Name</th><th>Course</th><th>Email</th><th>Phone</th><th>Enrolled</th><th>Actions</th></tr>
-        </thead>
+      <table>
+        <thead><tr>
+          <th>Student ID</th><th>Name</th><th>Course</th>
+          <th>Email</th><th>Phone</th><th>Enrolled</th><th>Actions</th>
+        </tr></thead>
         <tbody id="students-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--slate)">Loading…</td></tr>
+          <tr><td colspan="7" style="text-align:center;padding:2.5rem;color:var(--slate)">Loading…</td></tr>
         </tbody>
       </table>
     </div>
-  </div>
-</div>
 
-<!-- APPLICATION DETAIL MODAL -->
+  </div><!-- /admin-body -->
+</div><!-- /admin-app -->
+
+<!-- APPLICATION MODAL -->
 <div class="modal-overlay" id="app-modal">
   <div class="modal-box">
-    <button class="modal-close" onclick="closeModal('app-modal')">✕</button>
-    <div class="modal-title" id="modal-app-name">Application</div>
-    <div id="modal-app-details"></div>
-    <div class="approve-box" id="approve-box">
-      <h4>Review this Application</h4>
-      <p style="font-size:0.83rem;color:var(--slate);margin-bottom:0.5rem">Student ID that will be issued:</p>
-      <div class="gen-id" id="modal-gen-id">—</div>
-      <button class="btn btn-sm btn-outline" onclick="regenId()" style="margin-left:0.5rem;vertical-align:middle">↻ Regenerate</button>
-      <div style="margin-top:0.75rem">
-        <label style="font-size:0.75rem;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:0.08em">Notes (optional)</label>
-        <textarea id="admin-notes" placeholder="Any notes about this application…"></textarea>
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-eyebrow">Application Details</div>
+        <div class="modal-title" id="modal-app-name">—</div>
       </div>
-      <div class="approve-actions">
-        <button class="btn btn-sm btn-green" id="approve-btn" onclick="approveApplication()">✓ Confirm Payment &amp; Approve</button>
-        <button class="btn btn-sm btn-red"   id="reject-btn"  onclick="rejectApplication()">✗ Reject</button>
+      <button class="modal-close" onclick="closeModal('app-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="modal-app-details"></div>
+      <div class="approve-box" id="approve-box">
+        <h4>Review &amp; Decision</h4>
+        <p style="font-size:0.82rem;color:var(--slate);margin-bottom:0.5rem">Student ID to be issued:</p>
+        <div class="id-row">
+          <div class="id-display" id="modal-gen-id">—</div>
+          <button class="btn btn-sm btn-outline" onclick="regenId()">↻ New ID</button>
+        </div>
+        <label style="font-size:0.72rem;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:0.09em">
+          Admin Notes (optional)
+        </label>
+        <textarea id="admin-notes" placeholder="Notes about this application…"></textarea>
+        <div class="approve-actions">
+          <button class="btn btn-sm btn-green" id="approve-btn" onclick="approveApplication()">
+            ✓ Confirm Payment &amp; Approve
+          </button>
+          <button class="btn btn-sm btn-red" id="reject-btn" onclick="rejectApplication()">
+            ✗ Reject Application
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<script src="js/supabase.js"></script>
+<script src="/supabase.js"></script>
 <script>
-let _currentTab = 'pending';
-let _allApps    = [];
+// ── STATE ──────────────────────────────────────────────────────
+let _currentTab  = 'pending';
+let _allApps     = [];
 let _allStudents = [];
-let _currentApp = null;
+let _currentApp  = null;
 let _generatedId = '';
 
+// ── HELPERS ────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  catch { return d; }
+}
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' toast-error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
 // ── ADMIN GATE ─────────────────────────────────────────────────
-function checkAdminPw() {
-  const pw = document.getElementById('gate-pw').value;
-  if (pw === ADMIN_PASSWORD) {
-    document.getElementById('admin-gate').style.display = 'none';
-    document.getElementById('admin-app').style.display = 'block';
+// CRITICAL FIX: await configReady() before comparing password
+async function checkAdminPw() {
+  const btn   = document.getElementById('gate-btn');
+  const errEl = document.getElementById('gate-err');
+  const pw    = document.getElementById('gate-pw').value;
+
+  btn.disabled    = true;
+  btn.textContent = 'Verifying…';
+  errEl.classList.remove('show');
+
+  // Wait for config.json to load so ADMIN_PASSWORD is set
+  await configReady();
+
+  const correctPw = getAdminPassword();
+
+  if (!correctPw) {
+    errEl.textContent = 'Admin configuration not loaded. Check Railway env vars (ADMIN_PASSWORD).';
+    errEl.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Enter Admin Panel';
+    return;
+  }
+
+  if (pw === correctPw) {
     sessionStorage.setItem('hmli_admin', '1');
+    document.getElementById('admin-gate').style.display = 'none';
+    document.getElementById('admin-app').style.display  = 'block';
     loadAll();
   } else {
-    document.getElementById('gate-err').classList.add('show');
+    errEl.textContent = 'Incorrect password. Please try again.';
+    errEl.classList.add('show');
+    btn.disabled    = false;
+    btn.textContent = 'Enter Admin Panel';
+    document.getElementById('gate-pw').focus();
   }
 }
+
 function adminLogout() {
   sessionStorage.removeItem('hmli_admin');
   location.reload();
 }
-// Auto-login if session exists
-if (sessionStorage.getItem('hmli_admin') === '1') {
-  document.getElementById('admin-gate').style.display = 'none';
-  document.getElementById('admin-app').style.display = 'block';
-}
 
-// ── TOAST ──────────────────────────────────────────────────────
-function showToast(msg, duration = 3000) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), duration);
+// Auto-restore session (still await config for data loads)
+async function initGate() {
+  document.getElementById('gate-loading').style.display = 'block';
+  await configReady();
+  document.getElementById('gate-loading').style.display = 'none';
+
+  if (sessionStorage.getItem('hmli_admin') === '1') {
+    document.getElementById('admin-gate').style.display = 'none';
+    document.getElementById('admin-app').style.display  = 'block';
+    loadAll();
+  }
 }
+initGate();
 
 // ── TABS ───────────────────────────────────────────────────────
 function switchTab(tab, btn) {
@@ -261,37 +429,37 @@ function switchTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('table-search').value = '';
-
   const isStudents = tab === 'students';
   document.getElementById('apps-table-wrap').style.display     = isStudents ? 'none' : 'block';
   document.getElementById('students-table-wrap').style.display = isStudents ? 'block' : 'none';
-
   if (isStudents) renderStudents(_allStudents);
   else renderApps(_allApps.filter(a => a.status === tab));
 }
 
 // ── LOAD DATA ──────────────────────────────────────────────────
 async function loadAll() {
-  // Load applications
-  const { ok: ok1, data: apps } = await sbAdmin('/rest/v1/applications?order=submitted_at.desc&select=*', { method: 'GET', headers: { 'Prefer': '' } });
-  if (ok1 && Array.isArray(apps)) {
-    _allApps = apps;
-    const pending  = apps.filter(a => a.status === 'pending').length;
-    const approved = apps.filter(a => a.status === 'approved').length;
-    document.getElementById('s-total').textContent   = apps.length;
-    document.getElementById('s-pending').textContent = pending;
+  const [appsRes, studentsRes] = await Promise.all([
+    sbAdmin('/rest/v1/applications?order=submitted_at.desc&select=*', { method:'GET', headers:{'Prefer':''} }),
+    sbAdmin('/rest/v1/students?order=created_at.desc&select=*',       { method:'GET', headers:{'Prefer':''} })
+  ]);
+
+  if (appsRes.ok && Array.isArray(appsRes.data)) {
+    _allApps = appsRes.data;
+    const pending  = _allApps.filter(a => a.status === 'pending').length;
+    const approved = _allApps.filter(a => a.status === 'approved').length;
+    document.getElementById('s-total').textContent    = _allApps.length;
+    document.getElementById('s-pending').textContent  = pending;
     document.getElementById('s-approved').textContent = approved;
     document.getElementById('badge-pending').textContent = pending;
+  } else {
+    showToast('Failed to load applications. Check Supabase connection.', true);
   }
 
-  // Load students
-  const { ok: ok2, data: students } = await sbAdmin('/rest/v1/students?order=created_at.desc&select=*', { method: 'GET', headers: { 'Prefer': '' } });
-  if (ok2 && Array.isArray(students)) {
-    _allStudents = students;
-    document.getElementById('s-students').textContent = students.length;
+  if (studentsRes.ok && Array.isArray(studentsRes.data)) {
+    _allStudents = studentsRes.data;
+    document.getElementById('s-students').textContent = _allStudents.length;
   }
 
-  // Render current tab
   if (_currentTab === 'students') renderStudents(_allStudents);
   else renderApps(_allApps.filter(a => a.status === _currentTab));
 }
@@ -300,20 +468,25 @@ async function loadAll() {
 function renderApps(apps) {
   const tbody = document.getElementById('apps-tbody');
   if (!apps.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No applications here yet.</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No applications in this category.</td></tr>';
     return;
   }
   tbody.innerHTML = apps.map(a => `
-    <tr data-search="${esc(a.full_name + ' ' + a.email + ' ' + (a.student_id||'')).toLowerCase()}">
+    <tr data-search="${esc((a.full_name+' '+a.email+' '+(a.student_id||'')).toLowerCase())}">
       <td class="td-name">${esc(a.full_name)}</td>
-      <td>${esc(a.course)} ${esc(a.level)}</td>
+      <td>${esc(a.course)} <span style="color:var(--slate);font-size:0.8rem">${esc(a.level)}</span></td>
       <td>${esc(a.email)}</td>
       <td>${esc(a.phone)}</td>
       <td style="white-space:nowrap;font-size:0.78rem;color:var(--slate)">${formatDate(a.submitted_at)}</td>
-      <td><span class="badge badge-${a.status}">${a.status}</span>${a.student_id ? `<div class="td-id">${esc(a.student_id)}</div>` : ''}</td>
+      <td>
+        <span class="badge badge-${esc(a.status)}">${esc(a.status)}</span>
+        ${a.student_id ? `<div class="td-id issued" style="margin-top:0.25rem">${esc(a.student_id)}</div>` : ''}
+      </td>
       <td><div class="actions">
-        <button class="btn btn-sm btn-outline" onclick="openAppModal('${a.id}')">View</button>
-        ${a.status === 'pending' ? `<button class="btn btn-sm btn-green" onclick="quickApprove('${a.id}')">Quick Approve</button>` : ''}
+        <button class="btn btn-sm btn-outline" onclick="openAppModal('${esc(a.id)}')">View</button>
+        ${a.status === 'pending'
+          ? `<button class="btn btn-sm btn-gold" onclick="quickApprove('${esc(a.id)}')">Approve</button>`
+          : ''}
       </div></td>
     </tr>
   `).join('');
@@ -327,47 +500,46 @@ function renderStudents(students) {
     return;
   }
   tbody.innerHTML = students.map(s => `
-    <tr data-search="${esc(s.full_name + ' ' + (s.email||'') + ' ' + s.student_id).toLowerCase()}">
-      <td class="td-id" style="font-weight:700;color:var(--green-deep)">${esc(s.student_id)}</td>
+    <tr data-search="${esc((s.full_name+' '+(s.email||'')+' '+s.student_id).toLowerCase())}">
+      <td class="td-id issued" style="color:var(--green-deep)">${esc(s.student_id)}</td>
       <td class="td-name">${esc(s.full_name)}</td>
-      <td>${esc(s.course || '')} ${esc(s.level || '')}</td>
-      <td>${esc(s.email || '—')}</td>
-      <td>${esc(s.phone || '—')}</td>
+      <td>${esc(s.course||'')} <span style="color:var(--slate);font-size:0.8rem">${esc(s.level||'')}</span></td>
+      <td>${esc(s.email||'—')}</td>
+      <td>${esc(s.phone||'—')}</td>
       <td style="font-size:0.78rem;color:var(--slate)">${formatDate(s.created_at)}</td>
       <td><div class="actions">
-        <button class="btn btn-sm btn-red" onclick="revokeStudent('${s.id}','${esc(s.student_id)}')">Revoke</button>
+        <button class="btn btn-sm btn-red" onclick="revokeStudent('${esc(s.id)}','${esc(s.student_id)}')">Revoke</button>
       </div></td>
     </tr>
   `).join('');
 }
 
-// ── FILTER TABLE ───────────────────────────────────────────────
+// ── SEARCH ─────────────────────────────────────────────────────
 function filterTable(q) {
-  const qLow = q.toLowerCase();
-  const rows = document.querySelectorAll('#apps-tbody tr[data-search], #students-tbody tr[data-search]');
-  rows.forEach(r => {
-    r.style.display = !q || r.dataset.search.includes(qLow) ? '' : 'none';
-  });
+  const ql = q.toLowerCase();
+  document.querySelectorAll('#apps-tbody tr[data-search], #students-tbody tr[data-search]')
+    .forEach(r => { r.style.display = !q || r.dataset.search.includes(ql) ? '' : 'none'; });
 }
 
-// ── APPLICATION DETAIL MODAL ───────────────────────────────────
+// ── APP MODAL ──────────────────────────────────────────────────
 function openAppModal(id) {
   const app = _allApps.find(a => a.id === id);
   if (!app) return;
-  _currentApp = app;
+  _currentApp  = app;
   _generatedId = app.student_id || generateStudentId();
 
   document.getElementById('modal-app-name').textContent = app.full_name;
-  document.getElementById('modal-gen-id').textContent = _generatedId;
-  document.getElementById('admin-notes').value = app.notes || '';
-
-  // Show/hide approve box
-  document.getElementById('approve-box').style.display = app.status === 'pending' ? 'block' : 'none';
+  document.getElementById('modal-gen-id').textContent   = _generatedId;
+  document.getElementById('admin-notes').value           = app.notes || '';
+  document.getElementById('approve-box').style.display  = app.status === 'pending' ? 'block' : 'none';
+  document.getElementById('approve-btn').disabled        = false;
+  document.getElementById('approve-btn').textContent     = '✓ Confirm Payment & Approve';
 
   const proofHtml = app.payment_proof_url && app.payment_proof_url !== 'upload-failed'
     ? (app.payment_proof_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
         ? `<img class="proof-img" src="${esc(app.payment_proof_url)}" alt="Payment proof" />`
-        : `<a href="${esc(app.payment_proof_url)}" target="_blank" style="color:var(--green-mid);font-weight:600">View Payment Proof →</a>`)
+        : `<a href="${esc(app.payment_proof_url)}" target="_blank"
+             style="color:var(--green-mid);font-weight:600">📄 View Payment Proof →</a>`)
     : '<span style="color:var(--slate);font-style:italic">No file uploaded</span>';
 
   document.getElementById('modal-app-details').innerHTML = `
@@ -376,10 +548,10 @@ function openAppModal(id) {
     <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">${esc(app.phone)}</div></div>
     <div class="detail-row"><div class="detail-label">Course</div><div class="detail-value">${esc(app.course)} — ${esc(app.level)}</div></div>
     <div class="detail-row"><div class="detail-label">Submitted</div><div class="detail-value">${formatDate(app.submitted_at)}</div></div>
-    <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value"><span class="badge badge-${app.status}">${app.status}</span></div></div>
-    ${app.student_id ? `<div class="detail-row"><div class="detail-label">Student ID</div><div class="detail-value td-id" style="font-weight:700;color:var(--green-deep);font-size:1rem">${esc(app.student_id)}</div></div>` : ''}
+    <div class="detail-row"><div class="detail-label">Status</div><div class="detail-value"><span class="badge badge-${esc(app.status)}">${esc(app.status)}</span></div></div>
+    ${app.student_id ? `<div class="detail-row"><div class="detail-label">Student ID</div><div class="detail-value td-id issued" style="font-size:1rem">${esc(app.student_id)}</div></div>` : ''}
     ${app.notes ? `<div class="detail-row"><div class="detail-label">Notes</div><div class="detail-value">${esc(app.notes)}</div></div>` : ''}
-    <div class="detail-row"><div class="detail-label">Payment Proof</div><div class="detail-value">${proofHtml}</div></div>
+    <div class="detail-row"><div class="detail-label">Proof</div><div class="detail-value">${proofHtml}</div></div>
   `;
 
   document.getElementById('app-modal').classList.add('open');
@@ -392,21 +564,17 @@ function regenId() {
 
 async function approveApplication() {
   if (!_currentApp) return;
-  const btn = document.getElementById('approve-btn');
-  btn.disabled = true; btn.textContent = 'Approving…';
-
+  const btn      = document.getElementById('approve-btn');
   const studentId = _generatedId || generateStudentId();
-  const notes     = document.getElementById('admin-notes').value;
-
+  const notes    = document.getElementById('admin-notes').value;
+  btn.disabled   = true;
+  btn.textContent = 'Approving…';
   try {
-    // 1. Update application status
     await sbAdmin(`/rest/v1/applications?id=eq.${_currentApp.id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: 'approved', student_id: studentId, notes, reviewed_at: new Date().toISOString() })
+      body: JSON.stringify({ status:'approved', student_id:studentId, notes, reviewed_at:new Date().toISOString() })
     });
-
-    // 2. Create student record (copy password_hash from application)
-    await sbAdmin('/rest/v1/students', {
+    const { ok, data } = await sbAdmin('/rest/v1/students', {
       method: 'POST',
       body: JSON.stringify({
         student_id:    studentId,
@@ -418,15 +586,14 @@ async function approveApplication() {
         password_hash: _currentApp.password_hash
       })
     });
-
+    if (!ok) throw new Error(JSON.stringify(data));
     showToast(`✓ Approved! Student ID: ${studentId}`);
     closeModal('app-modal');
     await loadAll();
-
   } catch (err) {
     console.error(err);
-    showToast('Error approving. Check console.');
-    btn.disabled = false;
+    showToast('Error approving application. Check console.', true);
+    btn.disabled    = false;
     btn.textContent = '✓ Confirm Payment & Approve';
   }
 }
@@ -437,7 +604,7 @@ async function rejectApplication() {
   const notes = document.getElementById('admin-notes').value;
   await sbAdmin(`/rest/v1/applications?id=eq.${_currentApp.id}`, {
     method: 'PATCH',
-    body: JSON.stringify({ status: 'rejected', notes, reviewed_at: new Date().toISOString() })
+    body: JSON.stringify({ status:'rejected', notes, reviewed_at:new Date().toISOString() })
   });
   showToast('Application rejected.');
   closeModal('app-modal');
@@ -446,38 +613,24 @@ async function rejectApplication() {
 
 async function quickApprove(id) {
   const app = _allApps.find(a => a.id === id);
-  if (!app || !confirm(`Quick approve ${app.full_name}?`)) return;
+  if (!app || !confirm(`Approve ${app.full_name} and issue a Student ID?`)) return;
   _currentApp  = app;
   _generatedId = generateStudentId();
   await approveApplication();
 }
 
 async function revokeStudent(id, studentId) {
-  if (!confirm(`Revoke access for Student ID ${studentId}? They will no longer be able to log in.`)) return;
-  await sbAdmin(`/rest/v1/students?id=eq.${id}`, { method: 'DELETE', headers: { 'Prefer': '' } });
-  showToast(`Student ${studentId} revoked.`);
+  if (!confirm(`Revoke library access for ${studentId}? This cannot be undone.`)) return;
+  await sbAdmin(`/rest/v1/students?id=eq.${id}`, { method:'DELETE', headers:{'Prefer':''} });
+  showToast(`Access revoked for ${studentId}.`);
   await loadAll();
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-}
+// Modal close on backdrop
 document.querySelectorAll('.modal-overlay').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
-
-// ── HELPERS ────────────────────────────────────────────────────
-function esc(s) {
-  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function formatDate(d) {
-  if (!d) return '—';
-  try { return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); }
-  catch { return d; }
-}
-
-// Load on startup if already logged in
-if (sessionStorage.getItem('hmli_admin') === '1') loadAll();
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
 </script>
 </body>
 </html>
