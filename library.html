@@ -514,7 +514,7 @@ function applyFilters() {
 async function renderLibrary() {
   // Try Supabase first, then fallback to GitHub-based content
   let items = await loadLibraryFromSupabase();
-  if (!items) items = await loadLibrary();
+  if (!items || items.length === 0) items = await loadLibrary();
   _allItems = items;
 
   document.getElementById('loading-grid').style.display = 'none';

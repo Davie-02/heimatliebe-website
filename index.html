@@ -812,7 +812,11 @@ async function loadCollectionFromSupabase(folder) {
     await loadRuntimeConfig();
     const resp = await sbFetch(`/rest/v1/${folder}?select=*&order=created_at.desc`);
     if (!resp || !resp.ok || !Array.isArray(resp.data)) return null;
-    return resp.data.map(r => ({ ...r, _fromDB: true }));
+    return resp.data.map(r => ({
+      ...r,
+      _body: r.body || r._body || '',
+      _fromDB: true
+    }));
   } catch (e) { return null; }
 }
 
@@ -897,7 +901,7 @@ function esc(str) {
 async function renderCourses() {
   const grid = document.getElementById('courses-grid');
   let items = await loadCollectionFromSupabase('courses');
-  if (!items) items = await loadCollection('courses');
+  if (!items || items.length === 0) items = await loadCollection('courses');
   if (!items.length) {
     grid.innerHTML = '<p class="empty-state">Courses will appear here once added via the admin panel.</p>';
     return;
@@ -922,7 +926,7 @@ async function renderCourses() {
 async function renderNews() {
   const grid = document.getElementById('news-grid');
   let items = await loadCollectionFromSupabase('news');
-  if (!items) items = await loadCollection('news');
+  if (!items || items.length === 0) items = await loadCollection('news');
   if (!items.length) {
     grid.innerHTML = '<p class="empty-state">News will appear here once published from the admin panel.</p>';
     return;

@@ -306,6 +306,20 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ─── CONTENT LIST (list markdown files in a content folder) ──
+    if (urlPath === '/content-list' && method === 'GET') {
+      const folder = query.folder || '';
+      const contentDir = path.join(ROOT, 'content', folder);
+      try {
+        const files = await fs.readdir(contentDir);
+        const mdFiles = files.filter(f => f.endsWith('.md')).sort().reverse();
+        json(res, 200, mdFiles);
+      } catch {
+        json(res, 200, []);
+      }
+      return;
+    }
+
     // ─── CONTACT ENQUIRY ────────────────────────────────────
     if (urlPath === '/api/contact-enquiry' && method === 'POST') {
       const body = await readBody(req);
