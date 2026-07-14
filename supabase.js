@@ -63,23 +63,6 @@ function getPublicUrl(bucket, path) {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 }
 
-/**
- * Hashes a password with the required salt to match the server's implementation.
- * Uses the Web Crypto API, which is standard in modern browsers.
- * @param {string} password The password to hash.
- * @returns {Promise<string>} The hex-encoded SHA-256 hash.
- */
-async function hashPassword(password) {
-  const data = password + 'hmli_salt_2025';
-  if (typeof crypto === 'undefined' || !crypto.subtle || !crypto.subtle.digest) {
-    throw new Error('Web Crypto API not available. This browser is not supported for secure operations.');
-  }
-  const encoder = new TextEncoder();
-  const buffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
-  // Convert buffer to hex string
-  return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 function generateStudentId() {
   return `HMLI-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
 }

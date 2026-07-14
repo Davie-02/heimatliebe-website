@@ -303,6 +303,29 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ─── SUBMIT APPLICATION (new secure endpoint) ───────────
+    if (urlPath === '/api/submit-application' && method === 'POST') {
+      const body = await readBody(req);
+      const { full_name, email, phone, course, level, password, payment_proof_url } = body;
+
+      if (!full_name || !email || !password || !course || !level) {
+        return json(res, 400, { error: 'Missing required application fields.' });
+      }
+
+      const pwHash = hashPw(password);
+
+      const payload = {
+        full_name, email, phone, course, level,
+        password_hash: pwHash,
+        payment_proof_url: payment_proof_url || null,
+        status: 'pending',
+        submitted_at: new Date().toISOString()
+      };
+
+      const result = await supabase('/rest/v1/applications', { method: 'POST', body: JSON.stringify(payload) });
+      return json(res, result.status, result.data);
+    }
+
     // ─── REJECT APPLICATION ────────────────────────────────
     if (urlPath === '/api/reject-application' && method === 'POST') {
       const { application_id } = await readBody(req);
