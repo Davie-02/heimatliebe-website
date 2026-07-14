@@ -816,8 +816,6 @@ border:1px solid #ddd;
   </style>
 </head>
 <body>
-  <body>
-
 <div id="app">
 
     <!-- SIDEBAR -->
@@ -1260,8 +1258,14 @@ Loading...
 
 <script src="/admin/auth.js"></script>
 <script>
-// Wait for auth.js to expose sbAdmin, then boot the CMS
+/**
+ * -----------------------------------------------------------------
+ *  Bootstrapper
+ *  Waits for the auth helper to be ready, then initializes the CMS.
+ * -----------------------------------------------------------------
+ */
 function bootCMS() {
+  // auth.js will set window.sbAdmin and dispatch 'hmli:admin:ready'
   if (!window.sbAdmin) {
     window.addEventListener('hmli:admin:ready', bootCMS, { once: true });
     return;
@@ -1273,6 +1277,9 @@ bootCMS();
 function initAdminCMS() {
 
 // ── PASSWORD GATE ──────────────────────────────────────────────
+// This gate protects the admin panel. It checks a password stored in
+// sessionStorage against the ADMIN_PASSWORD from the config.
+// -----------------------------------------------------------------
 const GATE_KEY = 'hmli_admin_v2';
 let gateEl = null;
 
@@ -1341,154 +1348,145 @@ document.getElementById('logoutBtn').onclick = () => {
 };
 document.getElementById('refreshBtn').onclick = () => loadDashboard();
 
-const pages = document.querySelectorAll(".page");
+/*=========================================================
+    CMS ENGINE
+=========================================================*/
 
-const navItems = document.querySelectorAll(".nav-item");
+const CMS = {
+    currentPage: "dashboard",
+    cache: {},
+    loading: false,
 
-navItems.forEach(btn=>{
+    async load(table, options = ""){
+        const url = `/rest/v1/${table}?select=*${options}`;
+        const result = await sbAdmin(url,{
+            method:"GET"
+        });
 
-    btn.onclick=()=>{
+        if(!result.ok){
+            console.error(result.data);
+            return [];
+        }
 
-        navItems.forEach(n=>n.classList.remove("active"));
+        this.cache[table]=result.data;
+        return result.data;
+    },
 
-        btn.classList.add("active");
+    async create(table,data){
+        return sbAdmin(`/rest/v1/${table}`,{
+            method:"POST",
+            body:JSON.stringify(data)
+        });
+    },
 
-        const page=btn.dataset.page;
+    async update(table,id,data){
+        return sbAdmin(
+            `/rest/v1/${table}?id=eq.${id}`,
+            {
+                method:"PATCH",
+                body:JSON.stringify(data)
+            }
+        );
+    },
 
-        pages.forEach(p=>p.classList.remove("active"));
+    async delete(table,id){
+        return sbAdmin(
+            `/rest/v1/${table}?id=eq.${id}`,
+            {
+                method:"DELETE"
+            }
+        );
+    }
+};
 
-        document.getElementById(page).classList.add("active");
+async function loadDashboard(){
 
-        document.getElementById("page-title").textContent=btn.textContent.trim();
+showLoading();
 
-    };
+const
+applications=await CMS.load(
+"applications",
+"&order=submitted_at.desc"
+);
 
-});
-function showLoading(){
+const
+students=await CMS.load(
+"students",
+"&order=created_at.desc"
+);
 
-document.getElementById("loadingOverlay").style.display="flex";
+const
+courses=await CMS.load(
+"courses"
+);
 
-}
+const
+payments=await CMS.load(
+"payments"
+);
 
-function hideLoading(){
+document.getElementById(
+"statApplications"
+).textContent=applications.length;
 
-document.getElementById("loadingOverlay").style.display="none";
+document
+.getElementById(
+"statStudents"
+)
+.parentElement
+.onclick=()=>{
+document
+.querySelector(
+'[data-page="students"]'
+)
+.click();
+};
 
-}
+document
+.getElementById(
+"statCourses"
+)
+.parentElement
+.onclick=()=>{
+document
+.querySelector(
+'[data-page="courses"]'
+)
+.click();
+};
 
-function createStatCard(title,value,color="#1B4332"){
+const totalRevenue=
+payments.reduce(
+(sum,p)=>sum+(Number(p.amount)||0),
+0
+);
 
-return `
+document.getElementById(
+"statPayments"
+).textContent=
+"MWK "+totalRevenue.toLocaleString();
 
-<div class="card">
-
-<h3 style="color:${color}">
-
-${value}
-
-</h3>
-
-<p>
-
-${title}
-
-</p>
-
-</div>
-
-`;
-
-}
-
-function renderTable(columns,data,actions=[]){
-
-let html=`
-
-<table>
-
-<thead>
-
+document.getElementById(
+"dashboardApplications"
+).innerHTML=
+applications
+.slice(0,10)
+.map(app=>`
 <tr>
-
-`;
-
-columns.forEach(col=>{
-
-html+=`<th>${col.label}</th>`;
-
-});
-
-if(actions.length){
-
-html+="<th>Actions</th>";
-
-}
-
-html+="</tr></thead><tbody>";
-
-if(data.length===0){
-
-html+=`
-
-<tr>
-
-<td colspan="${columns.length+1}"
-
-style="text-align:center;padding:50px">
-
-No records found.
-
+<td>${app.full_name}</td>
+<td>${app.course}</td>
+<td>
+<span class="badge ${app.status}">
+${app.status}
+</span>
 </td>
-
+<td>
+${new Date(app.submitted_at).toLocaleDateString()}
+</td>
 </tr>
+`).join("");
 
-`;
-
-}
-
-data.forEach(row=>{
-
-html+="<tr>";
-
-columns.forEach(col=>{
-
-html+=`<td>${row[col.field] ?? ""}</td>`;
-
-});
-
-if(actions.length){
-
-html+="<td>";
-
-actions.forEach(btn=>{
-
-html+=`
-
-<button
-
-class="${btn.class}"
-
-onclick="${btn.onclick}('${row.id}')">
-
-${btn.label}
-
-</button>
-
-`;
-
-});
-
-html+="</td>";
-
-}
-
-html+="</tr>";
-
-});
-
-html+="</tbody></table>";
-
-return html;
+hideLoading();
 
 }
 
@@ -1647,6 +1645,100 @@ hideLoading();
 }
 
 loadDashboard();
+
+function showLoading(){
+  document.getElementById("loadingOverlay").style.display="flex";
+}
+
+function hideLoading(){
+  document.getElementById("loadingOverlay").style.display="none";
+}
+
+function createStatCard(title,value,color="#1B4332"){
+  return `
+    <div class="card">
+      <h3 style="color:${color}">${value}</h3>
+      <p>${title}</p>
+    </div>
+  `;
+}
+
+function renderTable(columns,data,actions=[]){
+  let html=`
+    <table>
+      <thead>
+        <tr>
+  `;
+  columns.forEach(col=>{
+    html+=`<th>${col.label}</th>`;
+  });
+  if(actions.length){
+    html+="<th>Actions</th>";
+  }
+  html+="</tr></thead><tbody>";
+
+  if(data.length===0){
+    html+=`
+      <tr>
+        <td colspan="${columns.length+1}" style="text-align:center;padding:50px">
+          No records found.
+        </td>
+      </tr>
+    `;
+  }
+
+  data.forEach(row=>{
+    html+="<tr>";
+    columns.forEach(col=>{
+      html+=`<td>${row[col.field] ?? ""}</td>`;
+    });
+    if(actions.length){
+      html+="<td>";
+      actions.forEach(btn=>{
+        html+=`
+          <button
+            class="${btn.class}"
+            onclick="${btn.onclick}('${row.id}')">
+            ${btn.label}
+          </button>
+        `;
+      });
+      html+="</td>";
+    }
+    html+="</tr>";
+  });
+  html+="</tbody></table>";
+  return html;
+}
+
+
+// ── NAV WIRE-UP ────────────────────────────────────────────────
+const pages    = document.querySelectorAll('.page');
+const navItems = document.querySelectorAll('.nav-item');
+navItems.forEach(btn => {
+  btn.onclick = () => {
+    navItems.forEach(n => n.classList.remove('active'));
+    btn.classList.add('active');
+    const page = btn.dataset.page;
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    document.getElementById("page-title").textContent = btn.textContent.trim();
+
+    switch(page){
+      case "dashboard":    loadDashboard();    break;
+      case "applications": loadApplications(); break;
+      case "students":     loadStudents();     break;
+      case "courses":      loadCourses();      break;
+      case "payments":     loadPayments();     break;
+      case "assignments":  loadAssignments();  break;
+      case "exams":        loadExams();        break;
+      case "results":      loadResults();      break;
+      case "scholarships": loadScholarships(); break;
+      case "messages":     loadMessages();     break;
+      case "settings":     loadSettings();     break;
+    }
+  };
+});
 
 /*=========================================================
     CMS ENGINE
@@ -3427,12 +3519,6 @@ hideLoading();
 
 }
 
-case "courses":
-
-loadCourses();
-
-break;
-
 // ── SEND APPROVAL EMAIL ────────────────────────────────────────
 async function sendApprovalEmail(app, studentId) {
   try {
@@ -3495,33 +3581,6 @@ function closeModal() {
 }
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target === document.getElementById('modal')) closeModal();
-});
-
-// ── NAV WIRE-UP ────────────────────────────────────────────────
-const pages    = document.querySelectorAll('.page');
-const navItems = document.querySelectorAll('.nav-item');
-navItems.forEach(btn => {
-  btn.onclick = () => {
-    navItems.forEach(n => n.classList.remove('active'));
-    btn.classList.add('active');
-    const page = btn.dataset.page;
-    pages.forEach(p => p.classList.remove('active'));
-    document.getElementById(page).classList.add('active');
-    document.getElementById('page-title').textContent = btn.textContent.trim();
-    switch(page) {
-      case 'dashboard':    loadDashboard();    break;
-      case 'applications': loadApplications(); break;
-      case 'students':     loadStudents();     break;
-      case 'courses':      loadCourses();      break;
-      case 'payments':     loadPayments();     break;
-      case 'assignments':  loadAssignments();  break;
-      case 'exams':        loadExams();        break;
-      case 'results':      loadResults();      break;
-      case 'scholarships': loadScholarships(); break;
-      case 'messages':     loadMessages();     break;
-      case 'settings':     loadSettings();     break;
-    }
-  };
 });
 
 // ── STUB LOADERS for pages not yet fully built ─────────────────
