@@ -1213,12 +1213,16 @@ Loading...
 </section>
 
             <!-- LIBRARY -->
-
-            <section class="page" id="library"></section>
+            <section class="page" id="library">
+              <div class="page-toolbar"><div><h2>Library</h2><p>Manage student resources</p></div><div class="toolbar-right"><input id="librarySearch" placeholder="Search..."><button class="btn btn-primary" onclick="newLibraryBook()">+ Upload Book</button></div></div>
+              <div id="libraryTable">Loading...</div>
+            </section>
 
             <!-- NEWS -->
-
-            <section class="page" id="news"></section>
+            <section class="page" id="news">
+              <div class="page-toolbar"><div><h2>News</h2><p>Manage announcements</p></div><div class="toolbar-right"><input id="newsSearch" placeholder="Search..."><button class="btn btn-primary" onclick="newNewsItem()">+ New Article</button></div></div>
+              <div id="newsTable">Loading...</div>
+            </section>
 
             <!-- ASSIGNMENTS -->
 
@@ -1254,8 +1258,90 @@ Loading...
 
 </div>
 
-<script type="module" src="/admin/auth.js">
-  const pages = document.querySelectorAll(".page");
+<script src="/admin/auth.js"></script>
+<script>
+// Wait for auth.js to expose sbAdmin, then boot the CMS
+function bootCMS() {
+  if (!window.sbAdmin) {
+    window.addEventListener('hmli:admin:ready', bootCMS, { once: true });
+    return;
+  }
+  initAdminCMS();
+}
+bootCMS();
+
+function initAdminCMS() {
+
+// ── PASSWORD GATE ──────────────────────────────────────────────
+const GATE_KEY = 'hmli_admin_v2';
+let gateEl = null;
+
+function showGate() {
+  gateEl = document.createElement('div');
+  gateEl.id = 'hmli-gate';
+  gateEl.innerHTML = `
+    <div style="position:fixed;inset:0;background:#1B4332;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;gap:0">
+      <div style="text-align:center;margin-bottom:2rem">
+        <img src="/admin/logo.png" style="width:56px;height:56px;margin-bottom:0.75rem;display:block;margin-left:auto;margin-right:auto" onerror="this.style.display='none'">
+        <div style="font-family:Georgia,serif;font-size:1.5rem;font-weight:700;color:#C9A84C">Heimatliebe <span style="color:rgba(255,255,255,0.7);font-weight:400">Institute</span></div>
+        <div style="font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-top:0.3rem">Admin CMS</div>
+      </div>
+      <div style="background:white;padding:2rem;width:100%;max-width:360px;border-top:3px solid #C9A84C">
+        <h2 style="font-family:Georgia,serif;color:#1B4332;margin-bottom:0.25rem;font-size:1.3rem">Admin Access</h2>
+        <p style="color:#4A6572;font-size:0.83rem;margin-bottom:1.25rem">Enter your admin password to continue.</p>
+        <div id="gate-err" style="display:none;background:rgba(192,57,43,0.07);border:1px solid rgba(192,57,43,0.25);color:#c0392b;padding:0.6rem 0.8rem;font-size:0.82rem;margin-bottom:0.75rem;border-radius:2px"></div>
+        <input type="password" id="gate-pw" placeholder="Admin password"
+          style="width:100%;padding:0.8rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-size:0.95rem;outline:none;margin-bottom:0.65rem"
+          onkeydown="if(event.key==='Enter')checkGate()" />
+        <button onclick="checkGate()" id="gate-go"
+          style="width:100%;padding:0.85rem;background:#C9A84C;color:#1B4332;border:none;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:2px">
+          Enter CMS
+        </button>
+        <p style="margin-top:1rem;font-size:0.78rem;color:#9aacb4;text-align:center">
+          <a href="/index.html" style="color:#9aacb4">← Back to main site</a>
+        </p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(gateEl);
+  setTimeout(() => document.getElementById('gate-pw') && document.getElementById('gate-pw').focus(), 100);
+}
+
+function checkGate() {
+  const pw  = document.getElementById('gate-pw').value;
+  const err = document.getElementById('gate-err');
+  const btn = document.getElementById('gate-go');
+  btn.textContent = 'Checking…';
+  btn.disabled = true;
+  // Use ADMIN_PASSWORD set by auth.js
+  const correct = window.ADMIN_PASSWORD || '';
+  if (!correct) {
+    err.textContent = 'Admin password not configured. Check Railway env vars.';
+    err.style.display = 'block';
+    btn.textContent = 'Enter CMS'; btn.disabled = false; return;
+  }
+  if (pw === correct) {
+    sessionStorage.setItem(GATE_KEY, '1');
+    if (gateEl) gateEl.remove();
+    loadDashboard();
+  } else {
+    err.textContent = 'Incorrect password.';
+    err.style.display = 'block';
+    btn.textContent = 'Enter CMS'; btn.disabled = false;
+    document.getElementById('gate-pw').focus();
+  }
+}
+
+if (sessionStorage.getItem(GATE_KEY) !== '1') { showGate(); }
+else { loadDashboard(); }
+
+document.getElementById('logoutBtn').onclick = () => {
+  sessionStorage.removeItem(GATE_KEY);
+  location.reload();
+};
+document.getElementById('refreshBtn').onclick = () => loadDashboard();
+
+const pages = document.querySelectorAll(".page");
 
 const navItems = document.querySelectorAll(".nav-item");
 
@@ -3347,6 +3433,163 @@ loadCourses();
 
 break;
 
+// ── SEND APPROVAL EMAIL ────────────────────────────────────────
+async function sendApprovalEmail(app, studentId) {
+  try {
+    await fetch('/api/send-approval-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: studentId,
+        full_name:  app.full_name,
+        email:      app.email,
+        course:     app.course,
+        level:      app.level
+      })
+    });
+    console.log('[email] Approval email sent to', app.email);
+  } catch(e) {
+    console.warn('[email] Could not send approval email:', e.message);
+  }
+}
+
+// Override approveApplication to also send email and use HMLI- prefix
+window.approveApplication = async function(id) {
+  const app = applications.find(a => a.id === id);
+  if (!app) return;
+  showLoading();
+  const studentNumber = generateStudentId();
+  await CMS.create('students', {
+    student_id:    studentNumber,
+    full_name:     app.full_name,
+    email:         app.email,
+    phone:         app.phone,
+    course:        app.course,
+    level:         app.level,
+    password_hash: app.password_hash
+  });
+  await CMS.update('applications', id, {
+    status:      'approved',
+    student_id:  studentNumber,
+    reviewed_at: new Date().toISOString()
+  });
+  await sendApprovalEmail(app, studentNumber);
+  closeModal();
+  await loadApplications();
+  await loadDashboard();
+  hideLoading();
+};
+
+function generateStudentId() {
+  return 'HMLI-' + new Date().getFullYear() + '-' + String(Math.floor(1000 + Math.random() * 9000));
+}
+
+// ── MODAL HELPERS ──────────────────────────────────────────────
+function openModal(title, body) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = body;
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+// ── NAV WIRE-UP ────────────────────────────────────────────────
+const pages    = document.querySelectorAll('.page');
+const navItems = document.querySelectorAll('.nav-item');
+navItems.forEach(btn => {
+  btn.onclick = () => {
+    navItems.forEach(n => n.classList.remove('active'));
+    btn.classList.add('active');
+    const page = btn.dataset.page;
+    pages.forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    document.getElementById('page-title').textContent = btn.textContent.trim();
+    switch(page) {
+      case 'dashboard':    loadDashboard();    break;
+      case 'applications': loadApplications(); break;
+      case 'students':     loadStudents();     break;
+      case 'courses':      loadCourses();      break;
+      case 'payments':     loadPayments();     break;
+      case 'assignments':  loadAssignments();  break;
+      case 'exams':        loadExams();        break;
+      case 'results':      loadResults();      break;
+      case 'scholarships': loadScholarships(); break;
+      case 'messages':     loadMessages();     break;
+      case 'settings':     loadSettings();     break;
+    }
+  };
+});
+
+// ── STUB LOADERS for pages not yet fully built ─────────────────
+function stubPage(elId, label) {
+  const el = document.getElementById(elId);
+  if (el && !el.dataset.loaded) {
+    el.dataset.loaded = '1';
+    el.innerHTML = `
+      <div class="page-toolbar">
+        <div><h2>${label}</h2><p>Manage ${label.toLowerCase()}</p></div>
+      </div>
+      <div class="panel" style="text-align:center;padding:3rem;color:#667085">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🚧</div>
+        <p>This section is coming soon.</p>
+      </div>`;
+  }
+}
+
+async function loadPayments()     { stubPage('payments',     'Payments');     }
+async function loadAssignments()  { stubPage('assignments',  'Assignments');  }
+async function loadExams()        { stubPage('exams',        'Exams');        }
+async function loadResults()      { stubPage('results',      'Results');      }
+async function loadScholarships() { stubPage('scholarships', 'Scholarships'); }
+async function loadMessages() {
+  showLoading();
+  const msgs = await CMS.load('messages', '&order=created_at.desc');
+  document.getElementById('messages').innerHTML = `
+    <div class="page-toolbar"><div><h2>Messages</h2><p>Student enquiries</p></div></div>
+    ${renderTable(
+      [{label:'From',field:'from_name'},{label:'Subject',field:'subject'},{label:'Read',field:'read'},{label:'Date',field:'created_at'}],
+      msgs,
+      [{label:'View',class:'btn btn-primary',onclick:'viewMessage'}]
+    )}`;
+  hideLoading();
+}
+function viewMessage(id) {
+  const msg = (CMS.cache['messages']||[]).find(m=>m.id===id);
+  if (!msg) return;
+  openModal(msg.subject||'Message',`
+    <p><strong>From:</strong> ${msg.from_name||'—'}</p>
+    <p><strong>Student ID:</strong> ${msg.student_id||'—'}</p>
+    <hr style="margin:1rem 0">
+    <p>${msg.body}</p>
+  `);
+}
+function loadSettings() {
+  document.getElementById('settings').innerHTML = `
+    <div class="page-toolbar"><div><h2>Settings</h2></div></div>
+    <div class="panel">
+      <h2>Site Configuration</h2>
+      <p style="color:#667085;margin-bottom:1.5rem">Environment variables are managed in Railway. Changes take effect on next deploy.</p>
+      <div class="form-group"><label>Supabase URL</label><input readonly value="${window.SUPABASE_URL||'Not set'}"></div>
+      <div class="form-group"><label>Site URL</label><input readonly value="${window.location.origin}"></div>
+      <div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap">
+        <a href="/index.html" target="_blank" class="btn btn-primary">View Main Site</a>
+        <a href="/admin-students.html" target="_blank" class="btn btn-warning">Student Admin</a>
+        <a href="/library.html" target="_blank" class="btn btn-primary">Library</a>
+      </div>
+    </div>`;
+}
+
+// ── QUICK ACTION BUTTONS ───────────────────────────────────────
+document.getElementById('btnNewCourse').onclick     = () => { document.querySelector('[data-page="courses"]').click(); setTimeout(newCourse,200); };
+document.getElementById('btnNewNews').onclick       = () => { document.querySelector('[data-page="news"]').click(); };
+document.getElementById('btnNewBook').onclick       = () => { document.querySelector('[data-page="library"]').click(); };
+document.getElementById('btnNewScholarship').onclick = () => { document.querySelector('[data-page="scholarships"]').click(); };
+
+} // end initAdminCMS
 </script>
 <div id="loadingOverlay">
 

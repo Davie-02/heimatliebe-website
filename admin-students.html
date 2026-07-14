@@ -226,6 +226,7 @@
       <a href="index.html" target="_blank" class="nav-link">← Main Site</a>
       <a href="/admin/" target="_blank" class="nav-link">CMS</a>
       <a href="library.html" target="_blank" class="nav-link">Library</a>
+      <a href="reset-password.html" target="_blank" class="nav-link">Reset Password</a>
       <button class="nav-link-logout" onclick="adminLogout()">Logout</button>
     </div>
   </nav>
@@ -587,7 +588,22 @@ async function approveApplication() {
       })
     });
     if (!ok) throw new Error(JSON.stringify(data));
-    showToast(`✓ Approved! Student ID: ${studentId}`);
+    // Send approval email with Student ID
+    try {
+      await fetch('/api/send-approval-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: studentId,
+          full_name:  _currentApp.full_name,
+          email:      _currentApp.email,
+          course:     _currentApp.course,
+          level:      _currentApp.level
+        })
+      });
+    } catch(e) { console.warn('[email] Could not send approval email:', e.message); }
+
+    showToast(`✓ Approved! Student ID: ${studentId} — Email sent to ${_currentApp.email}`);
     closeModal('app-modal');
     await loadAll();
   } catch (err) {
