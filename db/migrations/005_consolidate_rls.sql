@@ -49,13 +49,21 @@ BEGIN
 END;
 $$;
 
--- Also ensure storage policies are permissive for the server
-DROP POLICY IF EXISTS "Public Access" ON storage.objects;
-CREATE POLICY "Public Access" ON storage.objects
-  FOR ALL
-  USING (true)
-  WITH CHECK (true);
+-- Also ensure storage policies are permissive for the server.
+-- This needs to be in its own DO block to use RAISE NOTICE.
+DO $$
+BEGIN
+  -- Drop the policy if it exists to ensure the script is re-runnable
+  DROP POLICY IF EXISTS "Public Access" ON storage.objects;
 
-RAISE NOTICE 'Storage policies updated.';
+  -- Create a fully permissive policy for the server
+  CREATE POLICY "Public Access" ON storage.objects
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+
+  RAISE NOTICE 'Storage policies updated.';
+END;
+$$;
 
 SELECT 'CMS RLS policies consolidated and applied successfully.' as result;
