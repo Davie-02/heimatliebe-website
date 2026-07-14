@@ -8,6 +8,11 @@
     "start": "node src/server.js",
     "import:content": "node scripts/import_markdown_to_supabase.js"
   },
+  "files": [
+    "src",
+    "public",
+    "content"
+  ],
   "keywords": [
     "supabase",
     "static",
