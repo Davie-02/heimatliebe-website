@@ -64,8 +64,24 @@ function getPublicUrl(bucket, path) {
 }
 
 async function hashPassword(password) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password + 'hmli_salt_2025'));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const data = password + 'hmli_salt_2025';
+  // Try Web Crypto API (requires secure context)
+  if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest) {
+    try {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      console.warn('[HMLI] WebCrypto unavailable, using fallback');
+    }
+  }
+  // Fallback: simple string hash (matches server hashPw)
+  let hash = 0;
+  for (let i = 0; i < data.length; i++) {
+    const chr = data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16).padStart(64, '0').slice(0, 64);
 }
 
 function generateStudentId() {

@@ -275,13 +275,13 @@ document.getElementById('apply-form').addEventListener('submit', async e => {
     const ext  = file.name.split('.').pop();
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     let paymentUrl = '';
-    try {
-      paymentUrl = await uploadFile('payment-proofs', path, file);
-    } catch (uploadErr) {
-      // Continue even if upload fails — admin can request manually
-      console.warn('Upload failed:', uploadErr);
-      paymentUrl = 'upload-failed';
-    }
+      try {
+        paymentUrl = await sbUpload('payment-proofs', file);
+      } catch (uploadErr) {
+        // Continue even if upload fails — admin can request manually
+        console.warn('Upload failed:', uploadErr);
+        paymentUrl = 'upload-failed';
+      }
 
     btnText.textContent = 'Hashing password…';
 

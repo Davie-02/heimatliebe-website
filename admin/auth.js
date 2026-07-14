@@ -63,11 +63,8 @@
           const resp = await fetch('/config.json');
           if (resp.ok) {
             const cfg = await resp.json();
-            if (cfg.ADMIN_PASSWORD) window.ADMIN_PASSWORD = cfg.ADMIN_PASSWORD;
-            if (cfg.SUPABASE_URL)   window.SUPABASE_URL   = cfg.SUPABASE_URL;
-            if (cfg.SUPABASE_ANON)  window.SUPABASE_ANON  = cfg.SUPABASE_ANON;
-            if (window.SUPABASE_URL)    window.SUPABASE_URL    = cfg.SUPABASE_URL;
-            if (window.SUPABASE_ANON)   window.SUPABASE_ANON   = cfg.SUPABASE_ANON;
+            // Note: /config.json no longer exposes ADMIN_PASSWORD for security
+            // Use window.ADMIN_PASSWORD from env/supabase.js if needed
           }
         } catch (e) {
           console.warn('[HMLI Admin] Could not fetch config.json:', e.message);

@@ -233,15 +233,36 @@ function showGate() {
   document.body.appendChild(d);
 }
 
-window.checkAdminGate = function() {
+window.checkAdminGate = async function() {
   const pw = document.getElementById('gate-pw').value;
   const err = document.getElementById('gate-err');
   const btn = document.getElementById('gate-go');
   btn.textContent = 'Checking…'; btn.disabled = true;
-  const correct = window.ADMIN_PASSWORD || '';
-  if (!correct) { err.textContent = 'Admin password not configured.'; err.style.display = 'block'; btn.textContent = 'Enter CMS'; btn.disabled = false; return; }
-  if (pw === correct) { sessionStorage.setItem(GATE_KEY, '1'); const g = document.getElementById('hmli-gate'); if (g) g.remove(); loadDashboard(); }
-  else { err.textContent = 'Incorrect password.'; err.style.display = 'block'; btn.textContent = 'Enter CMS'; btn.disabled = false; }
+  err.style.display = 'none';
+  try {
+    const resp = await fetch('/api/verify-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    if (resp.ok) {
+      sessionStorage.setItem(GATE_KEY, '1');
+      const g = document.getElementById('hmli-gate');
+      if (g) g.remove();
+      loadDashboard();
+    } else {
+      const data = await resp.json();
+      err.textContent = data.error || 'Incorrect password.';
+      err.style.display = 'block';
+      btn.textContent = 'Enter CMS';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    err.textContent = 'Connection error. Is the server running?';
+    err.style.display = 'block';
+    btn.textContent = 'Enter CMS';
+    btn.disabled = false;
+  }
 };
 if (sessionStorage.getItem(GATE_KEY) !== '1') showGate(); else loadDashboard();
 

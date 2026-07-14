@@ -128,6 +128,24 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
 </td></tr></table></td></tr></table></body></html>`;
 }
 
+function resetEmailHtml({ full_name, site_url, token, student_id }) {
+  const resetLink = `${site_url}/reset-password.html?token=${token}&id=${encodeURIComponent(student_id)}`;
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reset Your Password — Heimatliebe Institute</title></head>
+<body style="margin:0;padding:0;background:#F7F5EF;font-family:Inter,Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F5EF;padding:40px 16px"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-top:4px solid #C9A84C">
+<tr><td style="background:#1B4332;padding:28px 36px">
+<p style="margin:0;font-family:Georgia,serif;font-size:20px;font-weight:700;color:#C9A84C">Heimatliebe <span style="color:rgba(255,255,255,.75);font-weight:400">Institute</span></p>
+<p style="margin:6px 0 0;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4)">Password Reset</p></td></tr>
+<tr><td style="padding:36px 36px 28px">
+<h1 style="margin:0 0 20px;font-family:Georgia,serif;font-size:24px;font-weight:700;color:#1B4332;line-height:1.2">Hi ${full_name},</h1>
+<p style="margin:0 0 24px;font-size:15px;color:#4A6572;line-height:1.7">A password reset was requested for your Heimatliebe account (<strong>${student_id}</strong>). Click the button below to set a new password. This link expires in 1 hour.</p>
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:0 0 28px">
+<a href="${resetLink}" style="display:inline-block;padding:14px 32px;background:#C9A84C;color:#1B4332;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:.08em;border-radius:2px">Reset Password</a>
+</td></tr></table>
+<p style="margin:0;font-size:13px;color:#4A6572;line-height:1.7">If you didn't request this, you can ignore this email. Your password will remain unchanged.</p></td></tr></table></td></tr></table></body></html>`;
+}
+
 // ── Router ─────────────────────────────────────────────────────
 const server = createServer(async (req, res) => {
   try {
@@ -143,9 +161,20 @@ const server = createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     if (method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
-    // ─── /config.json ──────────────────────────────────────
+    // ─── /config.json (public — only non-sensitive fields) ────
     if (urlPath === '/config.json') {
-      json(res, 200, CFG);
+      json(res, 200, { SUPABASE_URL: CFG.SUPABASE_URL, SUPABASE_ANON: CFG.SUPABASE_ANON });
+      return;
+    }
+
+    // ─── VERIFY ADMIN PASSWORD (server-side, no exposure to client) ──
+    if (urlPath === '/api/verify-admin' && method === 'POST') {
+      const { password } = await readBody(req);
+      if (!password) { json(res, 400, { error: 'Password required' }); return; }
+      const correct = CFG.ADMIN_PASSWORD;
+      if (!correct) { json(res, 500, { error: 'Admin password not configured' }); return; }
+      if (password === correct) { json(res, 200, { ok: true }); return; }
+      json(res, 401, { error: 'Incorrect password' });
       return;
     }
 
@@ -187,6 +216,59 @@ const server = createServer(async (req, res) => {
       await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(user_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
       console.log(`[auth] Password changed for ${user_id}`);
       json(res, 200, { ok: true });
+      return;
+    }
+
+    // ─── REQUEST PASSWORD RESET ────────────────────────────
+    if (urlPath === '/api/request-password-reset' && method === 'POST') {
+      const { student_id, email } = await readBody(req);
+      if (!student_id || !email) { json(res, 400, { error: 'Student ID and email required' }); return; }
+      // Find user — don't reveal whether the combo exists
+      const userResult = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(student_id.toUpperCase())}&email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,user_id,full_name,email`, { method: 'GET', headers: { 'Prefer': '' } });
+      if (userResult.ok && userResult.data?.length) {
+        const user = userResult.data[0];
+        const token = randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+        await supabase('/rest/v1/password_reset_tokens', {
+          method: 'POST',
+          body: JSON.stringify({ user_id: user.id, student_id: user.user_id, token, expires_at: expiresAt, used: false })
+        });
+        // Try email
+        try {
+          if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+            const t = getTransport();
+            await t.sendMail({
+              from: process.env.SMTP_FROM || `"Heimatliebe" <${process.env.SMTP_USER}>`,
+              to: user.email,
+              subject: 'Reset Your Password — Heimatliebe Institute',
+              html: resetEmailHtml({ full_name: user.full_name, site_url: siteUrl, token, student_id: user.user_id })
+            });
+          }
+        } catch (e) { console.warn('[email] Reset email send failed:', e.message); }
+      }
+      // Always return same message to avoid leaking user info
+      json(res, 200, { ok: true, message: 'If that Student ID and email match, a reset link has been sent.' });
+      return;
+    }
+
+    // ─── RESET PASSWORD (with token) ───────────────────────
+    if (urlPath === '/api/reset-password' && method === 'POST') {
+      const { token, student_id, new_password } = await readBody(req);
+      if (!token || !student_id || !new_password) { json(res, 400, { error: 'Missing required fields' }); return; }
+      if (new_password.length < 8) { json(res, 400, { error: 'Password must be 8+ characters' }); return; }
+      // Find valid token
+      const tokenResult = await supabase(`/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&student_id=eq.${encodeURIComponent(student_id.toUpperCase())}&used=eq.false&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+      if (!tokenResult.ok || !tokenResult.data?.length) { json(res, 400, { error: 'Invalid or expired reset link.' }); return; }
+      const resetRecord = tokenResult.data[0];
+      if (new Date(resetRecord.expires_at) < new Date()) { json(res, 400, { error: 'Reset link has expired. Request a new one.' }); return; }
+      // Update password
+      const newHash = hashPw(new_password);
+      await supabase(`/rest/v1/users?id=eq.${resetRecord.user_id}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
+      await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
+      // Mark token as used
+      await supabase(`/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, { method: 'PATCH', body: JSON.stringify({ used: true }) });
+      console.log(`[auth] Password reset completed for ${student_id}`);
+      json(res, 200, { ok: true, message: 'Password has been reset successfully.' });
       return;
     }
 
@@ -276,7 +358,12 @@ const server = createServer(async (req, res) => {
         if (query.limit) opts.push(`limit=${query.limit}`);
         let filterPath = `/rest/v1/${table}?select=*&${opts.join('&')}`;
         for (const [k, v] of Object.entries(query)) {
-          if (!['order','limit','select','page'].includes(k)) filterPath += `&${k}=eq.${encodeURIComponent(v)}`;
+          if (!['order','limit','select','page'].includes(k)) {
+            // Detect if value already has a Supabase operator prefix (e.g., "eq.5", "in.(1,2,3)", "gte.10")
+            // This preserves subqueries: "class_id=in.(select id from class_enrollments where user_id=eq.123)"
+            const hasOperator = /^[a-zA-Z_]+\./.test(v);
+            filterPath += hasOperator ? `&${k}=${encodeURIComponent(v)}` : `&${k}=eq.${encodeURIComponent(v)}`;
+          }
         }
         const result = await supabase(filterPath, { method: 'GET', headers: { 'Prefer': '' } });
         if (!result.ok) { json(res, result.status, { error: result.data }); return; }
