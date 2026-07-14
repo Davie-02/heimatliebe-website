@@ -12,14 +12,24 @@ const PORT  = process.env.PORT || 3000;
 const ROOT  = process.cwd();
 
 // ── Load Config ───────────────────────────────────────────────
-let CFG = { SUPABASE_URL: '', SUPABASE_ANON: '', ADMIN_PASSWORD: '' };
+// Prioritize environment variables (for production like Railway)
+// and fall back to config.json (for local development).
+const CFG = {
+  SUPABASE_URL: process.env.SUPABASE_URL || '',
+  SUPABASE_ANON: process.env.SUPABASE_ANON || '',
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || ''
+};
+
 try {
   const raw = await fs.readFile(path.join(ROOT, 'config.json'), 'utf8');
   const parsed = JSON.parse(raw.trim());
-  CFG.SUPABASE_URL   = process.env.SUPABASE_URL   || parsed.SUPABASE_URL   || '';
-  CFG.SUPABASE_ANON  = process.env.SUPABASE_ANON  || parsed.SUPABASE_ANON  || '';
-  CFG.ADMIN_PASSWORD = process.env.ADMIN_PASSWORD  || parsed.ADMIN_PASSWORD || '';
-} catch { /* fallback to env only */ }
+  // Allow config.json to override if environment variables are not set
+  CFG.SUPABASE_URL   = CFG.SUPABASE_URL   || parsed.SUPABASE_URL   || '';
+  CFG.SUPABASE_ANON  = CFG.SUPABASE_ANON  || parsed.SUPABASE_ANON  || '';
+  CFG.ADMIN_PASSWORD = CFG.ADMIN_PASSWORD || parsed.ADMIN_PASSWORD || '';
+} catch {
+  console.log('[server] No config.json found. Relying on environment variables.');
+}
 
 // ── MIME TYPES ────────────────────────────────────────────────
 const MIME = {
