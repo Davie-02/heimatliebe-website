@@ -110,14 +110,22 @@
       <button class="nav-item active" data-page="dashboard"><span>🏠</span> Dashboard</button>
       <button class="nav-item" data-page="applications"><span>📥</span> Applications</button>
       <button class="nav-item" data-page="students"><span>🎓</span> Students</button>
+      <button class="nav-item" data-page="classes"><span>🏫</span> Classes</button>
       <button class="nav-item" data-page="courses"><span>📚</span> Courses</button>
       <button class="nav-item" data-page="library"><span>📖</span> Library</button>
       <button class="nav-item" data-page="news"><span>📰</span> News</button>
       <button class="nav-item" data-page="assignments"><span>📝</span> Assignments</button>
+      <button class="nav-item" data-page="submissions"><span>📬</span> Submissions</button>
       <button class="nav-item" data-page="exams"><span>🧪</span> Exams</button>
       <button class="nav-item" data-page="results"><span>📊</span> Results</button>
+      <button class="nav-item" data-page="timetable"><span>🗓️</span> Timetable</button>
+      <button class="nav-item" data-page="attendance"><span>📋</span> Attendance</button>
       <button class="nav-item" data-page="payments"><span>💳</span> Payments</button>
+      <button class="nav-item" data-page="invoices"><span>🧾</span> Invoices</button>
+      <button class="nav-item" data-page="fees"><span>💰</span> Fees</button>
+      <button class="nav-item" data-page="messages"><span>💬</span> Messages</button>
       <button class="nav-item" data-page="scholarships"><span>🏅</span> Scholarships</button>
+      <button class="nav-item" data-page="alumni"><span>🧑‍🎓</span> Alumni</button>
       <button class="nav-item" data-page="settings"><span>⚙</span> Settings</button>
     </nav>
   </aside>
@@ -125,6 +133,10 @@
     <header id="topbar">
       <div><h1 id="page-title">Dashboard</h1><small id="page-subtitle">Welcome to Heimatliebe Administration</small></div>
       <div class="top-actions"><button id="refreshBtn">Refresh</button><button id="logoutBtn">Logout</button></div>
+      <div id="lang-switcher" style="margin-left: 1rem;">
+        <button id="lang-en" class="btn btn-sm btn-outline active">EN</button>
+        <button id="lang-de" class="btn btn-sm btn-outline">DE</button>
+      </div>
     </header>
     <section id="content">
       <!-- DASHBOARD -->
@@ -167,6 +179,12 @@
         <div id="studentsTable">Loading...</div>
       </section>
 
+      <!-- CLASSES -->
+      <section class="page" id="classes">
+        <div class="page-toolbar"><div><h2>Classes</h2></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newClass()">+ New Class</button></div></div>
+        <div id="classesTable">Loading...</div>
+      </section>
+
       <!-- COURSES -->
       <section class="page" id="courses">
         <div class="page-toolbar"><div><h2>Courses</h2></div><div class="toolbar-right"><input id="courseSearch" placeholder="Search..."><button class="btn btn-primary" onclick="newCourse()">+ New Course</button></div></div>
@@ -187,14 +205,43 @@
 
       <!-- ASSIGNMENTS -->
       <section class="page" id="assignments"><div id="assignmentsContent">Loading...</div></section>
+      <!-- SUBMISSIONS -->
+      <section class="page" id="submissions">
+        <div class="page-toolbar"><div><h2>Submissions</h2></div></div>
+        <div id="submissionsTable">Loading...</div>
+      </section>
       <!-- EXAMS -->
       <section class="page" id="exams"><div id="examsContent">Loading...</div></section>
       <!-- RESULTS -->
       <section class="page" id="results"><div id="resultsContent">Loading...</div></section>
+      <!-- TIMETABLE -->
+      <section class="page" id="timetable">
+        <div class="page-toolbar"><div><h2>Timetable</h2></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newTimetableEntry()">+ New Entry</button></div></div>
+        <div id="timetableTable">Loading...</div>
+      </section>
+      <!-- ATTENDANCE -->
+      <section class="page" id="attendance">
+        <div class="page-toolbar"><div><h2>Attendance</h2></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newAttendanceRecord()">+ New Record</button></div></div>
+        <div id="attendanceTable">Loading...</div>
+      </section>
       <!-- PAYMENTS -->
       <section class="page" id="payments"><div id="paymentsContent">Loading...</div></section>
+      <!-- INVOICES -->
+      <section class="page" id="invoices">
+        <div class="page-toolbar"><div><h2>Invoices</h2></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newInvoice()">+ New Invoice</button></div></div>
+        <div id="invoicesTable">Loading...</div>
+      </section>
+      <!-- FEES -->
+      <section class="page" id="fees">
+        <div class="page-toolbar"><div><h2>Fees</h2></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newFee()">+ New Fee</button></div></div>
+        <div id="feesTable">Loading...</div>
+      </section>
+      <!-- MESSAGES -->
+      <section class="page" id="messages"><div id="messagesContent">Loading...</div></section>
       <!-- SCHOLARSHIPS -->
       <section class="page" id="scholarships"><div id="scholarshipsContent">Loading...</div></section>
+      <!-- ALUMNI -->
+      <section class="page" id="alumni"><div id="alumniTable">Loading...</div></section>
       <!-- SETTINGS -->
       <section class="page" id="settings"><div id="settingsContent">Loading...</div></section>
     </section>
@@ -330,14 +377,22 @@ navBtns.forEach(btn => {
     if (pn === 'dashboard') loadDashboard();
     else if (pn === 'applications') loadApplications();
     else if (pn === 'students') loadStudents();
+    else if (pn === 'classes') loadClasses();
     else if (pn === 'courses') loadCourses();
     else if (pn === 'library') loadLibrary();
     else if (pn === 'news') loadNews();
     else if (pn === 'assignments') loadAssignments();
+    else if (pn === 'submissions') loadSubmissions();
     else if (pn === 'exams') loadExams();
     else if (pn === 'results') loadResults();
+    else if (pn === 'timetable') loadTimetable();
+    else if (pn === 'attendance') loadAttendance();
     else if (pn === 'payments') loadPayments();
+    else if (pn === 'invoices') loadInvoices();
+    else if (pn === 'fees') loadFees();
+    else if (pn === 'messages') loadMessages();
     else if (pn === 'scholarships') loadScholarships();
+    else if (pn === 'alumni') loadAlumni();
     else if (pn === 'settings') loadSettings();
   };
 });
@@ -411,35 +466,76 @@ window.rejectApp = async function(id) {
 // ── STUDENTS ────────────────────────────────────────────────────
 let students = [];
 async function loadStudents() {
+  // This module should manage the `users` table for student roles.
   showLoading();
-  students = await getApi('students', 'order=created_at.desc');
+  students = await getApi('users', 'role=eq.student&order=created_at.desc');
   renderStudents(students);
   hideLoading();
 }
 function renderStudents(data) {
   document.getElementById('studentsTable').innerHTML = renderTable(
-    [{label:'Student ID',field:'student_id'},{label:'Name',field:'full_name'},{label:'Course',field:'course'},{label:'Level',field:'level'},{label:'Email',field:'email'}],
+    [{label:'Student ID',field:'user_id'},{label:'Name',field:'full_name'},{label:'Course',field:'course'},{label:'Level',field:'level'},{label:'Email',field:'email'}, {label:'Status', field:'status'}],
     data,
     [{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editStudent'},{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteStudent'}]
   );
 }
 document.getElementById('studentSearch').oninput = function() {
   const q = this.value.toLowerCase();
-  renderStudents(students.filter(s => (s.full_name||'').toLowerCase().includes(q)||(s.student_id||'').toLowerCase().includes(q)));
+  renderStudents(students.filter(s => (s.full_name||'').toLowerCase().includes(q)||(s.user_id||'').toLowerCase().includes(q)));
 };
 function editStudent(id) {
   const s = students.find(x => x.id == id);
   if(!s) return;
-  openModal('Edit Student', '<div class="form-group"><label>Name</label><input id="eSName" value="'+esc(s.full_name)+'"></div><div class="form-row"><div class="form-group"><label>Course</label><input id="eSCourse" value="'+esc(s.course||'')+'"></div><div class="form-group"><label>Level</label><input id="eSLevel" value="'+esc(s.level||'')+'"></div></div><div class="form-group"><label>Email</label><input id="eSEmail" value="'+esc(s.email||'')+'"></div><button class="btn btn-primary" onclick="saveStudent(\''+esc(String(id))+'\')">Save</button>');
+  openModal('Edit Student: ' + esc(s.user_id),
+    `<div class="form-group"><label>Name</label><input id="eSName" value="${esc(s.full_name)}"></div>
+     <div class="form-row">
+       <div class="form-group"><label>Course</label><input id="eSCourse" value="${esc(s.course||'')}"></div>
+       <div class="form-group"><label>Level</label><input id="eSLevel" value="${esc(s.level||'')}"></div>
+     </div>
+     <div class="form-group"><label>Email</label><input id="eSEmail" value="${esc(s.email||'')}"></div>
+     <div class="form-group"><label>Status</label><select id="eSStatus"><option>active</option><option>inactive</option><option>graduated</option></select></div>
+     <button class="btn btn-primary" onclick="saveStudent('${esc(String(id))}')">Save</button>`);
+  document.getElementById('eSStatus').value = s.status || 'active';
 }
 window.saveStudent = async function(id) {
   showLoading();
-  await updateApi('students', id, { full_name: document.getElementById('eSName').value, course: document.getElementById('eSCourse').value, level: document.getElementById('eSLevel').value, email: document.getElementById('eSEmail').value });
+  await updateApi('users', id, {
+    full_name: document.getElementById('eSName').value,
+    course: document.getElementById('eSCourse').value,
+    level: document.getElementById('eSLevel').value,
+    email: document.getElementById('eSEmail').value,
+    status: document.getElementById('eSStatus').value
+  });
   closeModal(); await loadStudents(); hideLoading(); showToast('Saved.');
 };
 window.deleteStudent = async function(id) {
   if(!confirm('Delete this student?')) return;
-  showLoading(); await deleteApi('students', id); await loadStudents(); await loadDashboard(); hideLoading(); showToast('Deleted.');
+  showLoading(); await deleteApi('users', id); await loadStudents(); await loadDashboard(); hideLoading(); showToast('Deleted.');
+};
+
+// ── CLASSES ─────────────────────────────────────────────────────
+let classes = [];
+async function loadClasses() {
+  showLoading();
+  classes = await getApi('classes', 'order=name.asc');
+  document.getElementById('classesTable').innerHTML = renderTable(
+    [{label:'Name',field:'name'},{label:'Teacher ID',field:'teacher_id'},{label:'Course ID',field:'course_id'}],
+    classes,
+    [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteClass'}]
+  );
+  hideLoading();
+}
+window.newClass = function() {
+  openModal('New Class', '<div class="form-group"><label>Name</label><input id="clName" placeholder="e.g., German A1 - Section A"></div><div class="form-row"><div class="form-group"><label>Teacher ID</label><input id="clTeacher"></div><div class="form-group"><label>Course ID</label><input id="clCourse" type="number"></div></div><button class="btn btn-primary" onclick="saveNewClass()">Save</button>');
+};
+window.saveNewClass = async function() {
+  showLoading();
+  await createApi('classes', { name: document.getElementById('clName').value, teacher_id: document.getElementById('clTeacher').value, course_id: Number(document.getElementById('clCourse').value) });
+  closeModal(); await loadClasses(); hideLoading(); showToast('✓ Class created!');
+};
+window.deleteClass = async function(id) {
+  if(!confirm('Delete this class?')) return;
+  showLoading(); await deleteApi('classes', id); await loadClasses(); hideLoading(); showToast('Deleted.');
 };
 
 // ── COURSES ─────────────────────────────────────────────────────
@@ -734,6 +830,63 @@ async function loadResults() {
   hideLoading();
 }
 
+// ── SUBMISSIONS ────────────────────────────────────────────────
+async function loadSubmissions() {
+  showLoading();
+  try {
+    const data = await getApi('submissions', 'order=submitted_at.desc');
+    document.getElementById('submissionsTable').innerHTML = renderTable(
+      [{label:'Assignment ID',field:'assignment_id'},{label:'User ID',field:'user_id'},{label:'Grade',field:'grade'},{label:'Submitted At',field:'submitted_at'}],
+      data
+    );
+  } catch(e) { document.getElementById('submissionsTable').innerHTML = '<p>Error: '+e.message+'</p>'; }
+  hideLoading();
+}
+
+// ── TIMETABLE ──────────────────────────────────────────────────
+async function loadTimetable() {
+  showLoading();
+  try {
+    const data = await getApi('timetable_entries', 'order=day_of_week.asc');
+    document.getElementById('timetableTable').innerHTML = renderTable(
+      [{label:'Class ID',field:'class_id'},{label:'Day',field:'day_of_week'},{label:'Start',field:'start_time'},{label:'End',field:'end_time'},{label:'Room',field:'room'}],
+      data, [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteTimetableEntry'}]
+    );
+  } catch(e) { document.getElementById('timetableTable').innerHTML = '<p>Error: '+e.message+'</p>'; }
+  hideLoading();
+}
+window.newTimetableEntry = function() {
+  openModal('New Timetable Entry', '<div class="form-group"><label>Class ID</label><input id="ttClassId" type="number"></div><div class="form-group"><label>Day of Week</label><select id="ttDay"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select></div><div class="form-row"><div class="form-group"><label>Start Time</label><input id="ttStart" type="time"></div><div class="form-group"><label>End Time</label><input id="ttEnd" type="time"></div></div><div class="form-group"><label>Room</label><input id="ttRoom"></div><button class="btn btn-primary" onclick="saveTimetableEntry()">Save</button>');
+};
+window.saveTimetableEntry = async function() {
+  showLoading();
+  await createApi('timetable_entries', { class_id: Number(document.getElementById('ttClassId').value), day_of_week: Number(document.getElementById('ttDay').value), start_time: document.getElementById('ttStart').value, end_time: document.getElementById('ttEnd').value, room: document.getElementById('ttRoom').value });
+  closeModal(); await loadTimetable(); hideLoading(); showToast('✓ Entry added!');
+};
+window.deleteTimetableEntry = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('timetable_entries', id); await loadTimetable(); hideLoading(); showToast('Deleted.'); };
+
+// ── ATTENDANCE ─────────────────────────────────────────────────
+async function loadAttendance() {
+  showLoading();
+  try {
+    const data = await getApi('attendance', 'order=date.desc');
+    document.getElementById('attendanceTable').innerHTML = renderTable(
+      [{label:'User ID',field:'user_id'},{label:'Class ID',field:'class_id'},{label:'Date',field:'date'},{label:'Status',field:'status'}],
+      data, [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteAttendance'}]
+    );
+  } catch(e) { document.getElementById('attendanceTable').innerHTML = '<p>Error: '+e.message+'</p>'; }
+  hideLoading();
+}
+window.newAttendanceRecord = function() {
+  openModal('New Attendance Record', '<div class="form-group"><label>User ID</label><input id="atUserId"></div><div class="form-group"><label>Class ID</label><input id="atClassId" type="number"></div><div class="form-group"><label>Date</label><input id="atDate" type="date"></div><div class="form-group"><label>Status</label><select id="atStatus"><option>present</option><option>absent</option><option>late</option><option>excused</option></select></div><button class="btn btn-primary" onclick="saveAttendance()">Save</button>');
+};
+window.saveAttendance = async function() {
+  showLoading();
+  await createApi('attendance', { user_id: document.getElementById('atUserId').value, class_id: Number(document.getElementById('atClassId').value), date: document.getElementById('atDate').value, status: document.getElementById('atStatus').value });
+  closeModal(); await loadAttendance(); hideLoading(); showToast('✓ Recorded!');
+};
+window.deleteAttendance = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('attendance', id); await loadAttendance(); hideLoading(); showToast('Deleted.'); };
+
 // ── PAYMENTS ────────────────────────────────────────────────────
 async function loadPayments() {
   showLoading();
@@ -756,6 +909,94 @@ window.savePayment = async function() {
 };
 window.confirmPay = async function(id) { await updateApi('payments', id, { status: 'confirmed' }); await loadPayments(); showToast('Confirmed ✓'); };
 window.rejectPay = async function(id) { await updateApi('payments', id, { status: 'rejected' }); await loadPayments(); showToast('Rejected.'); };
+
+// ── INVOICES & FEES ──────────────────────────────────────────
+async function loadInvoices() {
+  showLoading();
+  const data = await getApi('invoices', 'order=created_at.desc');
+  document.getElementById('invoicesTable').innerHTML = renderTable(
+    [{label:'User ID',field:'user_id'},{label:'Amount',field:'amount'},{label:'Due Date',field:'due_date'},{label:'Status',field:'status'}],
+    data, [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteInvoice'}]
+  );
+  hideLoading();
+}
+window.newInvoice = function() {
+  openModal('New Invoice',
+    `<div class="form-group"><label>User ID</label><input id="invUserId" placeholder="e.g., HMLI-2026-1000"></div>
+     <div class="form-row">
+       <div class="form-group"><label>Amount (MWK)</label><input id="invAmount" type="number" placeholder="e.g., 200000"></div>
+       <div class="form-group"><label>Due Date</label><input id="invDueDate" type="date"></div>
+     </div>
+     <div class="form-group"><label>Status</label><select id="invStatus"><option value="pending">Pending</option><option value="paid">Paid</option><option value="overdue">Overdue</option><option value="cancelled">Cancelled</option></select></div>
+     <div class="form-group"><label>Description</label><input id="invDesc" placeholder="e.g., Term 1 Tuition Fee"></div>
+     <button class="btn btn-primary" onclick="saveNewInvoice()">Save Invoice</button>`);
+};
+window.saveNewInvoice = async function() {
+  showLoading();
+  await createApi('invoices', {
+    user_id: document.getElementById('invUserId').value,
+    amount: Number(document.getElementById('invAmount').value),
+    due_date: document.getElementById('invDueDate').value,
+    status: document.getElementById('invStatus').value,
+    description: document.getElementById('invDesc').value
+  });
+  closeModal(); await loadInvoices(); hideLoading(); showToast('✓ Invoice created!');
+};
+window.deleteInvoice = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('invoices', id); await loadInvoices(); hideLoading(); showToast('Deleted.'); };
+
+async function loadFees() {
+  showLoading();
+  const data = await getApi('fees', 'order=created_at.desc');
+  document.getElementById('feesTable').innerHTML = renderTable(
+    [{label:'Course ID',field:'course_id'},{label:'Amount',field:'amount'},{label:'Type',field:'type'},{label:'Description',field:'description'}],
+    data, [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteFee'}]
+  );
+  hideLoading();
+}
+window.newFee = async function() {
+  const courses = await getApi('courses');
+  const courseOptions = courses.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('');
+  openModal('New Fee',
+    `<div class="form-group"><label>Course</label><select id="feeCourseId">${courseOptions}</select></div>
+     <div class="form-group"><label>Amount (MWK)</label><input id="feeAmount" type="number"></div>
+     <div class="form-group"><label>Type</label><select id="feeType"><option>tuition</option><option>application</option><option>exam</option><option>late_fee</option><option>other</option></select></div>
+     <div class="form-group"><label>Description</label><input id="feeDesc" placeholder="e.g., Monthly Tuition"></div>
+     <button class="btn btn-primary" onclick="saveNewFee()">Save Fee</button>`);
+};
+window.saveNewFee = async function() {
+  showLoading();
+  await createApi('fees', {
+    course_id: Number(document.getElementById('feeCourseId').value),
+    amount: Number(document.getElementById('feeAmount').value),
+    type: document.getElementById('feeType').value,
+    description: document.getElementById('feeDesc').value
+  });
+  closeModal(); await loadFees(); hideLoading(); showToast('✓ Fee created!');
+};
+window.deleteFee = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('fees', id); await loadFees(); hideLoading(); showToast('Deleted.'); };
+
+// ── MESSAGES ───────────────────────────────────────────────────
+async function loadMessages() {
+  showLoading();
+  try {
+    const convos = await getApi('conversations', 'order=updated_at.desc');
+    const msgs = await getApi('messages', 'order=created_at.desc&limit=100');
+    document.getElementById('messagesContent').innerHTML = `
+      <div class="dashboard-grid">
+        <div class="panel"><h2>Recent Conversations</h2>${renderTable([{label:'ID',field:'id'},{label:'Created',field:'created_at'},{label:'Updated',field:'updated_at'}], convos)}</div>
+        <div class="panel"><h2>Recent Messages</h2>${renderTable([{label:'Convo ID',field:'conversation_id'},{label:'Sender ID',field:'sender_id'},{label:'Content',field:'content'}], msgs)}</div>
+      </div>`;
+  } catch(e) { document.getElementById('messagesContent').innerHTML = '<p>Error: '+e.message+'</p>'; }
+  hideLoading();
+}
+
+// ── ALUMNI ─────────────────────────────────────────────────────
+async function loadAlumni() {
+  showLoading();
+  const data = await getApi('alumni', 'order=graduation_year.desc');
+  document.getElementById('alumniTable').innerHTML = renderTable([{label:'Name',field:'full_name'},{label:'Email',field:'email'},{label:'Graduation Year',field:'graduation_year'}], data);
+  hideLoading();
+}
 
 // ── SCHOLARSHIPS ───────────────────────────────────────────────
 async function loadScholarships() {
@@ -792,9 +1033,9 @@ function loadSettings() {
 }
 
 // ── QUICK ACTION BUTTONS ───────────────────────────────────────
-document.getElementById('btnNewCourse').onclick = () => { document.querySelector('[data-page="courses"]').click(); setTimeout(newCourse, 200); };
-document.getElementById('btnNewNews').onclick = () => { document.querySelector('[data-page="news"]').click(); };
-document.getElementById('btnNewBook').onclick = () => { document.querySelector('[data-page="library"]').click(); };
+document.getElementById('btnNewCourse').onclick = () => { document.querySelector('[data-page="courses"]').click(); setTimeout(window.newCourse, 100); };
+document.getElementById('btnNewNews').onclick = () => { document.querySelector('[data-page="news"]').click(); setTimeout(window.newNewsItem, 100); };
+document.getElementById('btnNewBook').onclick = () => { document.querySelector('[data-page="library"]').click(); setTimeout(window.newLibraryBook, 100); };
 
 } // end initAdminCMS
 </script>

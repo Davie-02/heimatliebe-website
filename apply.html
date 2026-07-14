@@ -304,7 +304,7 @@ document.getElementById('apply-form').addEventListener('submit', async e => {
     if (!res.ok) throw new Error(data.message || JSON.stringify(data));
 
     // 3. Show success
-    const ref = data && data[0] ? data[0].id.slice(0,8).toUpperCase() : 'HMLI-APP';
+    const ref = data && Array.isArray(data) && data[0] ? data[0].id.slice(0,8).toUpperCase() : 'HMLI-APP';
     document.getElementById('apply-form').style.display = 'none';
     document.getElementById('success-ref').textContent = ref;
     document.getElementById('success-card').classList.add('show');
