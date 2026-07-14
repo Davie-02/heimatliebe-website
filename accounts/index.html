@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accounts Portal — Heimatliebe Institute</title>
+  <link rel="stylesheet" href="/css/lms.css" />
+</head>
+<body>
+<script src="/supabase.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+(function boot() {
+  const session = requireRole(['accounts', 'admin', 'superadmin'], '/login.html');
+  if (!session) return;
+  const s = session;
+
+  const navItems = [
+    { icon: '📊', label: 'Dashboard',       page: 'dashboard',    section: 'Overview' },
+    { icon: '💳', label: 'Payments',         page: 'payments' },
+    { icon: '📄', label: 'Invoices',         page: 'invoices',     section: 'Financial' },
+    { icon: '💰', label: 'Fees',             page: 'fees' },
+    { icon: '📈', label: 'Revenue Reports',  page: 'reports' },
+    { icon: '👤', label: 'My Profile',       page: 'profile',      section: 'Account' },
+  ];
+
+  document.body.innerHTML = renderSidebar(s, navItems);
+  const pages = {};
+
+  pages.dashboard = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `
+      <div class="dashboard-welcome"><div class="eyebrow">Finance Dashboard</div><h1>${esc(s.full_name)}</h1><p>Accounts Department</p></div>
+      <div class="stats-row" id="dash-stats">
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><h3>Recent Payments</h3></div><div class="card-body" id="dash-payments"></div></div>
+        <div class="card"><div class="card-header"><h3>Pending Invoices</h3></div><div class="card-body" id="dash-invoices"></div></div>
+      </div>`;
+
+    const payments = await loadData('payments', '&order=created_at.desc');
+    const invoices = await loadData('invoices', '&status=eq.pending&order=due_date.asc');
+    const confirmed = payments.filter(p => p.status === 'confirmed');
+    const totalRevenue = confirmed.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${payments.length}</div><div class="stat-lbl">Total Payments</div></div>
+      <div class="stat-card accent"><div class="stat-num">MWK ${totalRevenue.toLocaleString()}</div><div class="stat-lbl">Confirmed Revenue</div></div>
+      <div class="stat-card"><div class="stat-num">${invoices.length}</div><div class="stat-lbl">Pending Invoices</div></div>
+      <div class="stat-card"><div class="stat-num">MWK ${invoices.reduce((s,i) => s + (Number(i.amount) || 0), 0).toLocaleString()}</div><div class="stat-lbl">Outstanding</div></div>`;
+
+    document.getElementById('dash-payments').innerHTML = payments.slice(0, 10).map(p => `<div class="upcoming-card"><div class="uc-title">MWK ${Number(p.amount).toLocaleString()} — <span class="badge badge-${p.status}">${esc(p.status)}</span></div><div class="uc-meta">${esc(p.description || '')} · ${formatDate(p.created_at)}</div></div>`).join('') || '<p class="text-muted" style="padding:1rem">No payments yet.</p>';
+    document.getElementById('dash-invoices').innerHTML = invoices.slice(0, 10).map(i => `<div class="upcoming-card"><div class="uc-title">${esc(i.invoice_number || 'Inv #'+i.id)} — MWK ${Number(i.amount).toLocaleString()}</div><div class="uc-meta">Due: ${formatDate(i.due_date)}</div></div>`).join('') || '<p class="text-muted" style="padding:1rem">No pending invoices.</p>';
+  };
+
+  pages.payments = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Payments</h2><button class="btn btn-sm btn-primary" onclick="showRecordPayment()">+ Record Payment</button></div>
+      <div class="table-wrap"><table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="payments-body"></tbody></table></div>`;
+
+    const [payments, users] = await Promise.all([
+      loadData('payments', '&order=created_at.desc'),
+      loadData('users', '')
+    ]);
+
+    document.getElementById('payments-body').innerHTML = payments.length
+      ? payments.map(p => {
+          const u = users.find(u => u.id == p.user_id);
+          return `<tr>
+            <td class="td-name">${esc(u?.full_name || 'User #'+p.user_id)}</td>
+            <td><strong>MWK ${Number(p.amount).toLocaleString()}</strong></td>
+            <td>${esc(p.method || '—')}</td>
+            <td><span class="badge badge-${p.status}">${esc(p.status)}</span></td>
+            <td class="text-sm">${formatDate(p.created_at)}</td>
+            <td>
+              ${p.status === 'pending' ? `<button class="btn btn-sm btn-green" onclick="confirmPayment('${p.id}')">Confirm</button> <button class="btn btn-sm btn-danger" onclick="rejectPayment('${p.id}')">Reject</button>` : '—'}
+            </td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:2rem">No payments recorded.</td></tr>';
+  };
+
+  window.showRecordPayment = function() {
+    openModal('Record Payment', `
+      <div class="form-group"><label>User ID</label><input id="pay-user" class="form-input" placeholder="Student or User ID" /></div>
+      <div class="form-group"><label>Amount (MWK)</label><input id="pay-amount" class="form-input" type="number" /></div>
+      <div class="form-group"><label>Method</label><select id="pay-method" class="form-select"><option>airtel</option><option>tnm</option><option>bank</option><option>cash</option></select></div>
+      <div class="form-group"><label>Description</label><input id="pay-desc" class="form-input" /></div>
+      <button class="btn btn-primary" onclick="recordPayment()">Record</button>`);
+  };
+
+  window.recordPayment = async function() {
+    const userId = document.getElementById('pay-user').value.trim();
+    const amount = document.getElementById('pay-amount').value;
+    const method = document.getElementById('pay-method').value;
+    const desc = document.getElementById('pay-desc').value;
+    if (!userId || !amount) { showToast('User ID and amount required.', true); return; }
+
+    // Find user
+    const users = await loadData('users', `&or=(user_id.eq.${encodeURIComponent(userId)},id.eq.${encodeURIComponent(userId)})`);
+    const targetId = users.length ? users[0].id : userId;
+
+    const res = await sbAdmin('/rest/v1/payments', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: targetId, amount: Number(amount), method, description: desc, status: 'confirmed', processed_by: s.id })
+    });
+    if (res.ok) { closeModal(); showToast('✓ Payment recorded!'); pages.payments(); invalidateCache('payments'); }
+    else showToast('Error recording payment.', true);
+  };
+
+  window.confirmPayment = async function(id) {
+    await sbAdmin(`/rest/v1/payments?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'confirmed', processed_by: s.id }) });
+    showToast('Payment confirmed ✓'); pages.payments(); invalidateCache('payments');
+  };
+
+  window.rejectPayment = async function(id) {
+    await sbAdmin(`/rest/v1/payments?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'rejected', processed_by: s.id }) });
+    showToast('Payment rejected.'); pages.payments(); invalidateCache('payments');
+  };
+
+  pages.invoices = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Invoices</h2><button class="btn btn-sm btn-primary" onclick="showCreateInvoice()">+ New Invoice</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Invoice #</th><th>User</th><th>Amount</th><th>Paid</th><th>Due</th><th>Status</th></tr></thead><tbody id="invoices-body"></tbody></table></div>`;
+
+    const [invoices, users] = await Promise.all([
+      loadData('invoices', '&order=created_at.desc'),
+      loadData('users', '')
+    ]);
+
+    document.getElementById('invoices-body').innerHTML = invoices.length
+      ? invoices.map(i => {
+          const u = users.find(u => u.id == i.user_id);
+          return `<tr>
+            <td class="td-id">${esc(i.invoice_number || 'INV-'+i.id)}</td>
+            <td class="td-name">${esc(u?.full_name || 'User #'+i.user_id)}</td>
+            <td>MWK ${Number(i.amount).toLocaleString()}</td>
+            <td>MWK ${Number(i.paid || 0).toLocaleString()}</td>
+            <td>${formatDate(i.due_date)}</td>
+            <td><span class="badge badge-${i.status}">${esc(i.status)}</span></td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:2rem">No invoices.</td></tr>';
+  };
+
+  window.showCreateInvoice = function() {
+    openModal('Create Invoice', `
+      <div class="form-group"><label>User ID</label><input id="inv-user" class="form-input" /></div>
+      <div class="form-group"><label>Invoice Number</label><input id="inv-number" class="form-input" placeholder="INV-2025-001" /></div>
+      <div class="form-group"><label>Amount (MWK)</label><input id="inv-amount" class="form-input" type="number" /></div>
+      <div class="form-group"><label>Due Date</label><input id="inv-due" class="form-input" type="date" /></div>
+      <button class="btn btn-primary" onclick="createInvoice()">Create</button>`);
+  };
+
+  window.createInvoice = async function() {
+    const userId = document.getElementById('inv-user').value.trim();
+    const number = document.getElementById('inv-number').value.trim();
+    const amount = document.getElementById('inv-amount').value;
+    const due = document.getElementById('inv-due').value;
+    if (!userId || !amount) { showToast('User and amount required.', true); return; }
+
+    const users = await loadData('users', `&or=(user_id.eq.${encodeURIComponent(userId)},id.eq.${encodeURIComponent(userId)})`);
+    const targetId = users.length ? users[0].id : userId;
+
+    await sbAdmin('/rest/v1/invoices', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: targetId, invoice_number: number || null, amount: Number(amount), due_date: due, created_by: s.id })
+    });
+    closeModal(); showToast('✓ Invoice created!'); pages.invoices(); invalidateCache('invoices');
+  };
+
+  pages.fees = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Fee Structures</h2><button class="btn btn-sm btn-primary" onclick="showNewFee()">+ Add Fee</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Course</th><th>Amount</th><th>Frequency</th><th>Description</th></tr></thead><tbody id="fees-body"></tbody></table></div>`;
+
+    const [fees, courses] = await Promise.all([
+      loadData('fees', '&order=created_at.desc'),
+      loadData('courses', '')
+    ]);
+
+    document.getElementById('fees-body').innerHTML = fees.length
+      ? fees.map(f => `<tr><td>${esc(courses.find(c=>c.id==f.course_id)?.title || 'Course #'+f.course_id)}</td><td><strong>MWK ${Number(f.amount).toLocaleString()}</strong></td><td>${esc(f.frequency)}</td><td>${esc(f.description || '—')}</td></tr>`).join('')
+      : '<tr><td colspan="4" style="text-align:center;padding:2rem">No fee structures set.</td></tr>';
+  };
+
+  window.showNewFee = async function() {
+    const courses = await loadData('courses', '');
+    openModal('Add Fee Structure', `
+      <div class="form-group"><label>Course</label><select id="fee-course" class="form-select">${courses.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Amount (MWK)</label><input id="fee-amount" class="form-input" type="number" /></div>
+      <div class="form-group"><label>Frequency</label><select id="fee-freq" class="form-select"><option>one-time</option><option>monthly</option><option>term</option><option>yearly</option></select></div>
+      <div class="form-group"><label>Description</label><input id="fee-desc" class="form-input" /></div>
+      <button class="btn btn-primary" onclick="saveFee()">Save</button>`);
+  };
+
+  window.saveFee = async function() {
+    await sbAdmin('/rest/v1/fees', {
+      method: 'POST',
+      body: JSON.stringify({
+        course_id: document.getElementById('fee-course').value,
+        amount: Number(document.getElementById('fee-amount').value),
+        frequency: document.getElementById('fee-freq').value,
+        description: document.getElementById('fee-desc').value
+      })
+    });
+    closeModal(); showToast('✓ Fee added!'); pages.fees(); invalidateCache('fees');
+  };
+
+  pages.reports = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>Revenue Reports</h2>
+      <div class="stats-row mt-md" id="report-stats"></div>
+      <div class="card mt-md"><div class="card-header"><h3>Monthly Totals</h3></div><div class="card-body" id="report-body"></div></div>`;
+
+    const payments = await loadData('payments', '&status=eq.confirmed&order=created_at.desc');
+    const total = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+
+    // Group by month
+    const monthly = {};
+    payments.forEach(p => {
+      const month = (p.created_at || '').slice(0, 7);
+      if (month) { monthly[month] = (monthly[month] || 0) + (Number(p.amount) || 0); }
+    });
+
+    document.getElementById('report-stats').innerHTML = `
+      <div class="stat-card accent"><div class="stat-num">MWK ${total.toLocaleString()}</div><div class="stat-lbl">Total Confirmed Revenue</div></div>
+      <div class="stat-card"><div class="stat-num">${payments.length}</div><div class="stat-lbl">Confirmed Payments</div></div>
+      <div class="stat-card"><div class="stat-num">${Object.keys(monthly).length}</div><div class="stat-lbl">Months Active</div></div>`;
+
+    document.getElementById('report-body').innerHTML = Object.entries(monthly)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([month, amount]) => `<div class="upcoming-card"><div class="uc-title">${month} — MWK ${amount.toLocaleString()}</div></div>`).join('') || '<p class="text-muted">No payment data yet.</p>';
+  };
+
+  pages.profile = function() {
+    document.getElementById('portal-content').innerHTML = `
+      <h2>My Profile</h2>
+      <div class="card mt-md" style="max-width:600px;"><div class="card-body">
+        <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${esc(s.full_name)}</div></div>
+        <div class="detail-row"><div class="detail-label">Staff ID</div><div class="detail-value td-id">${esc(s.staff_id || s.user_id)}</div></div>
+        <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${esc(s.email||'—')}</div></div>
+        <div class="detail-row"><div class="detail-label">Department</div><div class="detail-value">Accounts</div></div>
+        <div class="detail-row"><div class="detail-label">Role</div><div class="detail-value"><span class="badge badge-active">${esc(s.role)}</span></div></div>
+      </div></div>`;
+  };
+
+  initPortal(s, pages);
+})();
+</script>
+</body>
+</html>

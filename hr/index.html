@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HR Portal — Heimatliebe Institute</title>
+  <link rel="stylesheet" href="/css/lms.css" />
+</head>
+<body>
+<script src="/supabase.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+(function boot() {
+  const session = requireRole(['hr', 'admin', 'superadmin'], '/login.html');
+  if (!session) return;
+  const s = session;
+
+  const navItems = [
+    { icon: '📊', label: 'Dashboard',       page: 'dashboard',    section: 'Overview' },
+    { icon: '👥', label: 'Staff',            page: 'staff' },
+    { icon: '👨‍🏫', label: 'Teachers',        page: 'teachers' },
+    { icon: '🎓', label: 'Students',         page: 'students' },
+    { icon: '➕', label: 'Add User',         page: 'adduser',      section: 'Management' },
+    { icon: '📋', label: 'Attendance',       page: 'attendance' },
+    { icon: '👤', label: 'My Profile',       page: 'profile',      section: 'Account' },
+  ];
+
+  document.body.innerHTML = renderSidebar(s, navItems);
+  const pages = {};
+
+  pages.dashboard = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `
+      <div class="dashboard-welcome"><div class="eyebrow">HR Dashboard</div><h1>${esc(s.full_name)}</h1><p>Human Resources</p></div>
+      <div class="stats-row" id="dash-stats">
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+      </div>
+      <div class="card"><div class="card-header"><h3>Active Staff</h3></div><div class="card-body" id="dash-staff"></div></div>`;
+
+    const users = await loadData('users', '&status=eq.active');
+    const byRole = {};
+    users.forEach(u => { byRole[u.role] = (byRole[u.role] || 0) + 1; });
+
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${users.length}</div><div class="stat-lbl">Active Users</div></div>
+      <div class="stat-card"><div class="stat-num">${byRole['student'] || 0}</div><div class="stat-lbl">Students</div></div>
+      <div class="stat-card accent"><div class="stat-num">${byRole['teacher'] || 0}</div><div class="stat-lbl">Teachers</div></div>
+      <div class="stat-card"><div class="stat-num">${(byRole['admin'] || 0) + (byRole['accounts'] || 0) + (byRole['hr'] || 0) + (byRole['director'] || 0)}</div><div class="stat-lbl">Other Staff</div></div>`;
+
+    const staff = users.filter(u => u.role !== 'student');
+    document.getElementById('dash-staff').innerHTML = staff.slice(0, 10).map(u =>
+      `<div class="upcoming-card"><div class="uc-title">${esc(u.full_name)} <span class="badge badge-active">${esc(u.role)}</span></div><div class="uc-meta">${esc(u.department || '')} · ${esc(u.email || '')}</div></div>`
+    ).join('') || '<p class="text-muted" style="padding:1rem">No staff records.</p>';
+  };
+
+  pages.staff = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>All Staff</h2>
+      <div class="table-wrap mt-md"><table><thead><tr><th>Name</th><th>Staff ID</th><th>Role</th><th>Department</th><th>Email</th><th>Status</th></tr></thead><tbody id="staff-body"></tbody></table></div>`;
+
+    const staff = await loadData('users', '&role=neq.student&order=full_name.asc');
+    document.getElementById('staff-body').innerHTML = staff.length
+      ? staff.map(u => `<tr>
+          <td class="td-name">${esc(u.full_name)}</td>
+          <td class="td-id">${esc(u.staff_id || u.user_id)}</td>
+          <td><span class="badge badge-active">${esc(u.role)}</span></td>
+          <td>${esc(u.department || '—')}</td>
+          <td>${esc(u.email || '—')}</td>
+          <td><span class="badge badge-${u.status === 'active' ? 'approved' : 'pending'}">${esc(u.status || 'active')}</span></td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:2rem">No staff found.</td></tr>';
+  };
+
+  pages.teachers = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>Teachers</h2>
+      <div class="table-wrap mt-md"><table><thead><tr><th>Name</th><th>Staff ID</th><th>Email</th><th>Department</th><th>Classes</th></tr></thead><tbody id="teachers-body"></tbody></table></div>`;
+
+    const [teachers, classes] = await Promise.all([
+      loadData('users', '&role=eq.teacher&order=full_name.asc'),
+      loadData('classes', '')
+    ]);
+
+    document.getElementById('teachers-body').innerHTML = teachers.length
+      ? teachers.map(t => {
+          const classCount = classes.filter(c => c.teacher_id == t.id).length;
+          return `<tr><td class="td-name">${esc(t.full_name)}</td><td class="td-id">${esc(t.staff_id || t.user_id)}</td><td>${esc(t.email || '—')}</td><td>${esc(t.department || 'Teaching')}</td><td>${classCount}</td></tr>`;
+        }).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:2rem">No teachers registered.</td></tr>';
+  };
+
+  pages.students = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>All Students</h2><div class="table-wrap mt-md"><table><thead><tr><th>Name</th><th>Student ID</th><th>Course</th><th>Level</th><th>Email</th><th>Status</th></tr></thead><tbody id="students-body"></tbody></table></div>`;
+    const students = await loadData('users', '&role=eq.student&order=full_name.asc');
+    document.getElementById('students-body').innerHTML = students.length
+      ? students.map(u => `<tr><td class="td-name">${esc(u.full_name)}</td><td class="td-id">${esc(u.user_id)}</td><td>${esc(u.course || '—')}</td><td>${esc(u.level || '—')}</td><td>${esc(u.email || '—')}</td><td><span class="badge badge-${u.status === 'active' ? 'approved' : 'pending'}">${esc(u.status || 'active')}</span></td></tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:2rem">No students.</td></tr>';
+  };
+
+  pages.adduser = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `
+      <h2>Add New User</h2>
+      <div class="card mt-md" style="max-width:600px;"><div class="card-body">
+        <div class="form-group"><label>Full Name</label><input id="u-name" class="form-input" /></div>
+        <div class="form-group"><label>Email</label><input id="u-email" class="form-input" type="email" /></div>
+        <div class="form-group"><label>Phone</label><input id="u-phone" class="form-input" /></div>
+        <div class="form-row">
+          <div class="form-group"><label>Role</label><select id="u-role" class="form-select"><option>student</option><option>teacher</option><option>accounts</option><option>hr</option><option>director</option><option>admin</option></select></div>
+          <div class="form-group"><label>Password</label><input id="u-pw" class="form-input" type="password" value="changeme123" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>User ID (leave blank for auto)</label><input id="u-id" class="form-input" placeholder="Auto-generated" /></div>
+          <div class="form-group"><label>Department</label><input id="u-dept" class="form-input" /></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Course (students)</label><input id="u-course" class="form-input" /></div>
+          <div class="form-group"><label>Level (students)</label><input id="u-level" class="form-input" /></div>
+        </div>
+        <button class="btn btn-primary" onclick="addUser()">Create User</button>
+      </div></div>`;
+  };
+
+  window.addUser = async function() {
+    const name = document.getElementById('u-name').value.trim();
+    const email = document.getElementById('u-email').value.trim();
+    const phone = document.getElementById('u-phone').value.trim();
+    const role = document.getElementById('u-role').value;
+    const pw = document.getElementById('u-pw').value;
+    const customId = document.getElementById('u-id').value.trim();
+    const dept = document.getElementById('u-dept').value.trim();
+    const course = document.getElementById('u-course').value.trim();
+    const level = document.getElementById('u-level').value.trim();
+
+    if (!name) { showToast('Name required.', true); return; }
+
+    // Generate user ID
+    let userId = customId;
+    if (!userId) {
+      if (role === 'student') {
+        userId = `HMLI-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+      } else {
+        userId = `HMLI-STF-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+      }
+    }
+
+    const pwHash = await hashPassword(pw);
+    const res = await sbAdmin('/rest/v1/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: userId.toUpperCase(),
+        full_name: name,
+        email,
+        phone,
+        role,
+        password_hash: pwHash,
+        department: dept || null,
+        course: course || null,
+        level: level || null,
+        status: 'active'
+      })
+    });
+
+    if (res.ok) {
+      showToast(`✓ User created! ID: ${userId.toUpperCase()}`);
+      document.getElementById('u-name').value = '';
+      document.getElementById('u-email').value = '';
+      document.getElementById('u-phone').value = '';
+      invalidateCache('users');
+    } else {
+      showToast('Error creating user. ID may be taken.', true);
+    }
+  };
+
+  pages.attendance = async function() {
+    const content = document.getElementById('portal-content');
+    const today = new Date().toISOString().slice(0, 10);
+    content.innerHTML = `
+      <div class="flex justify-between items-center mb-md"><h2>Attendance Records</h2></div>
+      <div class="flex gap-md items-center mb-md">
+        <input type="date" id="att-date" class="form-input" style="max-width:200px;" value="${today}" />
+        <button class="btn btn-sm btn-primary" onclick="loadAllAttendance()">View</button>
+      </div>
+      <div id="att-body">Select a date to view attendance.</div>`;
+
+    window.loadAllAttendance = async function() {
+      const date = document.getElementById('att-date').value;
+      if (!date) { showToast('Select a date.', true); return; }
+      const records = await loadData('attendance', `&date=eq.${date}&order=created_at.desc`);
+      if (!records.length) {
+        document.getElementById('att-body').innerHTML = '<p class="text-muted">No attendance records for this date.</p>';
+        return;
+      }
+      const users = await loadData('users', '');
+      document.getElementById('att-body').innerHTML = `
+        <div class="table-wrap"><table><thead><tr><th>User</th><th>Status</th><th>Marked By</th></tr></thead><tbody>
+          ${records.map(r => {
+            const u = users.find(u => u.id == r.user_id);
+            const marker = users.find(u => u.id == r.marked_by);
+            return `<tr><td class="td-name">${esc(u?.full_name || 'User #'+r.user_id)}</td><td><span class="badge badge-${r.status}">${esc(r.status)}</span></td><td class="text-sm">${esc(marker?.full_name || '—')}</td></tr>`;
+        }).join('')}
+        </tbody></table></div>`;
+    }
+  };
+
+  /* ── PROFILE ──────────────────────────────────────────────── */
+  pages.profile = function() {
+    document.getElementById('portal-content').innerHTML = `
+      <h2>My Profile</h2>
+      <div class="card mt-md" style="max-width:600px;"><div class="card-body">
+        <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${esc(s.full_name)}</div></div>
+        <div class="detail-row"><div class="detail-label">Staff ID</div><div class="detail-value td-id">${esc(s.staff_id || s.user_id)}</div></div>
+        <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${esc(s.email||'—')}</div></div>
+        <div class="detail-row"><div class="detail-label">Department</div><div class="detail-value">Human Resources</div></div>
+        <div class="detail-row"><div class="detail-label">Role</div><div class="detail-value"><span class="badge badge-active">${esc(s.role)}</span></div></div>
+      </div></div>`;
+  };
+
+  initPortal(s, pages);
+})();
+</script>
+</body>
+</html>

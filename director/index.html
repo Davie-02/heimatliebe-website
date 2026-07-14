@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Director Portal — Heimatliebe Institute</title>
+  <link rel="stylesheet" href="/css/lms.css" />
+</head>
+<body>
+<script src="/supabase.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+(function boot() {
+  const session = requireRole(['director', 'admin', 'superadmin'], '/login.html');
+  if (!session) return;
+  const s = session;
+
+  const navItems = [
+    { icon: '📊', label: 'Dashboard',       page: 'dashboard',   section: 'Overview' },
+    { icon: '📈', label: 'Analytics',        page: 'analytics' },
+    { icon: '🎓', label: 'Students',         page: 'students' },
+    { icon: '👨‍🏫', label: 'Teachers',        page: 'teachers' },
+    { icon: '💳', label: 'Revenue',          page: 'revenue',     section: 'Financial' },
+    { icon: '📋', label: 'Reports',          page: 'reports' },
+    { icon: '🏛️', label: 'Institution',      page: 'institution', section: 'Admin' },
+    { icon: '👤', label: 'My Profile',       page: 'profile',     section: 'Account' },
+  ];
+
+  document.body.innerHTML = renderSidebar(s, navItems);
+  const pages = {};
+
+  pages.dashboard = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `
+      <div class="dashboard-welcome"><div class="eyebrow">Director's Dashboard</div><h1>${esc(s.full_name)}</h1><p>Executive Overview</p></div>
+      <div class="stats-row" id="dash-stats">
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+      </div>
+      <div class="grid-3">
+        <div class="card"><div class="card-header"><h3>Recent Enrolments</h3></div><div class="card-body" id="dash-enrolments"></div></div>
+        <div class="card"><div class="card-header"><h3>Revenue This Month</h3></div><div class="card-body" id="dash-revenue"></div></div>
+        <div class="card"><div class="card-header"><h3>System Status</h3></div><div class="card-body" id="dash-status"></div></div>
+      </div>`;
+
+    const [users, payments, classes, courses, exams] = await Promise.all([
+      loadData('users', '&order=created_at.desc'),
+      loadData('payments', '&status=eq.confirmed&order=created_at.desc'),
+      loadData('classes', ''),
+      loadData('courses', ''),
+      loadData('exams', '')
+    ]);
+
+    const students = users.filter(u => u.role === 'student');
+    const teachers = users.filter(u => u.role === 'teacher');
+    const totalRevenue = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const monthStr = new Date().toISOString().slice(0, 7);
+    const monthlyRevenue = payments.filter(p => (p.created_at || '').startsWith(monthStr)).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const activeClasses = classes.length;
+
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${students.length}</div><div class="stat-lbl">Active Students</div></div>
+      <div class="stat-card accent"><div class="stat-num">${teachers.length}</div><div class="stat-lbl">Teachers</div></div>
+      <div class="stat-card"><div class="stat-num">${courses.length}</div><div class="stat-lbl">Courses</div></div>
+      <div class="stat-card"><div class="stat-num">${activeClasses}</div><div class="stat-lbl">Active Classes</div></div>
+      <div class="stat-card accent"><div class="stat-num">MWK ${totalRevenue.toLocaleString()}</div><div class="stat-lbl">Total Revenue</div></div>
+      <div class="stat-card"><div class="stat-num">MWK ${monthlyRevenue.toLocaleString()}</div><div class="stat-lbl">This Month</div></div>`;
+
+    document.getElementById('dash-enrolments').innerHTML = students.slice(0, 10).map(u =>
+      `<div class="upcoming-card"><div class="uc-title">${esc(u.full_name)}</div><div class="uc-meta">${esc(u.course || '—')} · ${esc(u.level || '—')}</div></div>`
+    ).join('') || '<p class="text-muted" style="padding:1rem">No recent enrolments.</p>';
+
+    document.getElementById('dash-revenue').innerHTML = `<h2 class="text-gold" style="font-size:2rem;margin-bottom:0.25rem">MWK ${monthlyRevenue.toLocaleString()}</h2><p class="text-sm">${payments.length} confirmed payments this month</p>`;
+    document.getElementById('dash-status').innerHTML = `
+      <div class="detail-row"><div class="detail-label">Students</div><div class="detail-value">${students.length} active</div></div>
+      <div class="detail-row"><div class="detail-label">Teachers</div><div class="detail-value">${teachers.length} active</div></div>
+      <div class="detail-row"><div class="detail-label">Classes</div><div class="detail-value">${activeClasses} running</div></div>
+      <div class="detail-row"><div class="detail-label">Exams</div><div class="detail-value">${exams.length} total</div></div>`;
+  };
+
+  pages.analytics = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>Analytics</h2>
+      <div class="grid-3 mt-md">
+        <div class="card"><div class="card-header"><h3>Users by Role</h3></div><div class="card-body" id="analytics-roles"></div></div>
+        <div class="card"><div class="card-header"><h3>Payments by Status</h3></div><div class="card-body" id="analytics-payments"></div></div>
+        <div class="card"><div class="card-header"><h3>Courses by Level</h3></div><div class="card-body" id="analytics-courses"></div></div>
+      </div>`;
+
+    const [users, payments, courses] = await Promise.all([
+      loadData('users', ''),
+      loadData('payments', ''),
+      loadData('courses', '')
+    ]);
+
+    const roles = {};
+    users.forEach(u => { roles[u.role] = (roles[u.role] || 0) + 1; });
+    document.getElementById('analytics-roles').innerHTML = Object.entries(roles).map(([r, c]) => `<div class="upcoming-card"><div class="uc-title">${esc(r)}: <strong>${c}</strong></div></div>`).join('');
+
+    const payStatus = {};
+    payments.forEach(p => { payStatus[p.status] = (payStatus[p.status] || 0) + 1; });
+    document.getElementById('analytics-payments').innerHTML = Object.entries(payStatus).map(([s, c]) => `<div class="upcoming-card"><div class="uc-title">${esc(s)}: <strong>${c}</strong></div></div>`).join('');
+
+    const levels = {};
+    courses.forEach(c => { levels[c.level] = (levels[c.level] || 0) + 1; });
+    document.getElementById('analytics-courses').innerHTML = Object.entries(levels).map(([l, c]) => `<div class="upcoming-card"><div class="uc-title">${esc(l || 'N/A')}: <strong>${c}</strong></div></div>`).join('');
+  };
+
+  pages.students = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>All Students</h2>
+      <div class="stats-row mt-md" id="student-stats"></div>
+      <div class="table-wrap mt-md"><table><thead><tr><th>Name</th><th>ID</th><th>Course</th><th>Level</th><th>Email</th><th>Created</th></tr></thead><tbody id="students-body"></tbody></table></div>`;
+
+    const students = await loadData('users', '&role=eq.student&order=created_at.desc');
+    const payments = await loadData('payments', '');
+
+    document.getElementById('student-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${students.length}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card"><div class="stat-num">${students.filter(s => s.status === 'active').length}</div><div class="stat-lbl">Active</div></div>`;
+
+    document.getElementById('students-body').innerHTML = students.length
+      ? students.map(u => `<tr>
+          <td class="td-name">${esc(u.full_name)}</td>
+          <td class="td-id">${esc(u.user_id)}</td>
+          <td>${esc(u.course || '—')}</td>
+          <td>${esc(u.level || '—')}</td>
+          <td>${esc(u.email || '—')}</td>
+          <td class="text-sm">${formatDate(u.created_at)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:2rem">No students.</td></tr>';
+  };
+
+  pages.teachers = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>All Teachers</h2>
+      <div class="table-wrap mt-md"><table><thead><tr><th>Name</th><th>Staff ID</th><th>Email</th><th>Department</th><th>Classes</th></tr></thead><tbody id="teachers-body"></tbody></table></div>`;
+
+    const [teachers, classes] = await Promise.all([
+      loadData('users', '&role=eq.teacher&order=full_name.asc'),
+      loadData('classes', '')
+    ]);
+
+    document.getElementById('teachers-body').innerHTML = teachers.length
+      ? teachers.map(t => `<tr><td class="td-name">${esc(t.full_name)}</td><td class="td-id">${esc(t.staff_id || t.user_id)}</td><td>${esc(t.email || '—')}</td><td>${esc(t.department || 'Teaching')}</td><td>${classes.filter(c => c.teacher_id == t.id).length}</td></tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:2rem">No teachers.</td></tr>';
+  };
+
+  pages.revenue = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>Revenue Overview</h2>
+      <div class="stats-row mt-md" id="rev-stats"></div>
+      <div class="card mt-md"><div class="card-header"><h3>All Payments</h3></div><div class="card-body" id="rev-body"></div></div>`;
+
+    const payments = await loadData('payments', '&order=created_at.desc');
+    const total = payments.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+    const confirmed = payments.filter(p => p.status === 'confirmed');
+
+    document.getElementById('rev-stats').innerHTML = `
+      <div class="stat-card accent"><div class="stat-num">MWK ${total.toLocaleString()}</div><div class="stat-lbl">Total All</div></div>
+      <div class="stat-card"><div class="stat-num">MWK ${confirmed.reduce((s, p) => s + (Number(p.amount) || 0), 0).toLocaleString()}</div><div class="stat-lbl">Confirmed</div></div>
+      <div class="stat-card"><div class="stat-num">${confirmed.length}</div><div class="stat-lbl">Confirmed Payments</div></div>`;
+
+    document.getElementById('rev-body').innerHTML = payments.slice(0, 20).map(p => `<div class="upcoming-card"><div class="uc-title">MWK ${Number(p.amount).toLocaleString()} — <span class="badge badge-${p.status}">${esc(p.status)}</span></div><div class="uc-meta">${esc(p.description || '')} · ${formatDate(p.created_at)}</div></div>`).join('') || '<p class="text-muted">No payments.</p>';
+  };
+
+  pages.reports = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>Exportable Reports</h2>
+      <div class="grid-auto mt-md">
+        <div class="card"><div class="card-body"><h3>Student List</h3><p class="text-sm mt-sm">Download all active students with course info.</p><button class="btn btn-sm btn-outline mt-sm" onclick="downloadCSV('students')">Download CSV</button></div></div>
+        <div class="card"><div class="card-body"><h3>Payment Report</h3><p class="text-sm mt-sm">Download all payment records.</p><button class="btn btn-sm btn-outline mt-sm" onclick="downloadCSV('payments')">Download CSV</button></div></div>
+        <div class="card"><div class="card-body"><h3>Exam Results</h3><p class="text-sm mt-sm">Download all exam results.</p><button class="btn btn-sm btn-outline mt-sm" onclick="downloadCSV('results')">Download CSV</button></div></div>
+        <div class="card"><div class="card-body"><h3>Attendance</h3><p class="text-sm mt-sm">Download attendance records.</p><button class="btn btn-sm btn-outline mt-sm" onclick="downloadCSV('attendance')">Download CSV</button></div></div>
+      </div>`;
+
+    window.downloadCSV = async function(type) {
+      let rows, headers;
+      if (type === 'students') {
+        const data = await loadData('users', '&role=eq.student&order=full_name.asc');
+        headers = ['Name','Student ID','Email','Phone','Course','Level','Status','Created'];
+        rows = data.map(u => [u.full_name, u.user_id, u.email, u.phone, u.course, u.level, u.status, u.created_at]);
+      } else if (type === 'payments') {
+        const data = await loadData('payments', '&order=created_at.desc');
+        headers = ['ID','User ID','Amount','Method','Status','Description','Created'];
+        rows = data.map(p => [p.id, p.user_id, p.amount, p.method, p.status, p.description, p.created_at]);
+      } else if (type === 'results') {
+        const data = await loadData('exam_results', '&order=created_at.desc');
+        headers = ['ID','Exam ID','User ID','Score','Percentage','Passed','Submitted'];
+        rows = data.map(r => [r.id, r.exam_id, r.user_id, r.score, r.percentage, r.passed, r.submitted_at]);
+      } else if (type === 'attendance') {
+        const data = await loadData('attendance', '&order=date.desc');
+        headers = ['ID','Class ID','User ID','Date','Status','Marked By'];
+        rows = data.map(a => [a.id, a.class_id, a.user_id, a.date, a.status, a.marked_by]);
+      }
+      if (!rows || !rows.length) { showToast('No data to export.', true); return; }
+      const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `${type}-report.csv`; a.click();
+      URL.revokeObjectURL(url);
+      showToast('✓ CSV downloaded!');
+    };
+  };
+
+  pages.institution = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>Institution Settings</h2>
+      <div class="card mt-md" style="max-width:600px;">
+        <div class="card-body">
+          <p class="text-sm mb-md">Configure institution-level settings here. Changes take effect immediately.</p>
+          <div class="form-group"><label>Institute Name</label><input id="inst-name" class="form-input" value="Heimatliebe Institute" /></div>
+          <div class="form-group"><label>Default Currency</label><input id="inst-currency" class="form-input" value="MWK" /></div>
+          <div class="form-group"><label>Current Term</label><select id="inst-term" class="form-select"><option>Term 1</option><option>Term 2</option><option selected>Term 3</option></select></div>
+          <div class="form-group"><label>Academic Year</label><input id="inst-year" class="form-input" value="${new Date().getFullYear()}" /></div>
+          <button class="btn btn-primary" onclick="showToast('Settings saved locally. (Server sync coming soon.)')">Save Settings</button>
+        </div>
+      </div>`;
+  };
+
+  pages.profile = function() {
+    document.getElementById('portal-content').innerHTML = `
+      <h2>My Profile</h2>
+      <div class="card mt-md" style="max-width:600px;"><div class="card-body">
+        <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${esc(s.full_name)}</div></div>
+        <div class="detail-row"><div class="detail-label">Staff ID</div><div class="detail-value td-id">${esc(s.staff_id || s.user_id)}</div></div>
+        <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${esc(s.email||'—')}</div></div>
+        <div class="detail-row"><div class="detail-label">Role</div><div class="detail-value"><span class="badge badge-active">${esc(s.role)}</span></div></div>
+      </div></div>`;
+  };
+
+  initPortal(s, pages);
+})();
+</script>
+</body>

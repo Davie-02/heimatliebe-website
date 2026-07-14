@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Portal — Heimatliebe Institute</title>
+  <link rel="stylesheet" href="/css/lms.css" />
+  <style>
+    .grade-input { width: 80px; padding: 0.4rem; border: 2px solid rgba(27,67,50,0.15); font-family: var(--hi-font-body); font-size: 0.85rem; }
+    .class-card { padding: 1rem; border: 2px solid var(--hi-charcoal); background: var(--hi-white); cursor: pointer; transition: all 0.12s; }
+    .class-card:hover { transform: translate(-2px,-2px); box-shadow: 3px 3px 0 var(--hi-charcoal); }
+    .class-card .cc-name { font-family: var(--hi-font-display); font-weight: 700; color: var(--hi-green-deep); font-size: 1.1rem; }
+    .class-card .cc-meta { font-size: 0.8rem; color: var(--hi-slate); }
+  </style>
+</head>
+<body>
+<script src="/supabase.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+(function boot() {
+  const session = requireRole(['teacher', 'admin', 'superadmin'], '/login.html');
+  if (!session) return;
+  const s = session;
+
+  const navItems = [
+    { icon: '📊', label: 'Dashboard',         page: 'dashboard',     section: 'Overview' },
+    { icon: '👨‍🏫', label: 'My Classes',       page: 'classes',       section: 'Teaching' },
+    { icon: '📝', label: 'Assignments',        page: 'assignments' },
+    { icon: '🧪', label: 'Exams',              page: 'exams' },
+    { icon: '📈', label: 'Grade Submissions',  page: 'grading' },
+    { icon: '👥', label: 'Students',           page: 'students' },
+    { icon: '📋', label: 'Attendance',         page: 'attendance' },
+    { icon: '💬', label: 'Messages',           page: 'messages',      section: 'Communication' },
+    { icon: '🔔', label: 'Notifications',      page: 'notifications' },
+    { icon: '👤', label: 'My Profile',         page: 'profile',       section: 'Account' },
+  ];
+
+  document.body.innerHTML = renderSidebar(s, navItems);
+  const pages = {};
+
+  /* ── DASHBOARD ──────────────────────────────────────────── */
+  pages.dashboard = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `
+      <div class="dashboard-welcome">
+        <div class="eyebrow">Teacher Dashboard</div>
+        <h1>${esc(s.full_name)}</h1>
+        <p>${esc(s.department || 'Teaching')} · ${esc(s.staff_id || 'Staff')}</p>
+      </div>
+      <div class="stats-row" id="dash-stats">
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+        <div class="stat-card skeleton" style="height:80px;"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-header"><h3>Pending Submissions</h3></div><div class="card-body" id="dash-submissions"></div></div>
+        <div class="card"><div class="card-header"><h3>Upcoming Exams</h3></div><div class="card-body" id="dash-exams"></div></div>
+      </div>`;
+
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const assignments = await loadData('assignments', `&class_id=in.(${classes.map(c=>c.id).join(',')||'0'})`);
+    const submissions = await loadData('submissions', `&assignment_id=in.(${assignments.map(a=>a.id).join(',')||'0'})&grade=is.null`);
+    const exams = await loadData('exams', `&class_id=in.(${classes.map(c=>c.id).join(',')||'0'})&published=eq.true&order=date.asc`);
+
+    const pending = submissions.filter(s => s.grade === null || s.grade === undefined);
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${classes.length}</div><div class="stat-lbl">My Classes</div></div>
+      <div class="stat-card"><div class="stat-num">${assignments.length}</div><div class="stat-lbl">Assignments</div></div>
+      <div class="stat-card accent"><div class="stat-num">${pending.length}</div><div class="stat-lbl">Pending Grading</div></div>
+      <div class="stat-card"><div class="stat-num">${exams.length}</div><div class="stat-lbl">Upcoming Exams</div></div>`;
+    document.getElementById('dash-submissions').innerHTML = pending.length
+      ? pending.slice(0, 10).map(p => `<div class="upcoming-card"><div class="uc-title">Submission #${p.id}</div><div class="uc-meta">Assignment: ${p.assignment_id} · <button class="btn btn-sm btn-primary" onclick="navigateTo('grading')">Grade</button></div></div>`).join('')
+      : '<p class="text-muted" style="padding:1rem">All submissions graded. ✓</p>';
+    document.getElementById('dash-exams').innerHTML = exams.length
+      ? exams.slice(0, 5).map(e => `<div class="upcoming-card"><div class="uc-title">${esc(e.title)}</div><div class="uc-meta">${formatDate(e.date)}</div></div>`).join('')
+      : '<p class="text-muted" style="padding:1rem">No upcoming exams.</p>';
+  };
+
+  function navigateTo(page) {
+    const link = document.querySelector(`.nav-link[data-page="${page}"]`);
+    if (link) link.click();
+  }
+
+  /* ── CLASSES ────────────────────────────────────────────── */
+  pages.classes = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>My Classes</h2></div><div class="grid-auto" id="classes-grid"></div>`;
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const grid = document.getElementById('classes-grid');
+    if (!classes.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="empty-icon">👨‍🏫</div><p>No classes assigned yet.</p></div>';
+      return;
+    }
+    grid.innerHTML = classes.map(c => `
+      <div class="class-card" onclick="openModal('${esc(c.name)}', \`
+        <div class='detail-row'><div class='detail-label'>Course</div><div class='detail-value'>\${esc('${esc(c.course_id || '')}')}</div></div>
+        <div class='detail-row'><div class='detail-label'>Schedule</div><div class='detail-value'>\${esc('${esc(c.schedule || 'TBD')}')}</div></div>
+        <div class='detail-row'><div class='detail-label'>Room</div><div class='detail-value'>\${esc('${esc(c.room || 'TBD')}')}</div></div>
+        <div class='detail-row'><div class='detail-label'>Period</div><div class='detail-value'>\${'${c.start_date || '—'} to ${c.end_date || '—}'}</div></div>
+        <div class='detail-row'><div class='detail-label'>Max Students</div><div class='detail-value'>\${'${c.max_students || 30}'}</div></div>
+      \`)">
+        <div class="cc-name">${esc(c.name)}</div>
+        <div class="cc-meta">${esc(c.schedule || 'Schedule TBD')} · Room ${esc(c.room || 'TBD')}</div></div>
+    `).join('');
+  };
+
+  /* ── ASSIGNMENTS ────────────────────────────────────────── */
+  pages.assignments = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Assignments</h2><button class="btn btn-sm btn-primary" onclick="showNewAssignment()">+ New Assignment</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Title</th><th>Class</th><th>Due Date</th><th>Submissions</th><th>Actions</th></tr></thead><tbody id="assignments-body"></tbody></table></div>`;
+
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const classIds = classes.map(c => c.id).join(',') || '0';
+    const assignments = await loadData('assignments', `&class_id=in.(${classIds})&order=due_date.desc`);
+    const submissions = await loadData('submissions', `&assignment_id=in.(${assignments.map(a=>a.id).join(',')||'0'})`);
+
+    const tbody = document.getElementById('assignments-body');
+    if (!assignments.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No assignments yet.</td></tr>';
+      return;
+    }
+    window._assignments = assignments;
+    tbody.innerHTML = assignments.map(a => {
+      const subs = submissions.filter(s => s.assignment_id == a.id);
+      const graded = subs.filter(s => s.grade !== null).length;
+      return `<tr>
+        <td class="td-name">${esc(a.title)}</td>
+        <td>${esc(a.class_id ? classes.find(c=>c.id==a.class_id)?.name || 'Class' : 'General')}</td>
+        <td>${formatDate(a.due_date)}</td>
+        <td>${subs.length} total · ${graded} graded</td>
+        <td><button class="btn btn-sm btn-outline" onclick="deleteAssignment('${a.id}')">Delete</button></td>
+      </tr>`;
+    }).join('');
+  };
+
+  window.showNewAssignment = async function() {
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    openModal('New Assignment', `
+      <div class="form-group"><label>Title</label><input id="as-title" class="form-input" /></div>
+      <div class="form-group"><label>Class</label><select id="as-class" class="form-select">${classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Description</label><textarea id="as-desc" class="form-textarea" rows="3"></textarea></div>
+      <div class="form-group"><label>Due Date</label><input id="as-due" class="form-input" type="datetime-local" /></div>
+      <div class="form-group"><label>Total Points</label><input id="as-points" class="form-input" type="number" value="100" /></div>
+      <button class="btn btn-primary" onclick="saveAssignment()">Create Assignment</button>`);
+  };
+
+  window.saveAssignment = async function() {
+    const title = document.getElementById('as-title').value;
+    const classId = document.getElementById('as-class').value;
+    const desc = document.getElementById('as-desc').value;
+    const due = document.getElementById('as-due').value;
+    const points = document.getElementById('as-points').value;
+    if (!title) { showToast('Title required.', true); return; }
+    const res = await sbAdmin('/rest/v1/assignments', { method: 'POST', body: JSON.stringify({ title, class_id: classId, description: desc, due_date: due, total_points: points, created_by: s.id }) });
+    if (res.ok) { closeModal(); showToast('✓ Assignment created!'); pages.assignments(); invalidateCache('assignments'); }
+    else showToast('Error creating assignment.', true);
+  };
+
+  window.deleteAssignment = async function(id) {
+    if (!confirm('Delete this assignment?')) return;
+    await sbAdmin(`/rest/v1/assignments?id=eq.${id}`, { method: 'DELETE' });
+    showToast('Deleted.');
+    pages.assignments();
+    invalidateCache('assignments');
+  };
+
+  /* ── EXAMS ──────────────────────────────────────────────── */
+  pages.exams = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Exams</h2><button class="btn btn-sm btn-primary" onclick="showNewExam()">+ New Exam</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Title</th><th>Class</th><th>Date</th><th>Duration</th><th>Published</th><th>Actions</th></tr></thead><tbody id="exams-body"></tbody></table></div>`;
+
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const classIds = classes.map(c => c.id).join(',') || '0';
+    const exams = await loadData('exams', `&class_id=in.(${classIds})&order=date.desc`);
+
+    document.getElementById('exams-body').innerHTML = exams.length
+      ? exams.map(e => `<tr>
+          <td class="td-name">${esc(e.title)}</td>
+          <td>${esc(classes.find(c=>c.id==e.class_id)?.name || '—')}</td>
+          <td>${formatDate(e.date)}</td>
+          <td>${e.duration_minutes || '—'} min</td>
+          <td><span class="badge ${e.published ? 'badge-published' : 'badge-draft'}">${e.published ? 'Published' : 'Draft'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline" onclick="toggleExamPublish('${e.id}','${e.published}')">${e.published ? 'Unpublish' : 'Publish'}</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteExam('${e.id}')">Delete</button>
+          </td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" style="text-align:center;padding:2rem">No exams created.</td></tr>';
+  };
+
+  window.showNewExam = async function() {
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    openModal('Create Exam', `
+      <div class="form-group"><label>Title</label><input id="ex-title" class="form-input" /></div>
+      <div class="form-group"><label>Class</label><select id="ex-class" class="form-select">${classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Date & Time</label><input id="ex-date" class="form-input" type="datetime-local" /></div>
+      <div class="form-group"><label>Duration (minutes)</label><input id="ex-duration" class="form-input" type="number" value="60" /></div>
+      <div class="form-group"><label>Description</label><textarea id="ex-desc" class="form-textarea" rows="3"></textarea></div>
+      <div class="form-group"><label>Questions (JSON array)</label><textarea id="ex-questions" class="form-textarea" rows="6" placeholder='[{"text":"What is 2+2?","type":"mcq","options":["3","4","5"]}]'></textarea></div>
+      <button class="btn btn-primary" onclick="saveExam()">Create Exam</button>`);
+  };
+
+  window.saveExam = async function() {
+    let questions = [];
+    try { questions = JSON.parse(document.getElementById('ex-questions').value || '[]'); } catch { showToast('Invalid JSON in questions.', true); return; }
+    const payload = {
+      title: document.getElementById('ex-title').value,
+      class_id: document.getElementById('ex-class').value,
+      date: document.getElementById('ex-date').value,
+      duration_minutes: document.getElementById('ex-duration').value,
+      description: document.getElementById('ex-desc').value,
+      questions,
+      published: false,
+      created_by: s.id
+    };
+    if (!payload.title) { showToast('Title required.', true); return; }
+    const res = await sbAdmin('/rest/v1/exams', { method: 'POST', body: JSON.stringify(payload) });
+    if (res.ok) { closeModal(); showToast('✓ Exam created!'); pages.exams(); invalidateCache('exams'); }
+    else showToast('Error creating exam.', true);
+  };
+
+  window.toggleExamPublish = async function(id, current) {
+    await sbAdmin(`/rest/v1/exams?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ published: current === 'true' ? false : true }) });
+    showToast('Updated.');
+    pages.exams();
+    invalidateCache('exams');
+  };
+
+  window.deleteExam = async function(id) {
+    if (!confirm('Delete this exam?')) return;
+    await sbAdmin(`/rest/v1/exams?id=eq.${id}`, { method: 'DELETE' });
+    showToast('Deleted.');
+    pages.exams();
+    invalidateCache('exams');
+  };
+
+  /* ── GRADING ────────────────────────────────────────────── */
+  pages.grading = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Grade Submissions</h2></div>
+      <div class="table-wrap"><table><thead><tr><th>Student</th><th>Assignment</th><th>Submitted</th><th>Current Grade</th><th>Action</th></tr></thead><tbody id="grade-body"></tbody></table></div>`;
+
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const classIds = classes.map(c => c.id).join(',') || '0';
+    const assignments = await loadData('assignments', `&class_id=in.(${classIds})`);
+    const asIds = assignments.map(a => a.id).join(',') || '0';
+    const submissions = await loadData('submissions', `&assignment_id=in.(${asIds})&order=submitted_at.desc`);
+    const users = await loadData('users', '');
+
+    const tbody = document.getElementById('grade-body');
+    if (!submissions.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem">No submissions to grade.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = submissions.map(sub => {
+      const student = users.find(u => u.id == sub.user_id);
+      const as = assignments.find(a => a.id == sub.assignment_id);
+      return `<tr>
+        <td class="td-name">${esc(student?.full_name || 'Student #'+sub.user_id)}</td>
+        <td>${esc(as?.title || 'Assignment #'+sub.assignment_id)}</td>
+        <td class="text-sm">${formatDate(sub.submitted_at)}</td>
+        <td>${sub.grade !== null ? `${sub.grade}/${as?.total_points || 100}` : '<span class="badge badge-pending">Ungraded</span>'}</td>
+        <td>
+          <input class="grade-input" id="grade-${sub.id}" type="number" value="${sub.grade || ''}" placeholder="Score" ${sub.grade !== null ? '' : ''} />
+          <button class="btn btn-sm btn-primary" onclick="saveGrade('${sub.id}','${as?.total_points || 100}')">Save</button>
+          ${sub.feedback ? `<span class="text-sm">FB: ${esc(sub.feedback)}</span>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  };
+
+  window.saveGrade = async function(subId, maxPoints) {
+    const grade = document.getElementById(`grade-${subId}`).value;
+    if (grade === '' || isNaN(grade)) { showToast('Enter a valid grade.', true); return; }
+    await sbAdmin(`/rest/v1/submissions?id=eq.${subId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ grade: Number(grade), graded_by: s.id, graded_at: new Date().toISOString() })
+    });
+    showToast('✓ Grade saved!');
+    pages.grading();
+    invalidateCache('submissions');
+  };
+
+  /* ── STUDENTS ───────────────────────────────────────────── */
+  pages.students = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<h2>My Students</h2>
+      <div class="table-wrap mt-md"><table><thead><tr><th>Name</th><th>Student ID</th><th>Course</th><th>Level</th><th>Email</th></tr></thead><tbody id="students-body"></tbody></table></div>`;
+
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const classIds = classes.map(c => c.id).join(',') || '0';
+    const enrollments = await loadData('class_enrollments', `&class_id=in.(${classIds})`);
+    const userIds = [...new Set(enrollments.map(e => e.user_id))];
+    const students = await loadData('users', `&role=eq.student&id=in.(${userIds.join(',')||'0'})`);
+
+    document.getElementById('students-body').innerHTML = students.length
+      ? students.map(u => `<tr><td class="td-name">${esc(u.full_name)}</td><td class="td-id">${esc(u.user_id)}</td><td>${esc(u.course || '—')}</td><td>${esc(u.level || '—')}</td><td>${esc(u.email || '—')}</td></tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;padding:2rem">No students enrolled in your classes.</td></tr>';
+  };
+
+  /* ── ATTENDANCE ─────────────────────────────────────────── */
+  pages.attendance = async function() {
+    const content = document.getElementById('portal-content');
+    const today = new Date().toISOString().slice(0, 10);
+    content.innerHTML = `
+      <div class="flex justify-between items-center mb-md"><h2>Mark Attendance</h2></div>
+      <div class="flex gap-md items-center mb-md">
+        <select id="att-class" class="form-select" style="max-width:300px;">
+          <option>Loading classes...</option>
+        </select>
+        <input type="date" id="att-date" class="form-input" style="max-width:200px;" value="${today}" />
+        <button class="btn btn-sm btn-primary" onclick="loadAttendance()">Load</button>
+      </div>
+      <div id="att-body"></div>`;
+
+    const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+    const sel = document.getElementById('att-class');
+    sel.innerHTML = classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+
+    window.loadAttendance = async function() {
+      const classId = document.getElementById('att-class').value;
+      const date = document.getElementById('att-date').value;
+      if (!classId || !date) { showToast('Select class and date.', true); return; }
+
+      const enrollments = await loadData('class_enrollments', `&class_id=eq.${classId}`);
+      const userIds = enrollments.map(e => e.user_id);
+      const students = await loadData('users', `&id=in.(${userIds.join(',')||'0'})`);
+      const existing = await loadData('attendance', `&class_id=eq.${classId}&date=eq.${date}`);
+
+      const attBody = document.getElementById('att-body');
+      if (!students.length) { attBody.innerHTML = '<p class="text-muted">No students in this class.</p>'; return; }
+
+      attBody.innerHTML = `
+        <div class="table-wrap"><table><thead><tr><th>Student</th><th>Status</th></tr></thead><tbody>
+          ${students.map(u => {
+            const record = existing.find(e => e.user_id == u.id);
+            const status = record?.status || 'present';
+            return `<tr>
+              <td class="td-name">${esc(u.full_name)}</td>
+              <td>
+                <select class="form-select att-status" data-student="${u.id}" style="max-width:150px;">
+                  <option value="present" ${status==='present'?'selected':''}>Present</option>
+                  <option value="absent" ${status==='absent'?'selected':''}>Absent</option>
+                  <option value="late" ${status==='late'?'selected':''}>Late</option>
+                  <option value="excused" ${status==='excused'?'selected':''}>Excused</option>
+                </select>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody></table></div>
+        <button class="btn btn-primary mt-md" onclick="saveAttendance('${classId}','${date}')">Save Attendance</button>`;
+    };
+
+    window.saveAttendance = async function(classId, date) {
+      const rows = document.querySelectorAll('.att-status');
+      for (const sel of rows) {
+        const userId = sel.dataset.student;
+        const status = sel.value;
+        // Upsert: try insert, update if exists
+        const existing = await loadData('attendance', `&class_id=eq.${classId}&user_id=eq.${userId}&date=eq.${date}`);
+        if (existing.length) {
+          await sbAdmin(`/rest/v1/attendance?id=eq.${existing[0].id}`, { method: 'PATCH', body: JSON.stringify({ status, marked_by: s.id }) });
+        } else {
+          await sbAdmin('/rest/v1/attendance', { method: 'POST', body: JSON.stringify({ class_id: classId, user_id: userId, date, status, marked_by: s.id }) });
+        }
+      }
+      showToast('✓ Attendance saved!');
+      invalidateCache('attendance');
+    };
+  };
+
+  /* ── MESSAGES ───────────────────────────────────────────── */
+  pages.messages = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Messages</h2><button class="btn btn-sm btn-primary" onclick="composeMsg()">+ New Message</button></div><div id="messages-list"></div>`;
+    const parts = await loadData('conversation_participants', `&user_id=eq.${s.id}`);
+    if (!parts.length) { document.getElementById('messages-list').innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>No messages.</p></div>'; return; }
+    const convIds = parts.map(p => p.conversation_id).join(',');
+    const convs = await loadData('conversations', `&id=in.(${convIds})&order=created_at.desc`);
+    document.getElementById('messages-list').innerHTML = convs.map(c => `<div class="msg-item" onclick="viewConv('${c.id}')"><div class="msg-subject">${esc(c.subject || '(No Subject)')}</div><div class="msg-time">${formatDateTime(c.created_at)}</div></div>`).join('');
+  };
+
+  window.composeMsg = function() {
+    openModal('New Message', `
+      <div class="form-group"><label>Recipient (Student ID or Email)</label><input id="msg-to" class="form-input" /></div>
+      <div class="form-group"><label>Subject</label><input id="msg-subject" class="form-input" /></div>
+      <div class="form-group"><label>Message</label><textarea id="msg-body" class="form-textarea" rows="5"></textarea></div>
+      <button class="btn btn-primary" onclick="sendMsg()">Send</button>`);
+  };
+
+  window.sendMsg = async function() {
+    const to = document.getElementById('msg-to').value.trim();
+    const subject = document.getElementById('msg-subject').value.trim();
+    const body = document.getElementById('msg-body').value.trim();
+    if (!to || !body) { showToast('Recipient and message required.', true); return; }
+    const users = await loadData('users', `&or=(user_id.eq.${encodeURIComponent(to)},email.eq.${encodeURIComponent(to)})`);
+    if (!users.length) { showToast('User not found.', true); return; }
+    const conv = await sbAdmin('/rest/v1/conversations', { method: 'POST', body: JSON.stringify({ subject, created_by: s.id }) });
+    const convId = conv.data[0].id;
+    await sbAdmin('/rest/v1/conversation_participants', { method: 'POST', body: JSON.stringify({ conversation_id: convId, user_id: s.id }) });
+    await sbAdmin('/rest/v1/conversation_participants', { method: 'POST', body: JSON.stringify({ conversation_id: convId, user_id: users[0].id }) });
+    await sbAdmin('/rest/v1/messages', { method: 'POST', body: JSON.stringify({ conversation_id: convId, sender_id: s.id, body }) });
+    closeModal(); showToast('✓ Sent!'); pages.messages();
+    invalidateCache('conversation_participants'); invalidateCache('conversations');
+  };
+
+  window.viewConv = async function(convId) {
+    const msgs = await loadData('messages', `&conversation_id=eq.${convId}&order=created_at.asc`);
+    openModal('Conversation', `<div style="max-height:400px;overflow-y:auto;">${msgs.map(m => `<div style="padding:0.65rem 0;border-bottom:1px solid rgba(27,67,50,0.06)"><strong style="font-size:0.78rem;color:var(--hi-slate)">${m.sender_id == s.id ? 'You' : 'User'}</strong><p style="margin-top:0.2rem;font-size:0.88rem">${esc(m.body)}</p><span class="text-sm text-muted">${formatDateTime(m.created_at)}</span></div>`).join('')}</div>
+      <div class="mt-md flex gap-sm"><input id="reply-text" class="form-input" style="flex:1" placeholder="Reply..." /><button class="btn btn-sm btn-primary" onclick="replyMsg('${convId}')">Send</button></div>`);
+  };
+
+  window.replyMsg = async function(convId) {
+    const body = document.getElementById('reply-text').value.trim();
+    if (!body) return;
+    await sbAdmin('/rest/v1/messages', { method: 'POST', body: JSON.stringify({ conversation_id: convId, sender_id: s.id, body }) });
+    showToast('✓ Sent'); closeModal();
+    invalidateCache('messages');
+  };
+
+  /* ── NOTIFICATIONS ──────────────────────────────────────── */
+  pages.notifications = async function() {
+    const content = document.getElementById('portal-content');
+    content.innerHTML = `<div class="flex justify-between items-center mb-md"><h2>Notifications</h2><button class="btn btn-sm btn-primary" onclick="showNewNotif()">+ Send Notification</button></div><div id="notif-list"></div>`;
+    const notifs = await loadData('notifications', `&user_id=eq.${s.id}&order=created_at.desc`);
+    document.getElementById('notif-list').innerHTML = notifs.length
+      ? notifs.map(n => `<div class="upcoming-card"><div class="uc-title">${esc(n.title)}</div><div class="uc-meta">${esc(n.body || '')} · ${formatDateTime(n.created_at)}</div></div>`).join('')
+      : '<div class="empty-state"><div class="empty-icon">🔔</div><p>No notifications.</p></div>';
+  };
+
+  window.showNewNotif = function() {
+    openModal('Send Notification', `
+      <div class="form-group"><label>Recipient (Student ID)</label><input id="notif-to" class="form-input" placeholder="Leave blank for all your students" /></div>
+      <div class="form-group"><label>Title</label><input id="notif-title" class="form-input" /></div>
+      <div class="form-group"><label>Message</label><textarea id="notif-body" class="form-textarea" rows="4"></textarea></div>
+      <button class="btn btn-primary" onclick="sendNotif()">Send</button>`);
+  };
+
+  window.sendNotif = async function() {
+    const to = document.getElementById('notif-to').value.trim();
+    const title = document.getElementById('notif-title').value.trim();
+    const body = document.getElementById('notif-body').value.trim();
+    if (!title) { showToast('Title required.', true); return; }
+
+    if (to) {
+      const users = await loadData('users', `&user_id=eq.${encodeURIComponent(to)}`);
+      if (users.length) {
+        await sbAdmin('/rest/v1/notifications', { method: 'POST', body: JSON.stringify({ user_id: users[0].id, title, body, type: 'info' }) });
+      }
+    } else {
+      // Send to all students in my classes
+      const classes = await loadData('classes', `&teacher_id=eq.${s.id}`);
+      const classIds = classes.map(c => c.id).join(',') || '0';
+      const enrollments = await loadData('class_enrollments', `&class_id=in.(${classIds})`);
+      const userIds = [...new Set(enrollments.map(e => e.user_id))];
+      for (const uid of userIds) {
+        await sbAdmin('/rest/v1/notifications', { method: 'POST', body: JSON.stringify({ user_id: uid, title, body, type: 'info' }) });
+      }
+    }
+    closeModal(); showToast('✓ Notifications sent!');
+    invalidateCache('notifications');
+  };
+
+  /* ── PROFILE ────────────────────────────────────────────── */
+  pages.profile = function() {
+    document.getElementById('portal-content').innerHTML = `
+      <h2>My Profile</h2>
+      <div class="card mt-md" style="max-width:600px;"><div class="card-body">
+        <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${esc(s.full_name)}</div></div>
+        <div class="detail-row"><div class="detail-label">Staff ID</div><div class="detail-value td-id">${esc(s.staff_id || s.user_id)}</div></div>
+        <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${esc(s.email||'—')}</div></div>
+        <div class="detail-row"><div class="detail-label">Department</div><div class="detail-value">${esc(s.department||'Teaching')}</div></div>
+        <div class="detail-row"><div class="detail-label">Role</div><div class="detail-value"><span class="badge badge-active">${esc(s.role)}</span></div></div>
+      </div></div>`;
+  };
+
+  initPortal(s, pages);
+})();
+</script>
+</body>
+</html>

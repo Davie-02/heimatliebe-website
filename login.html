@@ -93,6 +93,7 @@
 </div>
 
 <script src="/supabase.js"></script>
+<script src="/js/auth.js"></script>
 <script>
 // Wait for config before any Supabase calls
 document.addEventListener("DOMContentLoaded", () => configReady());
@@ -100,11 +101,17 @@ document.addEventListener("DOMContentLoaded", () => configReady());
 const params = new URLSearchParams(window.location.search);
 if (params.get('next')) {
   const info = document.getElementById('alert-info');
-  info.textContent = 'Please log in to access the student library.';
+  info.textContent = 'Please log in to access the student portal.';
   info.classList.add('show');
 }
+// Error message
+if (params.get('error') === 'unauthorized') {
+  const err = document.getElementById('alert-error');
+  err.textContent = 'You do not have access to that area.';
+  err.classList.add('show');
+}
 
-// Pre-fill student ID if passed in URL (e.g. from admin approval email link)
+// Pre-fill student ID if passed in URL
 if (params.get('id')) {
   document.getElementById('student-id-input').value = params.get('id');
 }
@@ -116,36 +123,39 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   const errEl = document.getElementById('alert-error');
   errEl.classList.remove('show');
 
-  const studentId = f.student_id.value.trim().toUpperCase();
+  const loginId = f.student_id.value.trim().toUpperCase();
   const password  = f.password.value;
+
+  if (!loginId || !password) {
+    errEl.textContent = 'Please enter your User ID and password.';
+    errEl.classList.add('show');
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Checking…';
 
   try {
-    await configReady(); // ensure config loaded before DB call
-    const pwHash = await hashPassword(password);
+    const { ok, user, error } = await loginUser(loginId, password);
 
-    // Look up student by student_id and password_hash
-    const { ok, data } = await sbAdmin(
-      `/rest/v1/students?student_id=eq.${encodeURIComponent(studentId)}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`,
-      { method: 'GET', headers: { 'Prefer': '' } }
-    );
-
-    if (!ok || !data || !Array.isArray(data) || data.length === 0) {
-      errEl.textContent = 'Invalid Student ID or password. Please check your credentials.';
+    if (!ok || !user) {
+      errEl.textContent = error || 'Invalid credentials. Please check your login ID and password.';
       errEl.classList.add('show');
       btn.disabled = false;
       btn.textContent = 'Log In';
       return;
     }
 
-    // Save session
-    saveStudentSession(data[0]);
+    // Save session (role-aware)
+    saveSession(user);
 
-    // Redirect
-    const next = params.get('next') || 'library.html';
-    window.location.href = next;
+    // Redirect based on role or next param
+    const next = params.get('next');
+    if (next && !next.startsWith('/admin/')) {
+      window.location.href = next;
+    } else {
+      redirectToPortal();
+    }
 
   } catch (err) {
     console.error(err);
