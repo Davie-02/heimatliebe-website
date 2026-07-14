@@ -204,8 +204,8 @@
 <div id="loadingOverlay"><div class="loaderBox"><div class="spinner"></div><h3>Loading...</h3></div></div>
 <div id="modal"><div class="modalWindow"><div class="modalHeader"><h2 id="modalTitle">Modal</h2><button onclick="closeModal()">✕</button></div><div id="modalBody"></div></div></div>
 
-<script src="/admin/auth.js"></script>
-<script>
+<script src="/admin/auth.js" defer></script>
+<script defer>
 (function boot() {
   if (window.__HMLI_ADMIN_READY__) initAdminCMS();
   else window.addEventListener('hmli:admin:ready', initAdminCMS, { once: true });

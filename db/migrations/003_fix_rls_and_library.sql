@@ -46,23 +46,7 @@ INSERT INTO storage.buckets (id, name, public) VALUES
   ('uploads', 'uploads', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 🔐 Create storage access policies using PL/pgSQL (safe to re-run)
--- NOTE: CREATE POLICY IF NOT EXISTS is NOT supported, so we use DO block
-DO $$
-BEGIN
-  -- Drop existing policies first to make this idempotent
-  DROP POLICY IF EXISTS "public_read" ON storage.objects;
-  DROP POLICY IF EXISTS "public_insert" ON storage.objects;
-  DROP POLICY IF EXISTS "public_delete" ON storage.objects;
+-- 🔐 Create permissive storage access policies
+CREATE POLICY "Public Access" ON storage.objects FOR ALL USING (true) WITH CHECK (true);
 
-  -- Create them fresh
-  CREATE POLICY "public_read" ON storage.objects
-    FOR SELECT USING (true);
-
-  CREATE POLICY "public_insert" ON storage.objects
-    FOR INSERT WITH CHECK (true);
-
-  CREATE POLICY "public_delete" ON storage.objects
-    FOR DELETE USING (true);
-END
-$$;
+SELECT 'RLS disabled, library fixed, and storage configured.' as result;
