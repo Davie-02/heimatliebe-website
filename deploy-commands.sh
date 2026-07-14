@@ -7,18 +7,11 @@ set -euo pipefail
 # ---------------------------
 # Configuration (edit as needed)
 # ---------------------------
-export SUPABASE_URL="https://mcdcwrwzmifmouutpubn.supabase.co"
-export SUPABASE_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jZGN3cnd6bWlmbW91dXRwdWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDY1MjUsImV4cCI6MjA5Nzk4MjUyNX0.Xv_CrVMigI0nibRVa03NvPWgJQ9vVoJ1_T1xiRJWqTs"
-PROJECT_REF="mcdcwrwzmifmouutpubn"
-
-# Admin password used only for the local runtime config example
-export ADMIN_PASSWORD="change-me"
-
-# ---------------------------
-# 1) Write runtime config.json for frontend (not checked into git)
-# ---------------------------
-echo "Writing config.json (used by frontend at runtime)"
-./write-config.sh
+if [ -z "${PROJECT_REF}" ]; then
+  echo "Error: PROJECT_REF environment variable is not set."
+  echo "Please set it to your Supabase project reference ID."
+  exit 1
+fi
 
 # ---------------------------
 # 2) Supabase CLI: login & link project

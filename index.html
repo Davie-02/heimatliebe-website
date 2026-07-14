@@ -593,15 +593,15 @@
 </footer>
 
 <script>
-// ── YEAR ─────────────────────────────────────────────────────────
+// ── Dynamic Year for Footer ────────────────────────────────────
 document.getElementById('yr').textContent = new Date().getFullYear();
 
-// ── BACK TO TOP ───────────────────────────────────────────────────
+// ── "Back to Top" Button Visibility ────────────────────────────
 window.addEventListener('scroll', () => {
   document.getElementById('back-top').classList.toggle('visible', window.scrollY > 400);
 }, { passive: true });
 
-// ── NAV TOGGLE ────────────────────────────────────────────────────
+// ── Mobile Navigation Toggle ───────────────────────────────────
 const navToggle = document.getElementById('nav-toggle');
 const navLinks  = document.getElementById('nav-links');
 navToggle.addEventListener('click', () => {
@@ -609,13 +609,15 @@ navToggle.addEventListener('click', () => {
   navToggle.classList.toggle('open', open);
   navToggle.setAttribute('aria-expanded', open);
 });
+// Close mobile menu when a link is clicked
 navLinks.querySelectorAll('a').forEach(l => l.addEventListener('click', () => {
   navLinks.classList.remove('open');
   navToggle.classList.remove('open');
   navToggle.setAttribute('aria-expanded', 'false');
 }));
 
-// ── CONTACT FORM → WHATSAPP ───────────────────────────────────────
+// ── Contact Form to WhatsApp Redirection ───────────────────────
+// Handles the contact form submission by opening a pre-filled WhatsApp chat.
 function handleEnquiry(e) {
   e.preventDefault();
   const f  = e.target;
@@ -632,7 +634,8 @@ function handleEnquiry(e) {
   f.reset();
 }
 
-// ── LIGHTBOX ──────────────────────────────────────────────────────
+// ── Photo Gallery Lightbox ─────────────────────────────────────
+// Manages the full-screen image viewer for the gallery.
 let allPhotos = [], currentPhoto = 0;
 
 function openLightbox(photos, idx) {
@@ -662,7 +665,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft')  { currentPhoto = (currentPhoto - 1 + allPhotos.length) % allPhotos.length; showPhoto(currentPhoto); }
 });
 
-// ── NEWS MODAL ────────────────────────────────────────────────────
+// ── News Article Modal ─────────────────────────────────────────
+// Manages the modal popup for reading full news articles.
 function openModal(item) {
   const html = [
     item.category ? `<div class="modal-cat">${item.category}</div>` : '',
@@ -686,7 +690,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
-// ── GALLERY FILTER ────────────────────────────────────────────────
+// ── Gallery Filtering Logic ────────────────────────────────────
+// Filters the displayed gallery images based on category.
 let _galleryAllItems = [];
 function filterGallery(cat, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -698,9 +703,14 @@ function filterGallery(cat, btn) {
   renderGalleryItems(visible);
 }
 
-// ── FRONT-MATTER PARSER ───────────────────────────────────────────
+// ── Markdown Front-Matter Parser ───────────────────────────────
+/**
+ * A robust parser for extracting YAML front-matter and body content from a markdown string.
+ * It handles simple key-value pairs and nested lists for complex data structures like photo galleries.
+ * @param {string} text - The raw markdown content.
+ * @returns {{fm: object, body: string}} - An object with the parsed front-matter and the body.
+ */
 function parseFrontMatter(text) {
-
     const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 
     if (!match) {
@@ -712,30 +722,23 @@ function parseFrontMatter(text) {
 
     const yaml = match[1];
     const body = text.slice(match[0].length).trim();
-
     const fm = {};
-
     const lines = yaml.split(/\r?\n/);
-
     let currentList = null;
 
     for (const line of lines) {
-
+        // Handle list items (e.g., for gallery photos)
         if (/^\s*-\s*/.test(line) && currentList) {
-
             const item = {};
-
             line.replace(/-\s*([^:]+):\s*(.+)/, (_, key, value) => {
                 item[key.trim()] = value.trim().replace(/^['"]|['"]$/g, "");
             });
-
             fm[currentList].push(item);
-
             continue;
         }
 
+        // Handle simple key-value pairs
         const m = line.match(/^([^:]+):\s*(.*)$/);
-
         if (!m) continue;
 
         const key = m[1].trim();
@@ -748,11 +751,9 @@ function parseFrontMatter(text) {
         }
 
         currentList = null;
-
         value = value.replace(/^['"]|['"]$/g, "");
 
-        if (value === "true") value = true;
-        else if (value === "false") value = false;
+        if (value === "true") value = true; else if (value === "false") value = false;
 
         fm[key] = value;
     }
@@ -763,18 +764,26 @@ function parseFrontMatter(text) {
     };
 }
 
-// ── CONTENT LOADER ────────────────────────────────────────────────
-// Files are served from the same origin from /content, with a local directory
-// listing endpoint to avoid GitHub API dependencies.
+// ── Dynamic Content Loading System ─────────────────────────────
+// This system fetches content dynamically, preferring Supabase as the source of truth
+// but falling back to local markdown files. This creates a hybrid approach where
+// content can be managed via a database or simple file edits.
+
 const _listCache = {};
 const _itemCache = {};
 
-// Load supabase runtime helper so we can prefer DB-backed content
+// Load the Supabase client-side helper to enable database interactions.
 (function(){
-  const s = document.createElement('script'); s.src = '/js/supabase.js'; document.head.appendChild(s);
+  const s = document.createElement('script');
+  s.src = '/supabase.js'; // Path updated to reflect new structure
+  document.head.appendChild(s);
 })();
 
-// Try to load a collection from Supabase (table name same as folder)
+/**
+ * Attempts to fetch a collection of items from a Supabase table.
+ * @param {string} folder - The name of the collection, which maps to a Supabase table name.
+ * @returns {Promise<Array|null>} - An array of items or null if the fetch fails.
+ */
 async function loadCollectionFromSupabase(folder) {
   if (typeof loadRuntimeConfig !== 'function' || typeof sbFetch !== 'function') {
     const start = Date.now();
@@ -791,6 +800,11 @@ async function loadCollectionFromSupabase(folder) {
   } catch (e) { return null; }
 }
 
+/**
+ * Fetches the raw text content of a file from a given URL.
+ * @param {string} url - The URL of the text file to fetch.
+ * @returns {Promise<string|null>}
+ */
 async function fetchText(url) {
   try {
     const r = await fetch(url);
@@ -799,7 +813,11 @@ async function fetchText(url) {
   } catch { return null; }
 }
 
-// List .md files in a content folder via local content listing endpoint
+/**
+ * Lists markdown files in a content folder by calling the `/content-list` API endpoint.
+ * @param {string} folder - The name of the content folder (e.g., 'news').
+ * @returns {Promise<Array<string>>} - A sorted list of filenames.
+ */
 async function listFiles(folder) {
   if (_listCache[folder]) return _listCache[folder];
   try {
@@ -813,7 +831,12 @@ async function listFiles(folder) {
   } catch { return []; }
 }
 
-// Fetch a single markdown file from the site's /content folder (same origin)
+/**
+ * Fetches and parses a single markdown file from the `/content` directory.
+ * @param {string} folder - The sub-folder within `/content`.
+ * @param {string} filename - The name of the markdown file.
+ * @returns {Promise<object|null>} - The parsed front-matter and body, or null if not found/published.
+ */
 async function loadItem(folder, filename) {
   const cacheKey = `${folder}/${filename}`;
   if (_itemCache[cacheKey]) return _itemCache[cacheKey];
@@ -827,13 +850,18 @@ async function loadItem(folder, filename) {
   return fm;
 }
 
+/**
+ * Loads an entire collection of markdown files from a specified folder.
+ * @param {string} folder - The name of the content folder.
+ * @returns {Promise<Array<object>>} - An array of parsed content items.
+ */
 async function loadCollection(folder) {
   const files = await listFiles(folder);
   const items = await Promise.all(files.map(f => loadItem(folder, f)));
   return items.filter(Boolean);
 }
 
-// ── HELPERS ───────────────────────────────────────────────────────
+// ── Formatting and Utility Helpers ─────────────────────────────
 function formatDate(d) {
   if (!d) return '';
   try { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }); }
@@ -848,7 +876,8 @@ function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── RENDER: COURSES ───────────────────────────────────────────────
+// ── Content Rendering Functions ────────────────────────────────
+// These functions fetch data and render the corresponding HTML sections on the page.
 async function renderCourses() {
   const grid = document.getElementById('courses-grid');
   let items = await loadCollectionFromSupabase('courses');
@@ -874,7 +903,6 @@ async function renderCourses() {
   `).join('');
 }
 
-// ── RENDER: NEWS ──────────────────────────────────────────────────
 async function renderNews() {
   const grid = document.getElementById('news-grid');
   let items = await loadCollectionFromSupabase('news');
@@ -902,7 +930,6 @@ async function renderNews() {
   `).join('');
 }
 
-// ── RENDER: GALLERY ───────────────────────────────────────────────
 function renderGalleryItems(photos) {
   const grid = document.getElementById('gallery-grid');
   if (!photos.length) {
@@ -951,7 +978,6 @@ const photos = (album.photos || []).map(photo => ({
   renderGalleryItems(allPhotos);
 }
 
-// ── RENDER: DOCUMENTS ─────────────────────────────────────────────
 async function renderDocuments() {
   const list = document.getElementById('docs-list');
   const items = await loadCollection('documents');
@@ -972,7 +998,6 @@ async function renderDocuments() {
   `).join('');
 }
 
-// ── RENDER: TESTIMONIALS ──────────────────────────────────────────
 async function renderTestimonials() {
   const grid = document.getElementById('testi-grid');
   const items = await loadCollection('testimonials');
@@ -997,7 +1022,7 @@ async function renderTestimonials() {
   `).join('');
 }
 
-// ── POPULATE CONTACT COURSE SELECT FROM CMS ───────────────────────
+// ── Populate Contact Form Course Select ────────────────────────
 async function populateCourseSelect() {
   const sel = document.getElementById('course-select');
   const courses = await loadCollection('courses');
@@ -1018,16 +1043,13 @@ async function populateCourseSelect() {
   sel.appendChild(generalOpt);
 }
 
-// ── INIT ──────────────────────────────────────────────────────────
+// ── Initial Page Load Execution ────────────────────────────────
 renderCourses();
 renderNews();
 renderGallery();
 renderDocuments();
 renderTestimonials();
 populateCourseSelect();
-
-// Admin auth is handled separately (Supabase / Railway). Netlify Identity
-// integration removed to keep the frontend deployment platform-agnostic.
 </script>
 
 </body>

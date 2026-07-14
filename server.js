@@ -1,11 +1,21 @@
+/**
+ * @file Main server for the Heimatliebe Institute website.
+ * This Node.js server handles:
+ * - Serving static files from the `public` directory.
+ * - Providing a dynamic `/config.json` for frontend runtime configuration.
+ * - API endpoints for sending emails (student approval, password reset).
+ * - API endpoints for password reset flow.
+ * - A helper endpoint to list content files for the frontend.
+ */
+
 import { createServer } from 'http';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { createTransport } from 'nodemailer';
 
 const port = process.env.PORT || 3000;
-const root = process.cwd();
-
+const publicDir = path.join(process.cwd(), 'public'); // Serves static files from here
+const contentDir = path.join(process.cwd(), 'content'); // Markdown content lives here
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.js':   'application/javascript; charset=utf-8',
@@ -23,11 +33,16 @@ const mime = {
   '.txt':  'text/plain; charset=utf-8'
 };
 
+/**
+ * Returns the appropriate MIME type for a given file path.
+ * @param {string} filePath - The path to the file.
+ * @returns {string} The MIME type.
+ */
 function contentType(filePath) {
   return mime[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
 }
 
-// ── NODEMAILER TRANSPORT ───────────────────────────────────────
+// ── Nodemailer Transport ───────────────────────────────────────
 // Set these in Railway environment variables:
 //   SMTP_HOST     e.g. smtp.gmail.com
 //   SMTP_PORT     e.g. 465
@@ -35,6 +50,10 @@ function contentType(filePath) {
 //   SMTP_PASS     Gmail App Password (NOT your Gmail login password)
 //   SMTP_FROM     e.g. "Heimatliebe Institute <heimatliebemw@gmail.com>"
 //   SITE_URL      e.g. https://your-railway-url.up.railway.app
+/**
+ * Creates and configures a Nodemailer transport for sending emails.
+ * Reads SMTP configuration from environment variables.
+ */
 function getTransport() {
   return createTransport({
     host:   process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -47,7 +66,11 @@ function getTransport() {
   });
 }
 
-// ── EMAIL TEMPLATES ────────────────────────────────────────────
+// ── Email Templates ────────────────────────────────────────────
+/**
+ * Generates the HTML for the student approval email.
+ * @param {object} params - The parameters for the email template.
+ */
 function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
   const loginUrl     = `${site_url}/login.html?id=${encodeURIComponent(student_id)}`;
   const resetUrl     = `${site_url}/reset-password.html`;
@@ -164,6 +187,10 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
 </html>`;
 }
 
+/**
+ * Generates the HTML for the password reset email.
+ * @param {object} params - The parameters for the email template.
+ */
 function resetEmailHtml({ student_id, reset_token, site_url }) {
   const resetUrl = `${site_url}/reset-password.html?token=${reset_token}&id=${encodeURIComponent(student_id)}`;
   return `
@@ -209,7 +236,11 @@ function resetEmailHtml({ student_id, reset_token, site_url }) {
 </html>`;
 }
 
-// ── READ REQUEST BODY ──────────────────────────────────────────
+/**
+ * Reads and parses the JSON body from an incoming request.
+ * @param {import('http').IncomingMessage} req - The request object.
+ * @returns {Promise<object>} The parsed JSON body.
+ */
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -222,13 +253,24 @@ function readBody(req) {
   });
 }
 
-// ── JSON RESPONSE HELPER ───────────────────────────────────────
+/**
+ * Helper function to send a JSON response.
+ * @param {import('http').ServerResponse} res - The response object.
+ * @param {number} status - The HTTP status code.
+ * @param {object} data - The JSON data to send.
+ */
 function jsonRes(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
   res.end(JSON.stringify(data));
 }
 
-// ── SUPABASE REST HELPER (server-side) ────────────────────────
+/**
+ * A server-side helper to make authenticated requests to the Supabase REST API.
+ * Uses environment variables for Supabase URL and anon key.
+ * @param {string} path - The API path (e.g., '/rest/v1/students').
+ * @param {object} options - Fetch options.
+ * @returns {Promise<{ok: boolean, status: number, data: any}>}
+ */
 async function supabaseFetch(path, options = {}) {
   const url = `${process.env.SUPABASE_URL}${path}`;
   const res = await fetch(url, {
@@ -247,7 +289,7 @@ async function supabaseFetch(path, options = {}) {
   return { ok: res.ok, status: res.status, data };
 }
 
-// ── MAIN SERVER ────────────────────────────────────────────────
+// ── Main Server Logic ──────────────────────────────────────────
 const server = createServer(async (req, res) => {
   try {
     const urlObj  = new URL(req.url, `http://localhost`);
@@ -255,16 +297,23 @@ const server = createServer(async (req, res) => {
     const method  = req.method.toUpperCase();
 
     // ── CORS preflight ─────────────────────────────────────────
+    // Handles preflight requests for CORS, allowing cross-origin API calls from the frontend.
     if (method === 'OPTIONS') {
       res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
       res.end(); return;
     }
 
     // ── /config.json ───────────────────────────────────────────
+    // API Endpoint: /config.json
+    // Method: GET
+    // Description: Dynamically serves runtime configuration to the frontend.
+    // It merges environment variables (`SUPABASE_URL`, `SUPABASE_ANON`, `ADMIN_PASSWORD`)
+    // with a fallback to a local `config.json` if it exists. This keeps secrets
+    // out of the client-side code and allows for easy configuration in production.
     if (url === '/config.json') {
       let fileConfig = {};
       try {
-        const raw = await fs.readFile(path.join(root, 'config.json'), 'utf8');
+        const raw = await fs.readFile(path.join(publicDir, 'config.json'), 'utf8');
         const trimmed = raw.trim();
         if (trimmed.startsWith('{')) {
           fileConfig = JSON.parse(trimmed);
@@ -280,10 +329,15 @@ const server = createServer(async (req, res) => {
     }
 
     // ── /content-list ──────────────────────────────────────────
+    // API Endpoint: /content-list?folder=<folder_name>
+    // Method: GET
+    // Description: Lists all markdown files in a specified content directory (e.g., /content/news).
+    // Used by the frontend to dynamically discover content without hardcoding file lists,
+    // enabling a simple file-based CMS workflow.
     if (url.startsWith('/content-list')) {
       const folder = urlObj.searchParams.get('folder') || '';
       if (!/^[a-zA-Z0-9_-]+$/.test(folder)) { jsonRes(res, 400, { error: 'Invalid folder' }); return; }
-      const listDir = path.join(root, 'content', folder);
+      const listDir = path.join(contentDir, folder);
       try {
         const entries = await fs.readdir(listDir, { withFileTypes: true });
         const files = entries.filter(e => e.isFile() && e.name.endsWith('.md')).map(e => e.name).sort();
@@ -295,7 +349,11 @@ const server = createServer(async (req, res) => {
     }
 
     // ── /api/send-approval-email ───────────────────────────────
-    // Called by admin-students.html after approving an application.
+    // API Endpoint: /api/send-approval-email
+    // Method: POST
+    // Description: Sends a welcome email to a student after their application is approved.
+    // This email contains their new Student ID and a link to set their password.
+    // Called from the admin student management page.
     // Body: { student_id, full_name, email, course, level }
     if (url === '/api/send-approval-email' && method === 'POST') {
       const body = await readBody(req);
@@ -325,7 +383,12 @@ const server = createServer(async (req, res) => {
     }
 
     // ── /api/request-password-reset ───────────────────────────
-    // Student submits Student ID + email → we generate a token, store it, send email.
+    // API Endpoint: /api/request-password-reset
+    // Method: POST
+    // Description: Handles a student's request to reset their password.
+    // It verifies the student's existence, generates a secure reset token,
+    // stores it in the database with an expiry, and sends a reset link via email.
+    // To prevent user enumeration, it always returns a success message.
     // Body: { student_id, email }
     if (url === '/api/request-password-reset' && method === 'POST') {
       const body = await readBody(req);
@@ -384,7 +447,12 @@ const server = createServer(async (req, res) => {
     }
 
     // ── /api/reset-password ────────────────────────────────────
-    // Student submits token + new password.
+    // API Endpoint: /api/reset-password
+    // Method: POST
+    // Description: Completes the password reset process.
+    // It validates the provided token and student ID, checks for token expiry,
+    // hashes the new password, updates the student's record in the database,
+    // and invalidates the token to prevent reuse.
     // Body: { token, student_id, new_password }
     if (url === '/api/reset-password' && method === 'POST') {
       const body = await readBody(req);
@@ -433,12 +501,14 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // ── Static files ───────────────────────────────────────────
-    let filePath = path.join(root, url);
+    // ── Static File Serving ────────────────────────────────────
+    // Serves static files from the `public` directory. If a file is not found,
+    // it falls back to serving `index.html`, which is standard for single-page applications.
+    let filePath = path.join(publicDir, url);
     let stat;
     try { stat = await fs.stat(filePath); } catch { stat = null; }
     if (!stat) {
-      filePath = path.join(root, 'index.html');
+      filePath = path.join(publicDir, 'index.html');
     } else if (stat.isDirectory()) {
       filePath = path.join(filePath, 'index.html');
     }

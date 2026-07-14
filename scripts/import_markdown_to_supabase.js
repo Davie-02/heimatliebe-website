@@ -30,7 +30,7 @@ function parseFrontMatter(text) {
 }
 
 async function importNews() {
-  const dir = path.resolve('content/news');
+  const dir = path.resolve(process.cwd(), 'content/news');
   try {
     const files = await fs.readdir(dir);
     for (const f of files.filter(x=>x.endsWith('.md'))) {
@@ -53,7 +53,7 @@ async function importNews() {
 }
 
 async function importLibrary() {
-  const dir = path.resolve('content/library');
+  const dir = path.resolve(process.cwd(), 'content/library');
   try {
     const files = await fs.readdir(dir);
     for (const f of files.filter(x=>x.endsWith('.md')||x.endsWith('.pdf')||x.endsWith('.epub')||x.endsWith('.docx'))) {
