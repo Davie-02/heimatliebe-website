@@ -756,11 +756,31 @@ window.adminApprove = async function(id) {
   if (!app) return;
   showLoading();
   const studentNumber = generateStudentId();
+
+  // Create in both legacy students table AND unified users table
+  const userPayload = {
+    user_id: studentNumber,
+    full_name: app.full_name,
+    email: app.email,
+    phone: app.phone,
+    course: app.course,
+    level: app.level,
+    password_hash: app.password_hash,
+    role: 'student',
+    status: 'active'
+  };
+
+  // Insert into unified users table (preferred for new logins)
+  await CMS.create("users", userPayload);
+
+  // Also insert into legacy students table (backward compatibility)
   await CMS.create("students", {
     student_id: studentNumber, full_name: app.full_name, email: app.email,
     phone: app.phone, course: app.course, level: app.level, password_hash: app.password_hash
   });
+
   await CMS.update("applications", id, { status: "approved", student_id: studentNumber, reviewed_at: new Date().toISOString() });
+
   // Send approval email
   try {
     await fetch('/api/send-approval-email', {
@@ -768,6 +788,7 @@ window.adminApprove = async function(id) {
       body: JSON.stringify({ student_id: studentNumber, full_name: app.full_name, email: app.email, course: app.course, level: app.level })
     });
   } catch(e) { console.warn('[email] Could not send approval email:', e.message); }
+
   closeModal();
   await loadApplications();
   await loadDashboard();

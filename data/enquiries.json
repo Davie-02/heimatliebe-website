@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1784033427144,
+    "name": "Test User",
+    "email": "test@example.com",
+    "phone": "",
+    "interest": "German A1",
+    "message": "",
+    "created_at": "2026-07-14T12:50:27.144Z"
+  },
+  {
+    "id": 1784033518720,
+    "name": "Test User",
+    "email": "test@example.com",
+    "phone": "",
+    "interest": "German A1",
+    "message": "",
+    "created_at": "2026-07-14T12:51:58.720Z"
+  }
+]

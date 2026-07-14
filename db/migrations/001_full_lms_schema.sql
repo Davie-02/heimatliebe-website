@@ -368,6 +368,7 @@ CREATE TABLE alumni (
 CREATE TABLE password_reset_tokens (
   id bigserial PRIMARY KEY,
   user_id bigint REFERENCES users(id) ON DELETE CASCADE,
+  student_id text,                       -- for backward compatibility with server.js reset flow
   token text NOT NULL,
   expires_at timestamptz NOT NULL,
   used boolean DEFAULT false,

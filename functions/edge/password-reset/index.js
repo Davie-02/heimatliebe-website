@@ -1,10 +1,11 @@
 // Edge Function: password-reset
 // This function accepts { email } and triggers Supabase admin reset for that user using service_role key.
 // Deploy this as a server-side function and set SUPABASE_SERVICE_ROLE in env.
+// Uses ES module syntax to match the project.
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
   try {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
     const body = await getRequestBody(req);

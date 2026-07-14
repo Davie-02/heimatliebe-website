@@ -303,17 +303,34 @@ const server = createServer(async (req, res) => {
         jsonRes(res, 400, { error: 'Missing student_id or email' }); return;
       }
 
-      const { ok, data } = await supabaseFetch(
-        `/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}&email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,student_id,full_name,email`,
+      const sid   = student_id.toUpperCase();
+      const elc   = email.toLowerCase();
+      let student = null;
+
+      // Try unified users table first
+      let { ok, data } = await supabaseFetch(
+        `/rest/v1/users?user_id=eq.${encodeURIComponent(sid)}&email=eq.${encodeURIComponent(elc)}&select=id,user_id,full_name,email`,
         { method: 'GET', headers: { 'Prefer': '' } }
       );
+      if (ok && Array.isArray(data) && data.length > 0) {
+        student = { id: data[0].id, student_id: data[0].user_id, full_name: data[0].full_name, email: data[0].email };
+      }
 
-      if (!ok || !Array.isArray(data) || data.length === 0) {
+      // Fallback: legacy students table
+      if (!student) {
+        ({ ok, data } = await supabaseFetch(
+          `/rest/v1/students?student_id=eq.${encodeURIComponent(sid)}&email=eq.${encodeURIComponent(elc)}&select=id,student_id,full_name,email`,
+          { method: 'GET', headers: { 'Prefer': '' } }
+        ));
+        if (ok && Array.isArray(data) && data.length > 0) {
+          student = data[0];
+        }
+      }
+
+      if (!student) {
         jsonRes(res, 200, { ok: true, message: 'If that Student ID and email match, a reset link has been sent.' });
         return;
       }
-
-      const student = data[0];
 
       // Generate reset token
       const token     = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('');
@@ -377,8 +394,14 @@ const server = createServer(async (req, res) => {
       const { createHash } = await import('crypto');
       const pwHash = createHash('sha256').update(new_password + 'hmli_salt_2025').digest('hex');
 
+      // Update both legacy students table and unified users table
       await supabaseFetch(
         `/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}`,
+        { method: 'PATCH', body: JSON.stringify({ password_hash: pwHash }) }
+      );
+
+      await supabaseFetch(
+        `/rest/v1/users?user_id=eq.${encodeURIComponent(student_id.toUpperCase())}`,
         { method: 'PATCH', body: JSON.stringify({ password_hash: pwHash }) }
       );
 
@@ -410,6 +433,39 @@ const server = createServer(async (req, res) => {
         ADMIN_PASSWORD: process.env.ADMIN_PASSWORD  || fileConfig.ADMIN_PASSWORD || ''
       };
       jsonRes(res, 200, config); return;
+    }
+
+    // ── /api/contact-enquiry ──────────────────────────────────
+    if (url === '/api/contact-enquiry' && method === 'POST') {
+      const body = await readBody(req);
+      const { name, email, phone, interest, message } = body;
+      if (!name || !email) {
+        jsonRes(res, 400, { error: 'Name and email required' }); return;
+      }
+
+      // Save to a JSON file on disk (no extra DB table needed)
+      const logDir = path.join(process.cwd(), 'data');
+      try { await fs.mkdir(logDir, { recursive: true }); } catch {}
+      const logFile = path.join(logDir, 'enquiries.json');
+      let enquiries = [];
+      try {
+        const raw = await fs.readFile(logFile, 'utf8');
+        enquiries = JSON.parse(raw);
+      } catch {}
+      enquiries.push({
+        id: Date.now(),
+        name, email, phone: phone || '',
+        interest: interest || '',
+        message: message || '',
+        created_at: new Date().toISOString()
+      });
+      // Keep last 500 only
+      if (enquiries.length > 500) enquiries = enquiries.slice(-500);
+      await fs.writeFile(logFile, JSON.stringify(enquiries, null, 2));
+      console.log(`[contact] Enquiry from ${name} <${email}>`);
+
+      jsonRes(res, 200, { ok: true, message: 'Thank you! We will be in touch.' });
+      return;
     }
 
     // ── /content-list ──────────────────────────────────────────
