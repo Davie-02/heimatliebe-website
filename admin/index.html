@@ -3,22 +3,16 @@
 <head>
   <meta charset="utf-8">
   <title>Heimatliebe Institute CMS</title>
-
   <link rel="icon" href="./logo.png">
-
-  
   <style>
-
     /* ================================
    GLOBAL
 ================================ */
-
 *{
     margin:0;
     padding:0;
     box-sizing:border-box;
 }
-
 html,body{
     width:100%;
     height:100%;
@@ -26,1189 +20,481 @@ html,body{
     background:#f5f7fb;
     color:#1d2939;
 }
-
 body{
     overflow:hidden;
 }
-
 button,input,textarea,select{
     font-family:inherit;
 }
-
 a{
     text-decoration:none;
 }
-
 ::-webkit-scrollbar{
     width:8px;
 }
-
 ::-webkit-scrollbar-thumb{
     background:#d4d7dd;
     border-radius:20px;
 }
-
 ::-webkit-scrollbar-track{
     background:transparent;
 }
-
-/* ================================
-   APP
-================================ */
-
 #app{
-
     display:flex;
-
     height:100vh;
-
     width:100vw;
-
 }
-
-/* ================================
-   SIDEBAR
-================================ */
-
 #sidebar{
-
     width:270px;
-
     background:white;
-
     border-right:1px solid #e6e8ec;
-
     display:flex;
-
     flex-direction:column;
-
     flex-shrink:0;
-
 }
-
 .logo{
-
     height:80px;
-
     display:flex;
-
     align-items:center;
-
     padding:20px;
-
     border-bottom:1px solid #ececec;
-
 }
-
 .logo img{
-
     width:48px;
-
     height:48px;
-
     margin-right:15px;
-
 }
-
 .logo h2{
-
     font-size:20px;
-
     color:#1B4332;
-
 }
-
 .logo small{
-
     color:#888;
-
     display:block;
-
     margin-top:4px;
-
 }
-
-/* ================================
-NAV
-================================ */
-
 nav{
-
     flex:1;
-
     overflow-y:auto;
-
     padding:15px;
-
 }
-
 .nav-item{
-
     width:100%;
-
     border:none;
-
     background:none;
-
     display:flex;
-
     align-items:center;
-
     gap:15px;
-
     padding:14px 16px;
-
     border-radius:12px;
-
     cursor:pointer;
-
     font-size:15px;
-
     color:#475467;
-
     transition:.25s;
-
     margin-bottom:6px;
-
 }
-
 .nav-item span{
-
     font-size:20px;
-
 }
-
 .nav-item:hover{
-
     background:#edf7f0;
-
     color:#1B4332;
-
 }
-
 .nav-item.active{
-
     background:#1B4332;
-
     color:white;
-
 }
-
-/* ================================
-MAIN
-================================ */
-
 #main{
-
     flex:1;
-
     display:flex;
-
     flex-direction:column;
-
     overflow:hidden;
-
 }
-
-/* ================================
-TOPBAR
-================================ */
-
 #topbar{
-
     height:80px;
-
     background:white;
-
     border-bottom:1px solid #ececec;
-
     display:flex;
-
     align-items:center;
-
     justify-content:space-between;
-
     padding:0 35px;
-
 }
-
 #page-title{
-
     font-size:28px;
-
     color:#1B4332;
-
 }
-
 #page-subtitle{
-
     color:#888;
-
 }
-
 .top-actions{
-
     display:flex;
-
     gap:10px;
-
 }
-
 .top-actions button{
-
     border:none;
-
     background:#1B4332;
-
     color:white;
-
     padding:10px 18px;
-
     border-radius:10px;
-
     cursor:pointer;
-
     transition:.25s;
-
 }
-
 .top-actions button:hover{
-
     opacity:.9;
-
 }
-
-/* ================================
-CONTENT
-================================ */
-
 #content{
-
     flex:1;
-
     overflow:auto;
-
     padding:30px;
-
 }
-
-/* ================================
-PAGES
-================================ */
-
 .page{
-
     display:none;
-
 }
-
 .page.active{
-
     display:block;
-
 }
-
-/* ================================
-CARDS
-================================ */
-
 .cards{
-
     display:grid;
-
     grid-template-columns:repeat(4,1fr);
-
     gap:20px;
-
     margin-bottom:30px;
-
 }
-
 .card{
-
     background:white;
-
     border-radius:16px;
-
     padding:30px;
-
     box-shadow:0 8px 25px rgba(0,0,0,.05);
-
 }
-
 .card h3{
-
     font-size:40px;
-
     color:#1B4332;
-
 }
-
 .card p{
-
     margin-top:10px;
-
     color:#667085;
-
 }
-
-/* ================================
-PANELS
-================================ */
-
 .dashboard-grid{
-
     display:grid;
-
     grid-template-columns:2fr 1fr;
-
     gap:25px;
-
 }
-
 .panel{
-
     background:white;
-
     border-radius:16px;
-
     padding:25px;
-
     box-shadow:0 8px 25px rgba(0,0,0,.05);
-
 }
-
 .panel h2{
-
     margin-bottom:20px;
-
     color:#1B4332;
-
 }
-
-/* ================================
-TABLE
-================================ */
-
 table{
-
     width:100%;
-
     border-collapse:collapse;
-
 }
-
 thead{
-
     background:#f8f9fb;
-
 }
-
 th{
-
     text-align:left;
-
     padding:14px;
-
     font-size:13px;
-
     color:#667085;
-
 }
-
 td{
-
     padding:16px 14px;
-
     border-top:1px solid #ececec;
-
 }
-
 tbody tr:hover{
-
     background:#fafafa;
-
 }
-
-/* ================================
-BUTTONS
-================================ */
-
 .btn{
-
     border:none;
-
     cursor:pointer;
-
     padding:10px 16px;
-
     border-radius:8px;
-
 }
-
 .btn-primary{
-
     background:#1B4332;
-
     color:white;
-
 }
-
 .btn-danger{
-
     background:#dc2626;
-
     color:white;
-
 }
-
 .btn-warning{
-
     background:#F4BF5A;
-
     color:black;
-
 }
-
-/* ================================
-BADGES
-================================ */
-
 .badge{
-
     display:inline-block;
-
     padding:6px 10px;
-
     border-radius:30px;
-
     font-size:12px;
-
     font-weight:600;
-
 }
-
 .badge.pending{
-
     background:#FFF8E6;
-
     color:#996C00;
-
 }
-
 .badge.approved{
-
     background:#E8F8EF;
-
     color:#0B7A39;
-
 }
-
 .badge.rejected{
-
     background:#FDECEC;
-
     color:#C62828;
-
 }
-
-/* ================================
-FORMS
-================================ */
-
 .form-group{
-
     margin-bottom:20px;
-
 }
-
 .form-group label{
-
     display:block;
-
     margin-bottom:8px;
-
     font-weight:600;
-
 }
-
 .form-group input,
-
 .form-group textarea,
-
 .form-group select{
-
     width:100%;
-
     padding:12px;
-
     border:1px solid #d0d5dd;
-
     border-radius:10px;
-
     outline:none;
-
 }
-
 .form-group input:focus,
-
 .form-group textarea:focus,
-
 .form-group select:focus{
-
     border-color:#1B4332;
-
 }
-
-/* ================================
-RESPONSIVE
-================================ */
-
 @media(max-width:1200px){
-
 .cards{
-
 grid-template-columns:repeat(2,1fr);
-
 }
-
 .dashboard-grid{
-
 grid-template-columns:1fr;
-
 }
-
 }
-
 @media(max-width:900px){
-
 #sidebar{
-
 width:80px;
-
 }
-
 .logo div{
-
 display:none;
-
 }
-
 .nav-item{
-
 justify-content:center;
-
 }
-
 .nav-item span{
-
 margin:0;
-
 }
-
 .nav-item{
-
 font-size:0;
-
 }
-
 #topbar{
-
 padding:20px;
-
 }
-
 }
-
 @media(max-width:700px){
-
 .cards{
-
 grid-template-columns:1fr;
-
 }
-
 }
-    :root{
-      --gold:#F4BF5A;
-      --green:#7ED957;
-    }
-
-    #loadingOverlay{
-
+:root{
+    --gold:#F4BF5A;
+    --green:#7ED957;
+}
+#loadingOverlay{
 position:fixed;
-
 inset:0;
-
 background:rgba(255,255,255,.75);
-
 backdrop-filter:blur(3px);
-
 display:none;
-
 align-items:center;
-
 justify-content:center;
-
 z-index:9999;
-
 }
-
 .loaderBox{
-
 background:white;
-
 padding:40px;
-
 border-radius:20px;
-
 text-align:center;
-
 box-shadow:0 15px 50px rgba(0,0,0,.15);
-
 }
-
 .spinner{
-
 width:60px;
-
 height:60px;
-
 border-radius:50%;
-
 border:5px solid #ddd;
-
 border-top:5px solid var(--green);
-
 animation:spin 1s linear infinite;
-
 margin:auto;
-
 margin-bottom:20px;
-
 }
-
 @keyframes spin{
-
 100%{
-
 transform:rotate(360deg);
-
 }
-
 }
-
 #modal{
-
 position:fixed;
-
 inset:0;
-
 display:none;
-
 align-items:center;
-
 justify-content:center;
-
 background:rgba(0,0,0,.45);
-
 z-index:99999;
-
 }
-
 .modalWindow{
-
 width:700px;
-
 max-width:95%;
-
 max-height:90vh;
-
 overflow:auto;
-
 background:white;
-
 border-radius:18px;
-
 box-shadow:0 20px 60px rgba(0,0,0,.25);
-
 }
-
 .modalHeader{
-
 padding:20px;
-
 display:flex;
-
 justify-content:space-between;
-
 align-items:center;
-
 border-bottom:1px solid #eee;
-
 }
-
 .modalHeader button{
-
 background:none;
-
 border:none;
-
 font-size:24px;
-
 cursor:pointer;
-
 }
-
 #modalBody{
-
 padding:25px;
-
 }
-
 .page-toolbar{
-
 display:flex;
-
 justify-content:space-between;
-
 align-items:center;
-
 margin-bottom:25px;
-
 flex-wrap:wrap;
-
 gap:20px;
-
 }
-
 .toolbar-right{
-
 display:flex;
-
 gap:15px;
-
 }
-
 .toolbar-right input{
-
 width:260px;
-
 padding:12px;
-
 border:1px solid #ddd;
-
 border-radius:10px;
-
 }
-
 .toolbar-right select{
-
 padding:12px;
-
 border-radius:10px;
-
 border:1px solid #ddd;
-
 }
-
-
   </style>
 </head>
 <body>
 <div id="app">
-
-    <!-- SIDEBAR -->
-
     <aside id="sidebar">
-
         <div class="logo">
-
             <img src="./logo.png">
-
             <div>
-
                 <h2>Heimatliebe</h2>
-
                 <small>Institute CMS</small>
-
             </div>
-
         </div>
-
         <nav>
-
-            <button class="nav-item active" data-page="dashboard">
-
-                <span>🏠</span>
-
-                Dashboard
-
-            </button>
-
-            <button class="nav-item" data-page="applications">
-
-                <span>📥</span>
-
-                Applications
-
-            </button>
-
-            <button class="nav-item" data-page="students">
-
-                <span>🎓</span>
-
-                Students
-
-            </button>
-
-            <button class="nav-item" data-page="courses">
-
-                <span>📚</span>
-
-                Courses
-
-            </button>
-
-            <button class="nav-item" data-page="library">
-
-                <span>📖</span>
-
-                Library
-
-            </button>
-
-            <button class="nav-item" data-page="news">
-
-                <span>📰</span>
-
-                News
-
-            </button>
-
-            <button class="nav-item" data-page="assignments">
-
-                <span>📝</span>
-
-                Assignments
-
-            </button>
-
-            <button class="nav-item" data-page="exams">
-
-                <span>🧪</span>
-
-                Exams
-
-            </button>
-
-            <button class="nav-item" data-page="results">
-
-                <span>📊</span>
-
-                Results
-
-            </button>
-
-            <button class="nav-item" data-page="payments">
-
-                <span>💳</span>
-
-                Payments
-
-            </button>
-
-            <button class="nav-item" data-page="scholarships">
-
-                <span>🏅</span>
-
-                Scholarships
-
-            </button>
-
-            <button class="nav-item" data-page="messages">
-
-                <span>💬</span>
-
-                Messages
-
-            </button>
-
-            <button class="nav-item" data-page="settings">
-
-                <span>⚙</span>
-
-                Settings
-
-            </button>
-
+            <button class="nav-item active" data-page="dashboard"><span>🏠</span> Dashboard</button>
+            <button class="nav-item" data-page="applications"><span>📥</span> Applications</button>
+            <button class="nav-item" data-page="students"><span>🎓</span> Students</button>
+            <button class="nav-item" data-page="courses"><span>📚</span> Courses</button>
+            <button class="nav-item" data-page="library"><span>📖</span> Library</button>
+            <button class="nav-item" data-page="news"><span>📰</span> News</button>
+            <button class="nav-item" data-page="assignments"><span>📝</span> Assignments</button>
+            <button class="nav-item" data-page="exams"><span>🧪</span> Exams</button>
+            <button class="nav-item" data-page="results"><span>📊</span> Results</button>
+            <button class="nav-item" data-page="payments"><span>💳</span> Payments</button>
+            <button class="nav-item" data-page="scholarships"><span>🏅</span> Scholarships</button>
+            <button class="nav-item" data-page="messages"><span>💬</span> Messages</button>
+            <button class="nav-item" data-page="settings"><span>⚙</span> Settings</button>
         </nav>
-
     </aside>
-
-    <!-- MAIN -->
-
     <main id="main">
-
         <header id="topbar">
-
             <div>
-
-                <h1 id="page-title">
-
-                    Dashboard
-
-                </h1>
-
-                <small id="page-subtitle">
-
-                    Welcome to Heimatliebe Institute Administration
-
-                </small>
-
+                <h1 id="page-title">Dashboard</h1>
+                <small id="page-subtitle">Welcome to Heimatliebe Institute Administration</small>
             </div>
-
             <div class="top-actions">
-
-                <button id="refreshBtn">
-
-                    Refresh
-
-                </button>
-
-                <button id="logoutBtn">
-
-                    Logout
-
-                </button>
-
+                <button id="refreshBtn">Refresh</button>
+                <button id="logoutBtn">Logout</button>
             </div>
-
         </header>
-
         <section id="content">
-
             <!-- DASHBOARD -->
-
             <section class="page active" id="dashboard">
+              <div class="cards">
+                <div class="card"><h3 id="statApplications">0</h3><p>Total Applications</p></div>
+                <div class="card"><h3 id="statStudents">0</h3><p>Registered Students</p></div>
+                <div class="card"><h3 id="statCourses">0</h3><p>Courses</p></div>
+                <div class="card"><h3 id="statPayments">MWK 0</h3><p>Total Revenue</p></div>
+              </div>
+              <div class="dashboard-grid">
+                <div class="panel">
+                  <h2>Recent Applications</h2>
+                  <table><thead><tr><th>Name</th><th>Course</th><th>Status</th><th>Date</th></tr></thead><tbody id="dashboardApplications"><tr><td colspan="4">Loading...</td></tr></tbody></table>
+                </div>
+                <div class="panel">
+                  <h2>Quick Actions</h2>
+                  <div style="display:grid;gap:12px">
+                    <button class="btn btn-primary" id="btnNewCourse">+ Add Course</button>
+                    <button class="btn btn-primary" id="btnNewNews">+ Publish News</button>
+                    <button class="btn btn-primary" id="btnNewBook">+ Upload Library Book</button>
+                    <button class="btn btn-primary" id="btnNewScholarship">+ New Scholarship</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- APPLICATIONS -->
+            <section class="page" id="applications">
+              <div class="page-toolbar">
+                <div><h2>Applications</h2><p>Manage student applications</p></div>
+                <div class="toolbar-right">
+                  <input id="applicationSearch" type="text" placeholder="Search applications...">
+                  <select id="applicationFilter">
+                    <option value="all">All</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+              <div id="applicationsTable">Loading applications...</div>
+            </section>
 
-<div class="cards">
-
-<div class="card">
-<h3 id="statApplications">0</h3>
-<p>Total Applications</p>
-</div>
-
-<div class="card">
-<h3 id="statStudents">0</h3>
-<p>Registered Students</p>
-</div>
-
-<div class="card">
-<h3 id="statCourses">0</h3>
-<p>Courses</p>
-</div>
-
-<div class="card">
-<h3 id="statPayments">MWK 0</h3>
-<p>Total Revenue</p>
-</div>
-
-</div>
-
-<div class="dashboard-grid">
-
-<div class="panel">
-
-<h2>Recent Applications</h2>
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>Name</th>
-
-<th>Course</th>
-
-<th>Status</th>
-
-<th>Date</th>
-
-</tr>
-
-</thead>
-
-<tbody id="dashboardApplications">
-
-<tr>
-
-<td colspan="4">
-
-Loading...
-
-</td>
-
-</tr>
-
-</tbody>
-
-</table>
-
-</div>
-
-<div class="panel">
-
-<h2>Quick Actions</h2>
-
-<div style="display:grid;gap:12px">
-
-<button class="btn btn-primary" id="btnNewCourse">
-
-+ Add Course
-
-</button>
-
-<button class="btn btn-primary" id="btnNewNews">
-
-+ Publish News
-
-</button>
-
-<button class="btn btn-primary" id="btnNewBook">
-
-+ Upload Library Book
-
-</button>
-
-<button class="btn btn-primary" id="btnNewScholarship">
-
-+ New Scholarship
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-  <!-- APPLICATIONS -->
-
-<section class="page" id="applications">
-
-<div class="page-toolbar">
-
-    <div>
-
-        <h2>Applications</h2>
-
-        <p>Manage student applications</p>
-
-    </div>
-
-    <div class="toolbar-right">
-
-        <input
-            id="applicationSearch"
-            type="text"
-            placeholder="Search applications...">
-
-        <select id="applicationFilter">
-
-            <option value="all">All</option>
-
-            <option value="pending">Pending</option>
-
-            <option value="approved">Approved</option>
-
-            <option value="rejected">Rejected</option>
-
-        </select>
-
-    </div>
-
-</div>
-
-<div id="applicationsTable">
-
-Loading applications...
-
-</div>
-
-</section>
             <!-- STUDENTS -->
-
             <section class="page" id="students">
-
-<div class="page-toolbar">
-
-    <div>
-
-        <h2>Students</h2>
-
-        <p>Manage enrolled students</p>
-
-    </div>
-
-    <div class="toolbar-right">
-
-        <input
-            id="studentSearch"
-            placeholder="Search students...">
-
-    </div>
-
-</div>
-
-<div id="studentsTable">
-
-Loading...
-
-</div>
-
-</section>
+              <div class="page-toolbar">
+                <div><h2>Students</h2><p>Manage enrolled students</p></div>
+                <div class="toolbar-right"><input id="studentSearch" placeholder="Search students..."></div>
+              </div>
+              <div id="studentsTable">Loading...</div>
+            </section>
 
             <!-- COURSES -->
-
             <section class="page" id="courses">
-
-<div class="page-toolbar">
-
-    <div>
-
-        <h2>Courses</h2>
-
-        <p>Manage all institute programmes</p>
-
-    </div>
-
-    <div class="toolbar-right">
-
-        <input
-            id="courseSearch"
-            placeholder="Search course...">
-
-        <button
-            class="btn btn-primary"
-            onclick="newCourse()">
-
-            + New Course
-
-        </button>
-
-    </div>
-
-</div>
-
-<div id="coursesTable">
-
-Loading...
-
-</div>
-
-</section>
+              <div class="page-toolbar">
+                <div><h2>Courses</h2><p>Manage all institute programmes</p></div>
+                <div class="toolbar-right">
+                  <input id="courseSearch" placeholder="Search course...">
+                  <button class="btn btn-primary" onclick="newCourse()">+ New Course</button>
+                </div>
+              </div>
+              <div id="coursesTable">Loading...</div>
+            </section>
 
             <!-- LIBRARY -->
             <section class="page" id="library">
@@ -1222,69 +508,38 @@ Loading...
               <div id="newsTable">Loading...</div>
             </section>
 
-            <!-- ASSIGNMENTS -->
-
             <section class="page" id="assignments"></section>
-
-            <!-- EXAMS -->
-
             <section class="page" id="exams"></section>
-
-            <!-- RESULTS -->
-
             <section class="page" id="results"></section>
-
-            <!-- PAYMENTS -->
-
             <section class="page" id="payments"></section>
-
-            <!-- SCHOLARSHIPS -->
-
             <section class="page" id="scholarships"></section>
-
-            <!-- MESSAGES -->
-
             <section class="page" id="messages"></section>
-
-            <!-- SETTINGS -->
-
             <section class="page" id="settings"></section>
-
         </section>
-
     </main>
-
 </div>
 
 <script src="/admin/auth.js"></script>
 <script>
 /**
- * -----------------------------------------------------------------
- *  Bootstrapper
- *  Waits for the auth helper to be ready, then initializes the CMS.
- * -----------------------------------------------------------------
+ * Admin CMS — Heimatliebe Institute
+ * Bootstrapper: waits for auth.js to be ready, then initializes.
  */
-function bootCMS() {
-  // auth.js will set window.sbAdmin and dispatch 'hmli:admin:ready'
-  if (!window.sbAdmin) {
-    window.addEventListener('hmli:admin:ready', bootCMS, { once: true });
-    return;
+(function boot() {
+  if (window.__HMLI_ADMIN_READY__) {
+    initAdminCMS();
+  } else {
+    window.addEventListener('hmli:admin:ready', initAdminCMS, { once: true });
   }
-  initAdminCMS();
-}
-bootCMS();
+})();
 
 function initAdminCMS() {
 
-// ── PASSWORD GATE ──────────────────────────────────────────────
-// This gate protects the admin panel. It checks a password stored in
-// sessionStorage against the ADMIN_PASSWORD from the config.
-// -----------------------------------------------------------------
 const GATE_KEY = 'hmli_admin_v2';
-let gateEl = null;
 
+// ── PASSWORD GATE ──────────────────────────────────────────────
 function showGate() {
-  gateEl = document.createElement('div');
+  let gateEl = document.createElement('div');
   gateEl.id = 'hmli-gate';
   gateEl.innerHTML = `
     <div style="position:fixed;inset:0;background:#1B4332;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;gap:0">
@@ -1299,8 +554,8 @@ function showGate() {
         <div id="gate-err" style="display:none;background:rgba(192,57,43,0.07);border:1px solid rgba(192,57,43,0.25);color:#c0392b;padding:0.6rem 0.8rem;font-size:0.82rem;margin-bottom:0.75rem;border-radius:2px"></div>
         <input type="password" id="gate-pw" placeholder="Admin password"
           style="width:100%;padding:0.8rem;border:1.5px solid rgba(27,67,50,0.2);border-radius:2px;font-size:0.95rem;outline:none;margin-bottom:0.65rem"
-          onkeydown="if(event.key==='Enter')checkGate()" />
-        <button onclick="checkGate()" id="gate-go"
+          onkeydown="if(event.key==='Enter') document.getElementById('gate-go').click()" />
+        <button onclick="checkAdminGate()" id="gate-go"
           style="width:100%;padding:0.85rem;background:#C9A84C;color:#1B4332;border:none;font-weight:700;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:2px">
           Enter CMS
         </button>
@@ -1308,19 +563,16 @@ function showGate() {
           <a href="/index.html" style="color:#9aacb4">← Back to main site</a>
         </p>
       </div>
-    </div>
-  `;
+    </div>`;
   document.body.appendChild(gateEl);
-  setTimeout(() => document.getElementById('gate-pw') && document.getElementById('gate-pw').focus(), 100);
 }
 
-function checkGate() {
-  const pw  = document.getElementById('gate-pw').value;
+window.checkAdminGate = function() {
+  const pw = document.getElementById('gate-pw').value;
   const err = document.getElementById('gate-err');
   const btn = document.getElementById('gate-go');
   btn.textContent = 'Checking…';
   btn.disabled = true;
-  // Use ADMIN_PASSWORD set by auth.js
   const correct = window.ADMIN_PASSWORD || '';
   if (!correct) {
     err.textContent = 'Admin password not configured. Check Railway env vars.';
@@ -1329,15 +581,15 @@ function checkGate() {
   }
   if (pw === correct) {
     sessionStorage.setItem(GATE_KEY, '1');
+    const gateEl = document.getElementById('hmli-gate');
     if (gateEl) gateEl.remove();
     loadDashboard();
   } else {
     err.textContent = 'Incorrect password.';
     err.style.display = 'block';
     btn.textContent = 'Enter CMS'; btn.disabled = false;
-    document.getElementById('gate-pw').focus();
   }
-}
+};
 
 if (sessionStorage.getItem(GATE_KEY) !== '1') { showGate(); }
 else { loadDashboard(); }
@@ -1349,386 +601,91 @@ document.getElementById('logoutBtn').onclick = () => {
 document.getElementById('refreshBtn').onclick = () => loadDashboard();
 
 /*=========================================================
-    CMS ENGINE
+    CMS ENGINE (singleton)
 =========================================================*/
-
 const CMS = {
     currentPage: "dashboard",
     cache: {},
-    loading: false,
-
-    async load(table, options = ""){
+    async load(table, options = "") {
         const url = `/rest/v1/${table}?select=*${options}`;
-        const result = await sbAdmin(url,{
-            method:"GET"
-        });
-
-        if(!result.ok){
-            console.error(result.data);
-            return [];
-        }
-
-        this.cache[table]=result.data;
+        const result = await window.sbAdmin(url, { method: "GET" });
+        if (!result.ok) { console.error(result.data); return []; }
+        this.cache[table] = result.data;
         return result.data;
     },
-
-    async create(table,data){
-        return sbAdmin(`/rest/v1/${table}`,{
-            method:"POST",
-            body:JSON.stringify(data)
-        });
+    async create(table, data) {
+        return window.sbAdmin(`/rest/v1/${table}`, { method: "POST", body: JSON.stringify(data) });
     },
-
-    async update(table,id,data){
-        return sbAdmin(
-            `/rest/v1/${table}?id=eq.${id}`,
-            {
-                method:"PATCH",
-                body:JSON.stringify(data)
-            }
-        );
+    async update(table, id, data) {
+        return window.sbAdmin(`/rest/v1/${table}?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(data) });
     },
-
-    async delete(table,id){
-        return sbAdmin(
-            `/rest/v1/${table}?id=eq.${id}`,
-            {
-                method:"DELETE"
-            }
-        );
+    async delete(table, id) {
+        return window.sbAdmin(`/rest/v1/${table}?id=eq.${id}`, { method: "DELETE" });
     }
 };
 
-async function loadDashboard(){
-
-showLoading();
-
-const
-applications=await CMS.load(
-"applications",
-"&order=submitted_at.desc"
-);
-
-const
-students=await CMS.load(
-"students",
-"&order=created_at.desc"
-);
-
-const
-courses=await CMS.load(
-"courses"
-);
-
-const
-payments=await CMS.load(
-"payments"
-);
-
-document.getElementById(
-"statApplications"
-).textContent=applications.length;
-
-document
-.getElementById(
-"statStudents"
-)
-.parentElement
-.onclick=()=>{
-document
-.querySelector(
-'[data-page="students"]'
-)
-.click();
-};
-
-document
-.getElementById(
-"statCourses"
-)
-.parentElement
-.onclick=()=>{
-document
-.querySelector(
-'[data-page="courses"]'
-)
-.click();
-};
-
-const totalRevenue=
-payments.reduce(
-(sum,p)=>sum+(Number(p.amount)||0),
-0
-);
-
-document.getElementById(
-"statPayments"
-).textContent=
-"MWK "+totalRevenue.toLocaleString();
-
-document.getElementById(
-"dashboardApplications"
-).innerHTML=
-applications
-.slice(0,10)
-.map(app=>`
-<tr>
-<td>${app.full_name}</td>
-<td>${app.course}</td>
-<td>
-<span class="badge ${app.status}">
-${app.status}
-</span>
-</td>
-<td>
-${new Date(app.submitted_at).toLocaleDateString()}
-</td>
-</tr>
-`).join("");
-
-hideLoading();
-
+/*=========================================================
+    UTILITY HELPERS
+=========================================================*/
+function showLoading() {
+  const el = document.getElementById("loadingOverlay");
+  if (el) el.style.display = "flex";
+}
+function hideLoading() {
+  const el = document.getElementById("loadingOverlay");
+  if (el) el.style.display = "none";
 }
 
-async function loadDashboard(){
-
-showLoading();
-
-const
-
-applications=await CMS.load(
-
-"applications",
-
-"&order=submitted_at.desc"
-
-);
-
-const
-
-students=await CMS.load(
-
-"students",
-
-"&order=created_at.desc"
-
-);
-
-const
-
-courses=await CMS.load(
-
-"courses"
-
-);
-
-const
-
-payments=await CMS.load(
-
-"payments"
-
-);
-
-document.getElementById(
-
-"statApplications"
-
-).textContent=applications.length;
-
-document
-
-.getElementById(
-
-"statStudents"
-
-)
-
-.parentElement
-
-.onclick=()=>{
-
-document
-
-.querySelector(
-
-'[data-page="students"]'
-
-)
-
-.click();
-
-};
-
-document
-
-.getElementById(
-
-"statCourses"
-
-)
-
-.parentElement
-
-.onclick=()=>{
-
-document
-
-.querySelector(
-
-'[data-page="courses"]'
-
-)
-
-.click();
-
-};
-
-const totalRevenue=
-
-payments.reduce(
-
-(sum,p)=>sum+(Number(p.amount)||0),
-
-0
-
-);
-
-document.getElementById(
-
-"statPayments"
-
-).textContent=
-
-"MWK "+totalRevenue.toLocaleString();
-
-document.getElementById(
-
-"dashboardApplications"
-
-).innerHTML=
-
-applications
-
-.slice(0,10)
-
-.map(app=>`
-
-<tr>
-
-<td>${app.full_name}</td>
-
-<td>${app.course}</td>
-
-<td>
-
-<span class="badge ${app.status}">
-
-${app.status}
-
-</span>
-
-</td>
-
-<td>
-
-${new Date(app.submitted_at).toLocaleDateString()}
-
-</td>
-
-</tr>
-
-`).join("");
-
-hideLoading();
-
+/*=========================================================
+    DASHBOARD
+=========================================================*/
+async function loadDashboard() {
+  showLoading();
+  const applications = await CMS.load("applications", "&order=submitted_at.desc");
+  const students     = await CMS.load("students", "&order=created_at.desc");
+  const courses      = await CMS.load("courses");
+  const payments     = await CMS.load("payments");
+
+  document.getElementById("statApplications").textContent = applications.length;
+  document.getElementById("statStudents").textContent    = students.length;
+  document.getElementById("statCourses").textContent     = courses.length;
+
+  const totalRevenue = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  document.getElementById("statPayments").textContent = "MWK " + totalRevenue.toLocaleString();
+
+  document.getElementById("dashboardApplications").innerHTML = applications.slice(0, 10).map(app => `
+    <tr>
+      <td>${esc(app.full_name)}</td>
+      <td>${esc(app.course)}</td>
+      <td><span class="badge ${app.status}">${esc(app.status)}</span></td>
+      <td>${app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : ''}</td>
+    </tr>
+  `).join("");
+  hideLoading();
 }
 
-loadDashboard();
-
-function showLoading(){
-  document.getElementById("loadingOverlay").style.display="flex";
-}
-
-function hideLoading(){
-  document.getElementById("loadingOverlay").style.display="none";
-}
-
-function createStatCard(title,value,color="#1B4332"){
-  return `
-    <div class="card">
-      <h3 style="color:${color}">${value}</h3>
-      <p>${title}</p>
-    </div>
-  `;
-}
-
-function renderTable(columns,data,actions=[]){
-  let html=`
-    <table>
-      <thead>
-        <tr>
-  `;
-  columns.forEach(col=>{
-    html+=`<th>${col.label}</th>`;
-  });
-  if(actions.length){
-    html+="<th>Actions</th>";
-  }
-  html+="</tr></thead><tbody>";
-
-  if(data.length===0){
-    html+=`
-      <tr>
-        <td colspan="${columns.length+1}" style="text-align:center;padding:50px">
-          No records found.
-        </td>
-      </tr>
-    `;
-  }
-
-  data.forEach(row=>{
-    html+="<tr>";
-    columns.forEach(col=>{
-      html+=`<td>${row[col.field] ?? ""}</td>`;
-    });
-    if(actions.length){
-      html+="<td>";
-      actions.forEach(btn=>{
-        html+=`
-          <button
-            class="${btn.class}"
-            onclick="${btn.onclick}('${row.id}')">
-            ${btn.label}
-          </button>
-        `;
-      });
-      html+="</td>";
-    }
-    html+="</tr>";
-  });
-  html+="</tbody></table>";
-  return html;
-}
-
-
-// ── NAV WIRE-UP ────────────────────────────────────────────────
+/*=========================================================
+    NAVIGATION
+=========================================================*/
 const pages    = document.querySelectorAll('.page');
 const navItems = document.querySelectorAll('.nav-item');
 navItems.forEach(btn => {
   btn.onclick = () => {
     navItems.forEach(n => n.classList.remove('active'));
     btn.classList.add('active');
-    const page = btn.dataset.page;
+    const pageName = btn.dataset.page;
     pages.forEach(p => p.classList.remove('active'));
-    document.getElementById(page).classList.add('active');
+    const targetPage = document.getElementById(pageName);
+    if (targetPage) targetPage.classList.add('active');
     document.getElementById("page-title").textContent = btn.textContent.trim();
 
-    switch(page){
+    switch(pageName) {
       case "dashboard":    loadDashboard();    break;
       case "applications": loadApplications(); break;
       case "students":     loadStudents();     break;
       case "courses":      loadCourses();      break;
+      case "library":      loadLibrary();      break;
+      case "news":         loadNews();         break;
       case "payments":     loadPayments();     break;
       case "assignments":  loadAssignments();  break;
       case "exams":        loadExams();        break;
@@ -1741,1857 +698,416 @@ navItems.forEach(btn => {
 });
 
 /*=========================================================
-    CMS ENGINE
+    APPLICATIONS
 =========================================================*/
+let applications = [];
 
-const CMS = {
+async function loadApplications() {
+  showLoading();
+  applications = await CMS.load("applications", "&order=submitted_at.desc");
+  renderApplications(applications);
+  hideLoading();
+}
 
-    currentPage: "dashboard",
+function renderApplications(data) {
+  document.getElementById("applicationsTable").innerHTML =
+    renderTable(
+      [{ label: "Name", field: "full_name" }, { label: "Email", field: "email" },
+       { label: "Course", field: "course" }, { label: "Level", field: "level" },
+       { label: "Status", field: "status" }],
+      data,
+      [{ label: "View", class: "btn btn-primary", onclick: "viewApplication" }]
+    );
+}
 
-    cache: {},
-
-    loading: false,
-
-    async load(table, options = ""){
-
-        const url = `/rest/v1/${table}?select=*${options}`;
-
-        const result = await sbAdmin(url,{
-            method:"GET"
-        });
-
-        if(!result.ok){
-
-            console.error(result.data);
-
-            return [];
-
-        }
-
-        this.cache[table]=result.data;
-
-        return result.data;
-
-    },
-
-    async create(table,data){
-
-        return sbAdmin(`/rest/v1/${table}`,{
-
-            method:"POST",
-
-            body:JSON.stringify(data)
-
-        });
-
-    },
-
-    async update(table,id,data){
-
-        return sbAdmin(
-
-            `/rest/v1/${table}?id=eq.${id}`,
-
-            {
-
-                method:"PATCH",
-
-                body:JSON.stringify(data)
-
-            }
-
-        );
-
-    },
-
-    async delete(table,id){
-
-        return sbAdmin(
-
-            `/rest/v1/${table}?id=eq.${id}`,
-
-            {
-
-                method:"DELETE"
-
-            }
-
-        );
-
-    }
-
+document.getElementById("applicationSearch").oninput = function() {
+  const q = this.value.toLowerCase();
+  renderApplications(applications.filter(a =>
+    (a.full_name || "").toLowerCase().includes(q) ||
+    (a.email || "").toLowerCase().includes(q) ||
+    (a.course || "").toLowerCase().includes(q)
+  ));
 };
 
-let applications=[];
-
-async function loadApplications(){
-
-showLoading();
-
-applications=await CMS.load(
-
-"applications",
-
-"&order=submitted_at.desc"
-
-);
-
-renderApplications(applications);
-
-hideLoading();
-
-}
-
-function renderApplications(data){
-
-document.getElementById(
-
-"applicationsTable"
-
-).innerHTML=
-
-renderTable(
-
-[
-
-{
-
-label:"Name",
-
-field:"full_name"
-
-},
-
-{
-
-label:"Email",
-
-field:"email"
-
-},
-
-{
-
-label:"Course",
-
-field:"course"
-
-},
-
-{
-
-label:"Level",
-
-field:"level"
-
-},
-
-{
-
-label:"Status",
-
-field:"status"
-
-}
-
-],
-
-data,
-
-[
-
-{
-
-label:"View",
-
-class:"btn btn-primary",
-
-onclick:"viewApplication"
-
-}
-
-]
-
-);
-
-}
-
-document
-
-.getElementById(
-
-"applicationSearch"
-
-)
-
-.oninput=function(){
-
-const q=this.value.toLowerCase();
-
-const filtered=
-
-applications.filter(app=>
-
-(app.full_name||"")
-
-.toLowerCase()
-
-.includes(q)
-
-||
-
-(app.email||"")
-
-.toLowerCase()
-
-.includes(q)
-
-||
-
-(app.course||"")
-
-.toLowerCase()
-
-.includes(q)
-
-);
-
-renderApplications(filtered);
-
+document.getElementById("applicationFilter").onchange = function() {
+  const status = this.value;
+  renderApplications(status === "all" ? applications : applications.filter(a => a.status === status));
 };
 
-document
-
-.getElementById(
-
-"applicationFilter"
-
-)
-
-.onchange=function(){
-
-const status=this.value;
-
-if(status==="all"){
-
-renderApplications(applications);
-
-return;
-
+function viewApplication(id) {
+  const app = applications.find(a => a.id == id);
+  if (!app) return;
+  openModal("Application", `
+    <div class="form-group"><label>Full Name</label><input value="${esc(app.full_name)}" readonly></div>
+    <div class="form-group"><label>Email</label><input value="${esc(app.email)}" readonly></div>
+    <div class="form-group"><label>Phone</label><input value="${esc(app.phone)}" readonly></div>
+    <div class="form-group"><label>Course</label><input value="${esc(app.course)}" readonly></div>
+    <div class="form-group"><label>Level</label><input value="${esc(app.level)}" readonly></div>
+    <div class="form-group"><label>Status</label><input value="${esc(app.status)}" readonly></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="adminApprove('${esc(app.id)}')">Approve</button>
+      <button class="btn btn-danger" onclick="adminReject('${esc(app.id)}')">Reject</button>
+    </div>
+  `);
 }
 
-renderApplications(
-
-applications.filter(
-
-a=>a.status===status
-
-)
-
-);
-
-};
-
-function viewApplication(id){
-
-const app=
-
-applications.find(
-
-a=>a.id==id
-
-);
-
-if(!app)return;
-
-openModal(
-
-"Application",
-
-`
-
-<div class="form-group">
-
-<label>
-
-Full Name
-
-</label>
-
-<input
-
-value="${app.full_name}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Email
-
-</label>
-
-<input
-
-value="${app.email}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Phone
-
-</label>
-
-<input
-
-value="${app.phone}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Course
-
-</label>
-
-<input
-
-value="${app.course}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Level
-
-</label>
-
-<input
-
-value="${app.level}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Status
-
-</label>
-
-<input
-
-value="${app.status}"
-
-readonly>
-
-</div>
-
-<div style="display:flex;gap:10px">
-
-<button
-
-class="btn btn-primary"
-
-onclick="approveApplication('${app.id}')">
-
-Approve
-
-</button>
-
-<button
-
-class="btn btn-danger"
-
-onclick="rejectApplication('${app.id}')">
-
-Reject
-
-</button>
-
-</div>
-
-`
-
-);
-
-}
-
-function generateStudentNumber(){
-
-const year=
-
-new Date().getFullYear();
-
-const random=
-
-Math.floor(
-
-1000+
-
-Math.random()*9000
-
-);
-
-return `HI-${year}-${random}`;
-
-}
-
-async function approveApplication(id){
-
-const app=
-
-applications.find(
-
-a=>a.id===id
-
-);
-
-if(!app)return;
-
-showLoading();
-
-const studentNumber=
-
-generateStudentNumber();
-
-await CMS.create(
-
-"students",
-
-{
-
-student_id:studentNumber,
-
-full_name:app.full_name,
-
-email:app.email,
-
-phone:app.phone,
-
-course:app.course,
-
-level:app.level,
-
-password_hash:app.password_hash
-
-}
-
-);
-
-await CMS.update(
-
-"applications",
-
-id,
-
-{
-
-status:"approved",
-
-student_id:studentNumber,
-
-reviewed_at:
-
-new Date()
-
-.toISOString()
-
-}
-
-);
-
-closeModal();
-
-await loadApplications();
-
-await loadDashboard();
-
-hideLoading();
-
-}
-
-async function rejectApplication(id){
-
-await CMS.update(
-
-"applications",
-
-id,
-
-{
-
-status:"rejected",
-
-reviewed_at:
-
-new Date()
-
-.toISOString()
-
-}
-
-);
-
-closeModal();
-
-loadApplications();
-
-loadDashboard();
-
-}
-
-navItems.forEach(btn => {
-
-    btn.onclick = () => {
-
-        navItems.forEach(n => n.classList.remove("active"));
-        btn.classList.add("active");
-
-        const page = btn.dataset.page;
-
-        pages.forEach(p => p.classList.remove("active"));
-        document.getElementById(page).classList.add("active");
-
-        document.getElementById("page-title").textContent = btn.textContent.trim();
-
-        switch(page){
-
-            case "dashboard":
-                loadDashboard();
-                break;
-
-            case "applications":
-                loadApplications();
-                break;
-
-        }
-
-    };
-
-});
-
-let students=[];
-
-async function loadStudents(){
-
-showLoading();
-
-students=
-
-await CMS.load(
-
-"students",
-
-"&order=created_at.desc"
-
-);
-
-renderStudents(students);
-
-hideLoading();
-
-}
-
-function renderStudents(data){
-
-document.getElementById(
-
-"studentsTable"
-
-).innerHTML=
-
-renderTable(
-
-[
-
-{
-
-label:"Student ID",
-
-field:"student_id"
-
-},
-
-{
-
-label:"Full Name",
-
-field:"full_name"
-
-},
-
-{
-
-label:"Course",
-
-field:"course"
-
-},
-
-{
-
-label:"Level",
-
-field:"level"
-
-},
-
-{
-
-label:"Email",
-
-field:"email"
-
-}
-
-],
-
-data,
-
-[
-
-{
-
-label:"Profile",
-
-class:"btn btn-primary",
-
-onclick:"viewStudent"
-
-},
-
-{
-
-label:"Edit",
-
-class:"btn btn-warning",
-
-onclick:"editStudent"
-
-},
-
-{
-
-label:"Delete",
-
-class:"btn btn-danger",
-
-onclick:"deleteStudent"
-
-}
-
-]
-
-);
-
-}
-
-document
-
-.getElementById(
-
-"studentSearch"
-
-)
-
-.oninput=function(){
-
-const q=this.value.toLowerCase();
-
-renderStudents(
-
-students.filter(s=>
-
-(s.full_name||"")
-
-.toLowerCase()
-
-.includes(q)
-
-||
-
-(s.student_id||"")
-
-.toLowerCase()
-
-.includes(q)
-
-||
-
-(s.email||"")
-
-.toLowerCase()
-
-.includes(q)
-
-)
-
-);
-
-};
-
-function viewStudent(id){
-
-const student=
-
-students.find(
-
-s=>s.id==id
-
-);
-
-if(!student)return;
-
-openModal(
-
-student.full_name,
-
-`
-
-<div class="form-group">
-
-<label>
-
-Student Number
-
-</label>
-
-<input
-
-value="${student.student_id}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Email
-
-</label>
-
-<input
-
-value="${student.email}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Phone
-
-</label>
-
-<input
-
-value="${student.phone}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Course
-
-</label>
-
-<input
-
-value="${student.course}"
-
-readonly>
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Level
-
-</label>
-
-<input
-
-value="${student.level}"
-
-readonly>
-
-</div>
-
-<hr>
-
-<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-
-<button
-
-class="btn btn-primary"
-
-onclick="openPayments('${student.id}')">
-
-Payments
-
-</button>
-
-<button
-
-class="btn btn-primary"
-
-onclick="openAssignments('${student.id}')">
-
-Assignments
-
-</button>
-
-<button
-
-class="btn btn-primary"
-
-onclick="openResults('${student.id}')">
-
-Results
-
-</button>
-
-<button
-
-class="btn btn-primary"
-
-onclick="openLibrary('${student.id}')">
-
-Library
-
-</button>
-
-</div>
-
-`
-
-);
-
-}
-
-function editStudent(id){
-
-const s=
-
-students.find(
-
-x=>x.id==id
-
-);
-
-if(!s)return;
-
-openModal(
-
-"Edit Student",
-
-`
-
-<div class="form-group">
-
-<label>
-
-Full Name
-
-</label>
-
-<input
-
-id="editName"
-
-value="${s.full_name}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Email
-
-</label>
-
-<input
-
-id="editEmail"
-
-value="${s.email}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Phone
-
-</label>
-
-<input
-
-id="editPhone"
-
-value="${s.phone}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Course
-
-</label>
-
-<input
-
-id="editCourse"
-
-value="${s.course}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Level
-
-</label>
-
-<input
-
-id="editLevel"
-
-value="${s.level}">
-
-</div>
-
-<button
-
-class="btn btn-primary"
-
-onclick="saveStudent('${s.id}')">
-
-Save Changes
-
-</button>
-
-`
-
-);
-
-}
-
-async function saveStudent(id){
-
-showLoading();
-
-await CMS.update(
-
-"students",
-
-id,
-
-{
-
-full_name:
-
-document.getElementById(
-
-"editName"
-
-).value,
-
-email:
-
-document.getElementById(
-
-"editEmail"
-
-).value,
-
-phone:
-
-document.getElementById(
-
-"editPhone"
-
-).value,
-
-course:
-
-document.getElementById(
-
-"editCourse"
-
-).value,
-
-level:
-
-document.getElementById(
-
-"editLevel"
-
-).value
-
-}
-
-);
-
-closeModal();
-
-await loadStudents();
-
-hideLoading();
-
-}
-
-async function deleteStudent(id){
-
-if(
-
-!confirm(
-
-"Delete this student?"
-
-)
-
-)return;
-
-showLoading();
-
-await CMS.delete(
-
-"students",
-
-id
-
-);
-
-await loadStudents();
-
-await loadDashboard();
-
-hideLoading();
-
-}
-case "students":
-
-loadStudents();
-
-break;
-
-let courses=[];
-
-async function loadCourses(){
-
-showLoading();
-
-courses=await CMS.load(
-
-"courses",
-
-"&order=title.asc"
-
-);
-
-renderCourses(courses);
-
-hideLoading();
-
-}
-
-function renderCourses(data){
-
-document.getElementById(
-
-"coursesTable"
-
-).innerHTML=
-
-renderTable(
-
-[
-
-{
-
-label:"Title",
-
-field:"title"
-
-},
-
-{
-
-label:"Language",
-
-field:"language"
-
-},
-
-{
-
-label:"Level",
-
-field:"level"
-
-},
-
-{
-
-label:"Duration",
-
-field:"duration"
-
-},
-
-{
-
-label:"Fee",
-
-field:"fee"
-
-},
-
-{
-
-label:"Schedule",
-
-field:"schedule"
-
-}
-
-],
-
-data,
-
-[
-
-{
-
-label:"View",
-
-class:"btn btn-primary",
-
-onclick:"viewCourse"
-
-},
-
-{
-
-label:"Edit",
-
-class:"btn btn-warning",
-
-onclick:"editCourse"
-
-},
-
-{
-
-label:"Delete",
-
-class:"btn btn-danger",
-
-onclick:"deleteCourse"
-
-}
-
-]
-
-);
-
-}
-
-document
-
-.getElementById(
-
-"courseSearch"
-
-)
-
-.oninput=function(){
-
-const q=this.value.toLowerCase();
-
-renderCourses(
-
-courses.filter(c=>
-
-(c.title||"")
-
-.toLowerCase()
-
-.includes(q)
-
-||
-
-(c.language||"")
-
-.toLowerCase()
-
-.includes(q)
-
-||
-
-(c.level||"")
-
-.toLowerCase()
-
-.includes(q)
-
-)
-
-);
-
-};
-
-function newCourse(){
-
-openModal(
-
-"Create Course",
-
-`
-
-<div class="form-group">
-
-<label>
-
-Title
-
-</label>
-
-<input id="courseTitle">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Language
-
-</label>
-
-<input id="courseLanguage">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Level
-
-</label>
-
-<input id="courseLevel">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Duration
-
-</label>
-
-<input id="courseDuration">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Fee
-
-</label>
-
-<input id="courseFee">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Schedule
-
-</label>
-
-<input id="courseSchedule">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Description
-
-</label>
-
-<textarea
-
-id="courseBody"
-
-rows="8"></textarea>
-
-</div>
-
-<button
-
-class="btn btn-primary"
-
-onclick="saveNewCourse()">
-
-Save Course
-
-</button>
-
-`
-
-);
-
-}
-
-async function saveNewCourse(){
-
-showLoading();
-
-await CMS.create(
-
-"courses",
-
-{
-
-title:
-
-courseTitle.value,
-
-language:
-
-courseLanguage.value,
-
-level:
-
-courseLevel.value,
-
-duration:
-
-courseDuration.value,
-
-fee:
-
-courseFee.value,
-
-schedule:
-
-courseSchedule.value,
-
-body:
-
-courseBody.value,
-
-published:true
-
-}
-
-);
-
-closeModal();
-
-await loadCourses();
-
-await loadDashboard();
-
-hideLoading();
-
-}
-
-function viewCourse(id){
-
-const c=
-
-courses.find(
-
-x=>x.id==id
-
-);
-
-if(!c)return;
-
-const studentCount=
-
-students.filter(
-
-s=>
-
-s.course===c.title
-
-).length;
-
-openModal(
-
-c.title,
-
-`
-
-<div class="form-group">
-
-<label>
-
-Language
-
-</label>
-
-<input
-
-readonly
-
-value="${c.language}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Level
-
-</label>
-
-<input
-
-readonly
-
-value="${c.level}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Duration
-
-</label>
-
-<input
-
-readonly
-
-value="${c.duration}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Fee
-
-</label>
-
-<input
-
-readonly
-
-value="${c.fee}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Schedule
-
-</label>
-
-<input
-
-readonly
-
-value="${c.schedule}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Enrolled Students
-
-</label>
-
-<input
-
-readonly
-
-value="${studentCount}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Description
-
-</label>
-
-<textarea
-
-readonly
-
-rows="8">${c.body}</textarea>
-
-</div>
-
-`
-
-);
-
-}
-
-function editCourse(id){
-
-const c=
-
-courses.find(
-
-x=>x.id==id
-
-);
-
-if(!c)return;
-
-openModal(
-
-"Edit Course",
-
-`
-
-<div class="form-group">
-
-<label>
-
-Title
-
-</label>
-
-<input
-
-id="editCourseTitle"
-
-value="${c.title}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Language
-
-</label>
-
-<input
-
-id="editCourseLanguage"
-
-value="${c.language}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Level
-
-</label>
-
-<input
-
-id="editCourseLevel"
-
-value="${c.level}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Duration
-
-</label>
-
-<input
-
-id="editCourseDuration"
-
-value="${c.duration}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Fee
-
-</label>
-
-<input
-
-id="editCourseFee"
-
-value="${c.fee}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Schedule
-
-</label>
-
-<input
-
-id="editCourseSchedule"
-
-value="${c.schedule}">
-
-</div>
-
-<div class="form-group">
-
-<label>
-
-Description
-
-</label>
-
-<textarea
-
-id="editCourseBody"
-
-rows="8">${c.body}</textarea>
-
-</div>
-
-<button
-
-class="btn btn-primary"
-
-onclick="saveCourse('${c.id}')">
-
-Save Changes
-
-</button>
-
-`
-
-);
-
-}
-
-async function saveCourse(id){
-
-showLoading();
-
-await CMS.update(
-
-"courses",
-
-id,
-
-{
-
-title:
-
-editCourseTitle.value,
-
-language:
-
-editCourseLanguage.value,
-
-level:
-
-editCourseLevel.value,
-
-duration:
-
-editCourseDuration.value,
-
-fee:
-
-editCourseFee.value,
-
-schedule:
-
-editCourseSchedule.value,
-
-body:
-
-editCourseBody.value
-
-}
-
-);
-
-closeModal();
-
-await loadCourses();
-
-hideLoading();
-
-}
-
-async function deleteCourse(id){
-
-if(
-
-!confirm(
-
-"Delete this course?"
-
-)
-
-)return;
-
-showLoading();
-
-await CMS.delete(
-
-"courses",
-
-id
-
-);
-
-await loadCourses();
-
-await loadDashboard();
-
-hideLoading();
-
-}
-
-// ── SEND APPROVAL EMAIL ────────────────────────────────────────
-async function sendApprovalEmail(app, studentId) {
-  try {
-    await fetch('/api/send-approval-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        student_id: studentId,
-        full_name:  app.full_name,
-        email:      app.email,
-        course:     app.course,
-        level:      app.level
-      })
-    });
-    console.log('[email] Approval email sent to', app.email);
-  } catch(e) {
-    console.warn('[email] Could not send approval email:', e.message);
-  }
-}
-
-// Override approveApplication to also send email and use HMLI- prefix
-window.approveApplication = async function(id) {
+window.adminApprove = async function(id) {
   const app = applications.find(a => a.id === id);
   if (!app) return;
   showLoading();
   const studentNumber = generateStudentId();
-  await CMS.create('students', {
-    student_id:    studentNumber,
-    full_name:     app.full_name,
-    email:         app.email,
-    phone:         app.phone,
-    course:        app.course,
-    level:         app.level,
-    password_hash: app.password_hash
+  await CMS.create("students", {
+    student_id: studentNumber, full_name: app.full_name, email: app.email,
+    phone: app.phone, course: app.course, level: app.level, password_hash: app.password_hash
   });
-  await CMS.update('applications', id, {
-    status:      'approved',
-    student_id:  studentNumber,
-    reviewed_at: new Date().toISOString()
-  });
-  await sendApprovalEmail(app, studentNumber);
+  await CMS.update("applications", id, { status: "approved", student_id: studentNumber, reviewed_at: new Date().toISOString() });
+  // Send approval email
+  try {
+    await fetch('/api/send-approval-email', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: studentNumber, full_name: app.full_name, email: app.email, course: app.course, level: app.level })
+    });
+  } catch(e) { console.warn('[email] Could not send approval email:', e.message); }
   closeModal();
   await loadApplications();
   await loadDashboard();
   hideLoading();
 };
 
+window.adminReject = async function(id) {
+  await CMS.update("applications", id, { status: "rejected", reviewed_at: new Date().toISOString() });
+  closeModal();
+  loadApplications();
+  loadDashboard();
+};
+
 function generateStudentId() {
   return 'HMLI-' + new Date().getFullYear() + '-' + String(Math.floor(1000 + Math.random() * 9000));
 }
 
-// ── MODAL HELPERS ──────────────────────────────────────────────
-function openModal(title, body) {
-  document.getElementById('modalTitle').textContent = title;
-  document.getElementById('modalBody').innerHTML = body;
-  document.getElementById('modal').style.display = 'flex';
-}
-function closeModal() {
-  document.getElementById('modal').style.display = 'none';
-}
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('modal')) closeModal();
-});
+/*=========================================================
+    STUDENTS
+=========================================================*/
+let students = [];
 
-// ── STUB LOADERS for pages not yet fully built ─────────────────
+async function loadStudents() {
+  showLoading();
+  students = await CMS.load("students", "&order=created_at.desc");
+  renderStudents(students);
+  hideLoading();
+}
+
+function renderStudents(data) {
+  document.getElementById("studentsTable").innerHTML =
+    renderTable(
+      [{ label: "Student ID", field: "student_id" }, { label: "Full Name", field: "full_name" },
+       { label: "Course", field: "course" }, { label: "Level", field: "level" },
+       { label: "Email", field: "email" }],
+      data,
+      [{ label: "Profile", class: "btn btn-primary", onclick: "viewStudent" },
+       { label: "Edit", class: "btn btn-warning", onclick: "editStudent" },
+       { label: "Delete", class: "btn btn-danger", onclick: "deleteStudent" }]
+    );
+}
+
+document.getElementById("studentSearch").oninput = function() {
+  const q = this.value.toLowerCase();
+  renderStudents(students.filter(s =>
+    (s.full_name || "").toLowerCase().includes(q) ||
+    (s.student_id || "").toLowerCase().includes(q) ||
+    (s.email || "").toLowerCase().includes(q)
+  ));
+};
+
+function viewStudent(id) {
+  const s = students.find(x => x.id == id);
+  if (!s) return;
+  openModal(s.full_name, `
+    <div class="form-group"><label>Student Number</label><input value="${esc(s.student_id)}" readonly></div>
+    <div class="form-group"><label>Email</label><input value="${esc(s.email)}" readonly></div>
+    <div class="form-group"><label>Phone</label><input value="${esc(s.phone)}" readonly></div>
+    <div class="form-group"><label>Course</label><input value="${esc(s.course)}" readonly></div>
+    <div class="form-group"><label>Level</label><input value="${esc(s.level)}" readonly></div>
+  `);
+}
+
+function editStudent(id) {
+  const s = students.find(x => x.id == id);
+  if (!s) return;
+  openModal("Edit Student", `
+    <div class="form-group"><label>Full Name</label><input id="editName" value="${esc(s.full_name)}"></div>
+    <div class="form-group"><label>Email</label><input id="editEmail" value="${esc(s.email)}"></div>
+    <div class="form-group"><label>Phone</label><input id="editPhone" value="${esc(s.phone)}"></div>
+    <div class="form-group"><label>Course</label><input id="editCourse" value="${esc(s.course)}"></div>
+    <div class="form-group"><label>Level</label><input id="editLevel" value="${esc(s.level)}"></div>
+    <button class="btn btn-primary" onclick="saveStudent('${esc(s.id)}')">Save Changes</button>
+  `);
+}
+
+window.saveStudent = async function(id) {
+  showLoading();
+  await CMS.update("students", id, {
+    full_name: document.getElementById("editName").value,
+    email: document.getElementById("editEmail").value,
+    phone: document.getElementById("editPhone").value,
+    course: document.getElementById("editCourse").value,
+    level: document.getElementById("editLevel").value
+  });
+  closeModal();
+  await loadStudents();
+  hideLoading();
+};
+
+window.deleteStudent = async function(id) {
+  if (!confirm("Delete this student?")) return;
+  showLoading();
+  await CMS.delete("students", id);
+  await loadStudents();
+  await loadDashboard();
+  hideLoading();
+};
+
+/*=========================================================
+    COURSES
+=========================================================*/
+let courses = [];
+
+async function loadCourses() {
+  showLoading();
+  courses = await CMS.load("courses", "&order=title.asc");
+  renderCourses(courses);
+  hideLoading();
+}
+
+function renderCourses(data) {
+  document.getElementById("coursesTable").innerHTML =
+    renderTable(
+      [{ label: "Title", field: "title" }, { label: "Language", field: "language" },
+       { label: "Level", field: "level" }, { label: "Duration", field: "duration" },
+       { label: "Fee", field: "fee" }, { label: "Schedule", field: "schedule" }],
+      data,
+      [{ label: "View", class: "btn btn-primary", onclick: "viewCourse" },
+       { label: "Edit", class: "btn btn-warning", onclick: "editCourse" },
+       { label: "Delete", class: "btn btn-danger", onclick: "deleteCourse" }]
+    );
+}
+
+document.getElementById("courseSearch").oninput = function() {
+  const q = this.value.toLowerCase();
+  renderCourses(courses.filter(c =>
+    (c.title || "").toLowerCase().includes(q) ||
+    (c.language || "").toLowerCase().includes(q) ||
+    (c.level || "").toLowerCase().includes(q)
+  ));
+};
+
+window.newCourse = function() {
+  openModal("Create Course", `
+    <div class="form-group"><label>Title</label><input id="courseTitle"></div>
+    <div class="form-group"><label>Language</label><input id="courseLanguage"></div>
+    <div class="form-group"><label>Level</label><input id="courseLevel"></div>
+    <div class="form-group"><label>Duration</label><input id="courseDuration"></div>
+    <div class="form-group"><label>Fee</label><input id="courseFee"></div>
+    <div class="form-group"><label>Schedule</label><input id="courseSchedule"></div>
+    <div class="form-group"><label>Description</label><textarea id="courseBody" rows="8"></textarea></div>
+    <button class="btn btn-primary" onclick="saveNewCourse()">Save Course</button>
+  `);
+};
+
+window.saveNewCourse = async function() {
+  showLoading();
+  await CMS.create("courses", {
+    title: document.getElementById("courseTitle").value,
+    language: document.getElementById("courseLanguage").value,
+    level: document.getElementById("courseLevel").value,
+    duration: document.getElementById("courseDuration").value,
+    fee: document.getElementById("courseFee").value,
+    schedule: document.getElementById("courseSchedule").value,
+    body: document.getElementById("courseBody").value,
+    published: true
+  });
+  closeModal();
+  await loadCourses();
+  await loadDashboard();
+  hideLoading();
+};
+
+function viewCourse(id) {
+  const c = courses.find(x => x.id == id);
+  if (!c) return;
+  openModal(c.title, `
+    <div class="form-group"><label>Language</label><input readonly value="${esc(c.language)}"></div>
+    <div class="form-group"><label>Level</label><input readonly value="${esc(c.level)}"></div>
+    <div class="form-group"><label>Duration</label><input readonly value="${esc(c.duration)}"></div>
+    <div class="form-group"><label>Fee</label><input readonly value="${esc(c.fee)}"></div>
+    <div class="form-group"><label>Schedule</label><input readonly value="${esc(c.schedule)}"></div>
+    <div class="form-group"><label>Description</label><textarea readonly rows="8">${esc(c.body)}</textarea></div>
+  `);
+}
+
+function editCourse(id) {
+  const c = courses.find(x => x.id == id);
+  if (!c) return;
+  openModal("Edit Course", `
+    <div class="form-group"><label>Title</label><input id="editCourseTitle" value="${esc(c.title)}"></div>
+    <div class="form-group"><label>Language</label><input id="editCourseLanguage" value="${esc(c.language)}"></div>
+    <div class="form-group"><label>Level</label><input id="editCourseLevel" value="${esc(c.level)}"></div>
+    <div class="form-group"><label>Duration</label><input id="editCourseDuration" value="${esc(c.duration)}"></div>
+    <div class="form-group"><label>Fee</label><input id="editCourseFee" value="${esc(c.fee)}"></div>
+    <div class="form-group"><label>Schedule</label><input id="editCourseSchedule" value="${esc(c.schedule)}"></div>
+    <div class="form-group"><label>Description</label><textarea id="editCourseBody" rows="8">${esc(c.body)}</textarea></div>
+    <button class="btn btn-primary" onclick="saveCourse('${esc(c.id)}')">Save Changes</button>
+  `);
+}
+
+window.saveCourse = async function(id) {
+  showLoading();
+  await CMS.update("courses", id, {
+    title: document.getElementById("editCourseTitle").value,
+    language: document.getElementById("editCourseLanguage").value,
+    level: document.getElementById("editCourseLevel").value,
+    duration: document.getElementById("editCourseDuration").value,
+    fee: document.getElementById("editCourseFee").value,
+    schedule: document.getElementById("editCourseSchedule").value,
+    body: document.getElementById("editCourseBody").value
+  });
+  closeModal();
+  await loadCourses();
+  hideLoading();
+};
+
+window.deleteCourse = async function(id) {
+  if (!confirm("Delete this course?")) return;
+  showLoading();
+  await CMS.delete("courses", id);
+  await loadCourses();
+  await loadDashboard();
+  hideLoading();
+};
+
+/*=========================================================
+    LIBRARY
+=========================================================*/
+async function loadLibrary() {
+  const el = document.getElementById("libraryTable");
+  el.innerHTML = "<p>Loading library...</p>";
+  try {
+    const items = await CMS.load("library", "&order=created_at.desc");
+    el.innerHTML = renderTable(
+      [{ label: "Title", field: "title" }, { label: "Type", field: "type" }, { label: "Language", field: "language" }, { label: "Level", field: "level" }],
+      items,
+      [{ label: "Edit", class: "btn btn-warning", onclick: "editLibraryItem" }, { label: "Delete", class: "btn btn-danger", onclick: "deleteLibraryItem" }]
+    );
+  } catch(e) {
+    el.innerHTML = `<p style="color:#a00">Error loading library: ${e.message}</p>`;
+  }
+}
+
+window.newLibraryBook = function() {
+  openModal("Upload Library Book", `
+    <div class="form-group"><label>Title</label><input id="libTitle"></div>
+    <div class="form-group"><label>Author</label><input id="libAuthor"></div>
+    <div class="form-group"><label>Language</label><input id="libLanguage"></div>
+    <div class="form-group"><label>Level</label><input id="libLevel"></div>
+    <div class="form-group"><label>Type</label><input id="libType" placeholder="e.g. Textbook"></div>
+    <div class="form-group"><label>Description</label><textarea id="libDesc" rows="4"></textarea></div>
+    <div class="form-group"><label>File URL</label><input id="libFile" placeholder="https://..."></div>
+    <button class="btn btn-primary" onclick="saveLibraryItem()">Save</button>
+  `);
+};
+
+window.saveLibraryItem = async function() {
+  showLoading();
+  await CMS.create("library", {
+    title: document.getElementById("libTitle").value,
+    author: document.getElementById("libAuthor").value,
+    language: document.getElementById("libLanguage").value,
+    level: document.getElementById("libLevel").value,
+    type: document.getElementById("libType").value,
+    description: document.getElementById("libDesc").value,
+    file_url: document.getElementById("libFile").value,
+    free: true
+  });
+  closeModal();
+  await loadLibrary();
+  hideLoading();
+};
+
+window.deleteLibraryItem = async function(id) {
+  if (!confirm("Delete this item?")) return;
+  showLoading();
+  await CMS.delete("library", id);
+  await loadLibrary();
+  hideLoading();
+};
+
+/*=========================================================
+    NEWS
+=========================================================*/
+async function loadNews() {
+  const el = document.getElementById("newsTable");
+  el.innerHTML = "<p>Loading news...</p>";
+  try {
+    const items = await CMS.load("news", "&order=date.desc");
+    el.innerHTML = renderTable(
+      [{ label: "Title", field: "title" }, { label: "Date", field: "date" }, { label: "Category", field: "category" }],
+      items,
+      [{ label: "Edit", class: "btn btn-warning", onclick: "editNewsItem" }, { label: "Delete", class: "btn btn-danger", onclick: "deleteNewsItem" }]
+    );
+  } catch(e) {
+    el.innerHTML = `<p style="color:#a00">Error loading news: ${e.message}</p>`;
+  }
+}
+
+window.newNewsItem = function() {
+  openModal("Create News", `
+    <div class="form-group"><label>Title</label><input id="newsTitle"></div>
+    <div class="form-group"><label>Date</label><input id="newsDate" type="date"></div>
+    <div class="form-group"><label>Category</label>
+      <select id="newsCategory">
+        <option>Announcement</option><option>Event</option><option>Achievement</option><option>Update</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Summary</label><textarea id="newsSummary" rows="3"></textarea></div>
+    <div class="form-group"><label>Body</label><textarea id="newsBody" rows="6"></textarea></div>
+    <div class="form-group"><label>Image URL</label><input id="newsImage"></div>
+    <button class="btn btn-primary" onclick="saveNewsItem()">Save</button>
+  `);
+};
+
+window.saveNewsItem = async function() {
+  showLoading();
+  await CMS.create("news", {
+    title: document.getElementById("newsTitle").value,
+    date: document.getElementById("newsDate").value || null,
+    category: document.getElementById("newsCategory").value,
+    summary: document.getElementById("newsSummary").value,
+    body: document.getElementById("newsBody").value,
+    image: document.getElementById("newsImage").value,
+    published: true
+  });
+  closeModal();
+  await loadNews();
+  hideLoading();
+};
+
+window.deleteNewsItem = async function(id) {
+  if (!confirm("Delete this news item?")) return;
+  showLoading();
+  await CMS.delete("news", id);
+  await loadNews();
+  hideLoading();
+};
+
+/*=========================================================
+    STUB PAGES
+=========================================================*/
 function stubPage(elId, label) {
   const el = document.getElementById(elId);
   if (el && !el.dataset.loaded) {
     el.dataset.loaded = '1';
     el.innerHTML = `
-      <div class="page-toolbar">
-        <div><h2>${label}</h2><p>Manage ${label.toLowerCase()}</p></div>
-      </div>
+      <div class="page-toolbar"><div><h2>${label}</h2><p>Manage ${label.toLowerCase()}</p></div></div>
       <div class="panel" style="text-align:center;padding:3rem;color:#667085">
         <div style="font-size:2.5rem;margin-bottom:1rem">🚧</div>
         <p>This section is coming soon.</p>
@@ -3607,7 +1123,8 @@ async function loadScholarships() { stubPage('scholarships', 'Scholarships'); }
 async function loadMessages() {
   showLoading();
   const msgs = await CMS.load('messages', '&order=created_at.desc');
-  document.getElementById('messages').innerHTML = `
+  const el = document.getElementById('messages');
+  el.innerHTML = `
     <div class="page-toolbar"><div><h2>Messages</h2><p>Student enquiries</p></div></div>
     ${renderTable(
       [{label:'From',field:'from_name'},{label:'Subject',field:'subject'},{label:'Read',field:'read'},{label:'Date',field:'created_at'}],
@@ -3616,23 +1133,25 @@ async function loadMessages() {
     )}`;
   hideLoading();
 }
+
 function viewMessage(id) {
-  const msg = (CMS.cache['messages']||[]).find(m=>m.id===id);
+  const msg = (CMS.cache['messages']||[]).find(m=>m.id==id);
   if (!msg) return;
   openModal(msg.subject||'Message',`
-    <p><strong>From:</strong> ${msg.from_name||'—'}</p>
-    <p><strong>Student ID:</strong> ${msg.student_id||'—'}</p>
+    <p><strong>From:</strong> ${esc(msg.from_name||'—')}</p>
+    <p><strong>Student ID:</strong> ${esc(msg.student_id||'—')}</p>
     <hr style="margin:1rem 0">
-    <p>${msg.body}</p>
+    <p>${esc(msg.body)}</p>
   `);
 }
+
 function loadSettings() {
   document.getElementById('settings').innerHTML = `
     <div class="page-toolbar"><div><h2>Settings</h2></div></div>
     <div class="panel">
       <h2>Site Configuration</h2>
       <p style="color:#667085;margin-bottom:1.5rem">Environment variables are managed in Railway. Changes take effect on next deploy.</p>
-      <div class="form-group"><label>Supabase URL</label><input readonly value="${window.SUPABASE_URL||'Not set'}"></div>
+      <div class="form-group"><label>Supabase URL</label><input readonly value="${esc(window.SUPABASE_URL||'Not set')}"></div>
       <div class="form-group"><label>Site URL</label><input readonly value="${window.location.origin}"></div>
       <div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap">
         <a href="/index.html" target="_blank" class="btn btn-primary">View Main Site</a>
@@ -3643,55 +1162,86 @@ function loadSettings() {
 }
 
 // ── QUICK ACTION BUTTONS ───────────────────────────────────────
-document.getElementById('btnNewCourse').onclick     = () => { document.querySelector('[data-page="courses"]').click(); setTimeout(newCourse,200); };
-document.getElementById('btnNewNews').onclick       = () => { document.querySelector('[data-page="news"]').click(); };
-document.getElementById('btnNewBook').onclick       = () => { document.querySelector('[data-page="library"]').click(); };
-document.getElementById('btnNewScholarship').onclick = () => { document.querySelector('[data-page="scholarships"]').click(); };
+const gateEl = document.getElementById('hmli-gate');
+if (!gateEl || sessionStorage.getItem(GATE_KEY) === '1') {
+  document.getElementById('btnNewCourse').onclick     = () => { document.querySelector('[data-page="courses"]').click(); setTimeout(window.newCourse, 200); };
+  document.getElementById('btnNewNews').onclick       = () => { document.querySelector('[data-page="news"]').click(); };
+  document.getElementById('btnNewBook').onclick       = () => { document.querySelector('[data-page="library"]').click(); };
+  document.getElementById('btnNewScholarship').onclick = () => { document.querySelector('[data-page="scholarships"]').click(); };
+}
+
+/*=========================================================
+    RENDER TABLE HELPER
+=========================================================*/
+function renderTable(columns, data, actions = []) {
+  let html = `<table><thead><tr>`;
+  columns.forEach(col => { html += `<th>${esc(col.label)}</th>`; });
+  if (actions.length) html += `<th>Actions</th>`;
+  html += `</tr></thead><tbody>`;
+  if (data.length === 0) {
+    html += `<tr><td colspan="${columns.length + (actions.length ? 1 : 0)}" style="text-align:center;padding:50px">No records found.</td></tr>`;
+  }
+  data.forEach(row => {
+    html += `<tr>`;
+    columns.forEach(col => { html += `<td>${esc(row[col.field] ?? "")}</td>`; });
+    if (actions.length) {
+      html += `<td>`;
+      actions.forEach(btn => {
+        html += `<button class="${btn.class}" onclick="${btn.onclick}('${esc(row.id)}')">${esc(btn.label)}</button> `;
+      });
+      html += `</td>`;
+    }
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  return html;
+}
+
+/*=========================================================
+    MODAL HELPERS
+=========================================================*/
+function openModal(title, body) {
+  const titleEl = document.getElementById('modalTitle');
+  const bodyEl  = document.getElementById('modalBody');
+  if (titleEl) titleEl.textContent = title;
+  if (bodyEl)  bodyEl.innerHTML = body;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+// Modal backdrop close
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+
+/*=========================================================
+    ESCAPE HTML
+=========================================================*/
+function esc(s) {
+  return String(s || '').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+}
 
 } // end initAdminCMS
 </script>
+
 <div id="loadingOverlay">
-
     <div class="loaderBox">
-
         <div class="spinner"></div>
-
-        <h3>
-
-            Loading...
-
-        </h3>
-
+        <h3>Loading...</h3>
     </div>
-
 </div>
 
 <div id="modal">
-
-<div class="modalWindow">
-
-<div class="modalHeader">
-
-<h2 id="modalTitle">
-
-Modal
-
-</h2>
-
-<button onclick="closeModal()">
-
-✕
-
-</button>
-
-</div>
-
-<div id="modalBody">
-
-</div>
-
-</div>
-
+  <div class="modalWindow">
+    <div class="modalHeader">
+      <h2 id="modalTitle">Modal</h2>
+      <button onclick="closeModal()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
 </div>
 </body>
 </html>

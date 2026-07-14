@@ -1,7 +1,7 @@
 /**
  * @file Main server for the Heimatliebe Institute website.
  * This Node.js server handles:
- * - Serving static files from the `public` directory.
+ * - Serving static files from the project root.
  * - Providing a dynamic `/config.json` for frontend runtime configuration.
  * - API endpoints for sending emails (student approval, password reset).
  * - API endpoints for password reset flow.
@@ -14,7 +14,7 @@ import path from 'path';
 import { createTransport } from 'nodemailer';
 
 const port = process.env.PORT || 3000;
-const publicDir = path.join(process.cwd(), 'public'); // Serves static files from here
+const publicDir = process.cwd(); // Serve files from project root (not /public)
 const contentDir = path.join(process.cwd(), 'content'); // Markdown content lives here
 const mime = {
   '.html': 'text/html; charset=utf-8',
@@ -43,13 +43,6 @@ function contentType(filePath) {
 }
 
 // ── Nodemailer Transport ───────────────────────────────────────
-// Set these in Railway environment variables:
-//   SMTP_HOST     e.g. smtp.gmail.com
-//   SMTP_PORT     e.g. 465
-//   SMTP_USER     e.g. heimatliebemw@gmail.com
-//   SMTP_PASS     Gmail App Password (NOT your Gmail login password)
-//   SMTP_FROM     e.g. "Heimatliebe Institute <heimatliebemw@gmail.com>"
-//   SITE_URL      e.g. https://your-railway-url.up.railway.app
 /**
  * Creates and configures a Nodemailer transport for sending emails.
  * Reads SMTP configuration from environment variables.
@@ -67,10 +60,6 @@ function getTransport() {
 }
 
 // ── Email Templates ────────────────────────────────────────────
-/**
- * Generates the HTML for the student approval email.
- * @param {object} params - The parameters for the email template.
- */
 function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
   const loginUrl     = `${site_url}/login.html?id=${encodeURIComponent(student_id)}`;
   const resetUrl     = `${site_url}/reset-password.html`;
@@ -84,8 +73,6 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F5EF;padding:40px 16px">
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-top:4px solid #C9A84C">
-
-        <!-- HEADER -->
         <tr><td style="background:#1B4332;padding:28px 36px">
           <p style="margin:0;font-family:Georgia,serif;font-size:20px;font-weight:700;color:#C9A84C">
             Heimatliebe <span style="color:rgba(255,255,255,0.75);font-weight:400">Institute</span>
@@ -94,8 +81,6 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
             Student Portal
           </p>
         </td></tr>
-
-        <!-- BODY -->
         <tr><td style="padding:36px 36px 28px">
           <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#C9A84C">
             Enrolment Confirmed
@@ -107,8 +92,6 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
             Your payment has been confirmed and your enrolment in <strong style="color:#1B4332">${course} (${level})</strong>
             is now active. Your Student ID has been issued below.
           </p>
-
-          <!-- STUDENT ID BOX -->
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#1B4332;margin:0 0 28px">
             <tr><td style="padding:24px;text-align:center">
               <p style="margin:0 0 6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5)">
@@ -122,8 +105,6 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
               </p>
             </td></tr>
           </table>
-
-          <!-- WHAT NEXT -->
           <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1B4332;text-transform:uppercase;letter-spacing:1px">
             Next Steps
           </p>
@@ -147,8 +128,6 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
               </td>
             </tr>
           </table>
-
-          <!-- BUTTONS -->
           <table cellpadding="0" cellspacing="0" style="margin:0 0 28px">
             <tr>
               <td style="padding-right:12px">
@@ -165,21 +144,17 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
               </td>
             </tr>
           </table>
-
           <p style="margin:0;font-size:13px;color:#4A6572;line-height:1.7">
             Questions? Reply to this email or contact us on
             <a href="https://wa.me/265991383466" style="color:#2D6A4F;font-weight:600">WhatsApp +265 991 383 466</a>.
           </p>
         </td></tr>
-
-        <!-- FOOTER -->
         <tr><td style="background:#f7f5ef;padding:20px 36px;border-top:1px solid #ede9df">
           <p style="margin:0;font-size:12px;color:#9aacb4;text-align:center">
             Heimatliebe Institute · Karonga, Northern Malawi<br>
             <a href="${site_url}" style="color:#9aacb4">${site_url}</a>
           </p>
         </td></tr>
-
       </table>
     </td></tr>
   </table>
@@ -187,10 +162,6 @@ function approvalEmailHtml({ full_name, student_id, course, level, site_url }) {
 </html>`;
 }
 
-/**
- * Generates the HTML for the password reset email.
- * @param {object} params - The parameters for the email template.
- */
 function resetEmailHtml({ student_id, reset_token, site_url }) {
   const resetUrl = `${site_url}/reset-password.html?token=${reset_token}&id=${encodeURIComponent(student_id)}`;
   return `
@@ -255,9 +226,6 @@ function readBody(req) {
 
 /**
  * Helper function to send a JSON response.
- * @param {import('http').ServerResponse} res - The response object.
- * @param {number} status - The HTTP status code.
- * @param {object} data - The JSON data to send.
  */
 function jsonRes(res, status, data) {
   res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
@@ -266,10 +234,6 @@ function jsonRes(res, status, data) {
 
 /**
  * A server-side helper to make authenticated requests to the Supabase REST API.
- * Uses environment variables for Supabase URL and anon key.
- * @param {string} path - The API path (e.g., '/rest/v1/students').
- * @param {object} options - Fetch options.
- * @returns {Promise<{ok: boolean, status: number, data: any}>}
  */
 async function supabaseFetch(path, options = {}) {
   const url = `${process.env.SUPABASE_URL}${path}`;
@@ -297,64 +261,12 @@ const server = createServer(async (req, res) => {
     const method  = req.method.toUpperCase();
 
     // ── CORS preflight ─────────────────────────────────────────
-    // Handles preflight requests for CORS, allowing cross-origin API calls from the frontend.
     if (method === 'OPTIONS') {
       res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' });
       res.end(); return;
     }
 
-    // ── /config.json ───────────────────────────────────────────
-    // API Endpoint: /config.json
-    // Method: GET
-    // Description: Dynamically serves runtime configuration to the frontend.
-    // It merges environment variables (`SUPABASE_URL`, `SUPABASE_ANON`, `ADMIN_PASSWORD`)
-    // with a fallback to a local `config.json` if it exists. This keeps secrets
-    // out of the client-side code and allows for easy configuration in production.
-    if (url === '/config.json') {
-      let fileConfig = {};
-      try {
-        const raw = await fs.readFile(path.join(publicDir, 'config.json'), 'utf8');
-        const trimmed = raw.trim();
-        if (trimmed.startsWith('{')) {
-          fileConfig = JSON.parse(trimmed);
-        }
-      } catch {}
-
-      const config = {
-        SUPABASE_URL:   process.env.SUPABASE_URL   || fileConfig.SUPABASE_URL   || '',
-        SUPABASE_ANON:  process.env.SUPABASE_ANON  || fileConfig.SUPABASE_ANON  || '',
-        ADMIN_PASSWORD: process.env.ADMIN_PASSWORD  || fileConfig.ADMIN_PASSWORD || ''
-      };
-      jsonRes(res, 200, config); return;
-    }
-
-    // ── /content-list ──────────────────────────────────────────
-    // API Endpoint: /content-list?folder=<folder_name>
-    // Method: GET
-    // Description: Lists all markdown files in a specified content directory (e.g., /content/news).
-    // Used by the frontend to dynamically discover content without hardcoding file lists,
-    // enabling a simple file-based CMS workflow.
-    if (url.startsWith('/content-list')) {
-      const folder = urlObj.searchParams.get('folder') || '';
-      if (!/^[a-zA-Z0-9_-]+$/.test(folder)) { jsonRes(res, 400, { error: 'Invalid folder' }); return; }
-      const listDir = path.join(contentDir, folder);
-      try {
-        const entries = await fs.readdir(listDir, { withFileTypes: true });
-        const files = entries.filter(e => e.isFile() && e.name.endsWith('.md')).map(e => e.name).sort();
-        jsonRes(res, 200, files);
-      } catch {
-        jsonRes(res, 404, { error: 'Folder not found' });
-      }
-      return;
-    }
-
     // ── /api/send-approval-email ───────────────────────────────
-    // API Endpoint: /api/send-approval-email
-    // Method: POST
-    // Description: Sends a welcome email to a student after their application is approved.
-    // This email contains their new Student ID and a link to set their password.
-    // Called from the admin student management page.
-    // Body: { student_id, full_name, email, course, level }
     if (url === '/api/send-approval-email' && method === 'POST') {
       const body = await readBody(req);
       const { student_id, full_name, email, course, level } = body;
@@ -383,13 +295,6 @@ const server = createServer(async (req, res) => {
     }
 
     // ── /api/request-password-reset ───────────────────────────
-    // API Endpoint: /api/request-password-reset
-    // Method: POST
-    // Description: Handles a student's request to reset their password.
-    // It verifies the student's existence, generates a secure reset token,
-    // stores it in the database with an expiry, and sends a reset link via email.
-    // To prevent user enumeration, it always returns a success message.
-    // Body: { student_id, email }
     if (url === '/api/request-password-reset' && method === 'POST') {
       const body = await readBody(req);
       const { student_id, email } = body;
@@ -398,14 +303,12 @@ const server = createServer(async (req, res) => {
         jsonRes(res, 400, { error: 'Missing student_id or email' }); return;
       }
 
-      // Verify student exists with matching email
       const { ok, data } = await supabaseFetch(
         `/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}&email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,student_id,full_name,email`,
         { method: 'GET', headers: { 'Prefer': '' } }
       );
 
       if (!ok || !Array.isArray(data) || data.length === 0) {
-        // Return success anyway to prevent email enumeration
         jsonRes(res, 200, { ok: true, message: 'If that Student ID and email match, a reset link has been sent.' });
         return;
       }
@@ -414,9 +317,8 @@ const server = createServer(async (req, res) => {
 
       // Generate reset token
       const token     = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('');
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
-      // Store token in Supabase
       await supabaseFetch('/rest/v1/password_reset_tokens', {
         method: 'POST',
         body: JSON.stringify({
@@ -447,13 +349,6 @@ const server = createServer(async (req, res) => {
     }
 
     // ── /api/reset-password ────────────────────────────────────
-    // API Endpoint: /api/reset-password
-    // Method: POST
-    // Description: Completes the password reset process.
-    // It validates the provided token and student ID, checks for token expiry,
-    // hashes the new password, updates the student's record in the database,
-    // and invalidates the token to prevent reuse.
-    // Body: { token, student_id, new_password }
     if (url === '/api/reset-password' && method === 'POST') {
       const body = await readBody(req);
       const { token, student_id, new_password } = body;
@@ -465,7 +360,6 @@ const server = createServer(async (req, res) => {
         jsonRes(res, 400, { error: 'Password must be at least 8 characters' }); return;
       }
 
-      // Validate token
       const { ok, data } = await supabaseFetch(
         `/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&student_id=eq.${encodeURIComponent(student_id.toUpperCase())}&used=eq.false&select=*`,
         { method: 'GET', headers: { 'Prefer': '' } }
@@ -480,17 +374,14 @@ const server = createServer(async (req, res) => {
         jsonRes(res, 400, { error: 'This reset link has expired. Please request a new one.' }); return;
       }
 
-      // Hash new password (same salt as client-side)
       const { createHash } = await import('crypto');
       const pwHash = createHash('sha256').update(new_password + 'hmli_salt_2025').digest('hex');
 
-      // Update student password
       await supabaseFetch(
         `/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}`,
         { method: 'PATCH', body: JSON.stringify({ password_hash: pwHash }) }
       );
 
-      // Mark token used
       await supabaseFetch(
         `/rest/v1/password_reset_tokens?id=eq.${tokenRow.id}`,
         { method: 'PATCH', body: JSON.stringify({ used: true }) }
@@ -501,9 +392,42 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // ── /config.json ───────────────────────────────────────────
+    // Serve AFTER API routes so it doesn't catch /api/* routes
+    if (url === '/config.json') {
+      let fileConfig = {};
+      try {
+        const raw = await fs.readFile(path.join(publicDir, 'config.json'), 'utf8');
+        const trimmed = raw.trim();
+        if (trimmed.startsWith('{')) {
+          fileConfig = JSON.parse(trimmed);
+        }
+      } catch {}
+
+      const config = {
+        SUPABASE_URL:   process.env.SUPABASE_URL   || fileConfig.SUPABASE_URL   || '',
+        SUPABASE_ANON:  process.env.SUPABASE_ANON  || fileConfig.SUPABASE_ANON  || '',
+        ADMIN_PASSWORD: process.env.ADMIN_PASSWORD  || fileConfig.ADMIN_PASSWORD || ''
+      };
+      jsonRes(res, 200, config); return;
+    }
+
+    // ── /content-list ──────────────────────────────────────────
+    if (url.startsWith('/content-list')) {
+      const folder = urlObj.searchParams.get('folder') || '';
+      if (!/^[a-zA-Z0-9_-]+$/.test(folder)) { jsonRes(res, 400, { error: 'Invalid folder' }); return; }
+      const listDir = path.join(contentDir, folder);
+      try {
+        const entries = await fs.readdir(listDir, { withFileTypes: true });
+        const files = entries.filter(e => e.isFile() && e.name.endsWith('.md')).map(e => e.name).sort();
+        jsonRes(res, 200, files);
+      } catch {
+        jsonRes(res, 404, { error: 'Folder not found' });
+      }
+      return;
+    }
+
     // ── Static File Serving ────────────────────────────────────
-    // Serves static files from the `public` directory. If a file is not found,
-    // it falls back to serving `index.html`, which is standard for single-page applications.
     let filePath = path.join(publicDir, url);
     let stat;
     try { stat = await fs.stat(filePath); } catch { stat = null; }
