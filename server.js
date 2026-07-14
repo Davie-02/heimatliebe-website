@@ -530,3 +530,21 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => console.log(`Heimatliebe server running on port ${PORT}`));
+
+// ── Graceful Shutdown Handler ──────────────────────────────────
+function gracefulShutdown(signal) {
+  console.log(`[server] Received ${signal}, shutting down gracefully.`);
+  server.close(() => {
+    console.log('[server] Closed out remaining connections.');
+    process.exit(0);
+  });
+
+  // If server hasn't finished in 10s, force shutdown
+  setTimeout(() => {
+    console.error('[server] Could not close connections in time, forcefully shutting down.');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT')); // For local Ctrl+C

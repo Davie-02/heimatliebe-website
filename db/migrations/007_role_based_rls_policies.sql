@@ -8,7 +8,7 @@
 -- ═══════════════════════════════════════════════════════════════
 
 -- Helper function to get user role from JWT
-CREATE OR REPLACE FUNCTION auth.get_user_role()
+CREATE OR REPLACE FUNCTION public.get_user_role()
 RETURNS TEXT AS $$
   SELECT current_setting('request.jwt.claims', true)::jsonb->>'role';
 $$ LANGUAGE sql STABLE;
@@ -22,7 +22,7 @@ DROP POLICY IF EXISTS "Allow users to view their own data" ON public.users;
 DROP POLICY IF EXISTS "Allow users to update their own data" ON public.users;
 
 CREATE POLICY "Allow full access for admins" ON public.users
-  FOR ALL USING (auth.get_user_role() IN ('admin', 'superadmin', 'hr'));
+  FOR ALL USING (public.get_user_role() IN ('admin', 'superadmin', 'hr'));
 
 CREATE POLICY "Allow users to view their own data" ON public.users
   FOR SELECT USING (auth.uid() = id);
@@ -50,10 +50,10 @@ DROP POLICY IF EXISTS "Allow teachers to manage assignments" ON public.assignmen
 DROP POLICY IF EXISTS "Allow students to view assignments" ON public.assignments;
 
 CREATE POLICY "Allow full access for admins" ON public.assignments
-  FOR ALL USING (auth.get_user_role() IN ('admin', 'superadmin'));
+  FOR ALL USING (public.get_user_role() IN ('admin', 'superadmin'));
 CREATE POLICY "Allow teachers to manage assignments" ON public.assignments
   FOR ALL USING (class_id IN (SELECT id FROM public.classes WHERE teacher_id = auth.uid()))
-  WITH CHECK (auth.get_user_role() = 'teacher');
+  WITH CHECK (public.get_user_role() = 'teacher');
 CREATE POLICY "Allow students to view assignments" ON public.assignments
   FOR SELECT USING (class_id IN (SELECT id FROM get_user_classes(auth.uid())));
 
@@ -64,12 +64,12 @@ DROP POLICY IF EXISTS "Allow students to manage their own submissions" ON public
 DROP POLICY IF EXISTS "Allow teachers to view/grade submissions for their classes" ON public.submissions;
 
 CREATE POLICY "Allow full access for admins" ON public.submissions
-  FOR ALL USING (auth.get_user_role() IN ('admin', 'superadmin'));
+  FOR ALL USING (public.get_user_role() IN ('admin', 'superadmin'));
 CREATE POLICY "Allow students to manage their own submissions" ON public.submissions
   FOR ALL USING (user_id = auth.uid());
 CREATE POLICY "Allow teachers to view/grade submissions for their classes" ON public.submissions
   FOR ALL USING (assignment_id IN (SELECT id FROM public.assignments WHERE class_id IN (SELECT id FROM public.classes WHERE teacher_id = auth.uid())))
-  WITH CHECK (auth.get_user_role() = 'teacher');
+  WITH CHECK (public.get_user_role() = 'teacher');
 
 -- -------------------------------------------------------------
 -- Table: library
@@ -82,7 +82,7 @@ DROP POLICY IF EXISTS "Allow admins to manage library" ON public.library;
 CREATE POLICY "Allow read access to all authenticated users" ON public.library
   FOR SELECT USING (auth.role() = 'authenticated' AND published = true);
 CREATE POLICY "Allow admins to manage library" ON public.library
-  FOR ALL USING (auth.get_user_role() IN ('admin', 'superadmin'));
+  FOR ALL USING (public.get_user_role() IN ('admin', 'superadmin'));
 
 -- -------------------------------------------------------------
 -- Table: notifications
@@ -109,7 +109,7 @@ BEGIN
     EXECUTE format('DROP POLICY IF EXISTS "Allow admins full access" ON public.%I;', t_name);
     EXECUTE format('DROP POLICY IF EXISTS "Allow authenticated read access" ON public.%I;', t_name);
 
-    EXECUTE format('CREATE POLICY "Allow admins full access" ON public.%I FOR ALL USING (auth.get_user_role() IN (''admin'', ''superadmin'', ''accounts'', ''hr''));', t_name);
+    EXECUTE format('CREATE POLICY "Allow admins full access" ON public.%I FOR ALL USING (public.get_user_role() IN (''admin'', ''superadmin'', ''accounts'', ''hr''));', t_name);
     EXECUTE format('CREATE POLICY "Allow authenticated read access" ON public.%I FOR SELECT USING (auth.role() = ''authenticated'');', t_name);
   END LOOP;
 END;
