@@ -41,10 +41,13 @@ const sbFetch = sbAdmin;
 /** Upload a file to Supabase Storage using the server proxy (handles CORS). Returns public URL. */
 async function sbUpload(bucket, file, onProgress) {
   await loadRuntimeConfig();
-  const form = new FormData();
-  form.append('file', file);
-  const res = await fetch(`/api/upload/${bucket}`, { method: 'POST', body: form });
-  if (!res.ok) { const err = await res.text(); throw new Error(`Upload failed (${res.status}): ${err}`); }
+  // The server's /api/upload endpoint is designed to take the raw file body, not FormData.
+  const res = await fetch(`/api/upload/${bucket}/${file.name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file
+  });
+  if (!res.ok) { const err = await res.json(); throw new Error(`Upload failed (${res.status}): ${err.error || err.detail}`); }
   const data = await res.json();
   return data.url;
 }

@@ -189,9 +189,13 @@ function initPortal(session, pages) {
 const dataCache = {};
 async function loadData(table, options = '') {
   const key = `${table}?${options}`;
-  if (dataCache[key] && dataCache[key]._ts > Date.now() - 10000) return dataCache[key].data;
-  const res = await fetch(`/api/${table}?${options}`);
-  if (res.ok) { const data = await res.json(); dataCache[key] = { data, _ts: Date.now() }; return data; }
+  if (dataCache[key] && dataCache[key]._ts > Date.now() - 10000) {
+    return dataCache[key].data;
+  }
+  // Use sbFetch for consistency and error handling
+  const { ok, data } = await sbFetch(`/rest/v1/${table}?${options}`);
+  if (ok) { dataCache[key] = { data, _ts: Date.now() }; return data; }
+  console.error(`Failed to load data for: ${table}`);
   return [];
 }
 function invalidateCache(table) { Object.keys(dataCache).forEach(k => { if (k.startsWith(table)) delete dataCache[k]; }); }
@@ -208,18 +212,23 @@ async function updateNotificationCountBadge(session) {
 
   try {
     // Fetch only the IDs of unread notifications for a lightweight query
-    const unread = await loadData('notifications', `user_id=eq.${session.id}&is_read=eq.false&select=id`);
-    const count = unread.length;
+    // Using sbFetch directly for better error handling visibility
+    const { ok, data } = await sbFetch(`/rest/v1/notifications?user_id=eq.${session.id}&is_read=eq.false&select=id`);
+    if (ok) {
+      const count = data.length;
 
-    let badge = notifLink.querySelector('.nav-badge-count');
-    if (count > 0) {
-      if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'nav-badge-count';
-        notifLink.appendChild(badge);
-      }
-      badge.textContent = count;
-    } else if (badge) { badge.remove(); }
+      let badge = notifLink.querySelector('.nav-badge-count');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'nav-badge-count';
+          notifLink.appendChild(badge);
+        }
+        badge.textContent = count;
+      } else if (badge) { badge.remove(); }
+    } else {
+      console.warn('Could not fetch notification count.');
+    }
   } catch (e) { console.warn('Could not fetch notification count:', e.message); }
 }
 

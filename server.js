@@ -6,7 +6,8 @@ import { createServer } from 'http';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { createHash, randomBytes } from 'crypto';
-import { createTransport } from 'nodemailer';
+import { createTransport } from 'nodemailer'; // For sending emails
+import bcrypt from 'bcrypt'; // For secure password hashing
 
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const PORT  = process.env.PORT || 3000;
@@ -32,6 +33,12 @@ try {
   CFG.SUPABASE_SERVICE_KEY = CFG.SUPABASE_SERVICE_KEY || parsed.SUPABASE_SERVICE_KEY || '';
 } catch {
   console.log('[server] No config.json found. Relying on environment variables.');
+}
+
+// Fail fast if essential configs are missing
+if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON || !CFG.SUPABASE_SERVICE_KEY) {
+  console.error('[FATAL] Missing required Supabase configuration (URL, ANON, or SERVICE_KEY).');
+  process.exit(1);
 }
 
 // ── MIME TYPES ────────────────────────────────────────────────
@@ -68,7 +75,10 @@ const json = (res, status, data) => {
   res.end(JSON.stringify(data));
 };
 
-const hashPw = pw => createHash('sha256').update(pw + 'hmli_salt_2025').digest('hex');
+// Use bcrypt for hashing. It's async and includes a salt automatically.
+const hashPw = async pw => await bcrypt.hash(pw, 10);
+// Helper for comparing plaintext password with a hash.
+const comparePw = async (pw, hash) => await bcrypt.compare(pw, hash);
 
 // ── Supabase REST Helper ──────────────────────────────────────
 async function supabase(path, options = {}) {
@@ -275,31 +285,51 @@ async function handleVerifyAdmin(ctx) {
 async function handleLogin(ctx) {
   const { user_id, password } = ctx.body;
   if (!user_id || !password) return json(ctx.res, 400, { error: 'Missing credentials' });
-  const pwHash = hashPw(password);
-  let result = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+
+  // With bcrypt, we must fetch the user first, then compare the hash.
+  // We can't filter by hash in the query.
+  const selectFields = 'id,user_id,full_name,email,phone,role,photo_url,course,level,staff_id,department,password_hash';
+  const userIdUpper = user_id.toUpperCase();
+  const emailLower = user_id.toLowerCase();
+
+  // Try to find user by user_id or email
+  const result = await supabase(`/rest/v1/users?or=(user_id.eq.${encodeURIComponent(userIdUpper)},email.eq.${encodeURIComponent(emailLower)})&select=${selectFields}&limit=1`, { method: 'GET', headers: { 'Prefer': '' } });
+
   if (!result.ok || !result.data?.length) {
-    result = await supabase(`/rest/v1/users?email=eq.${encodeURIComponent(user_id.toLowerCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-  }
-  if (!result.ok || !result.data?.length) {
-    result = await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-    if (result.ok && result.data?.length) {
-      const s = result.data[0];
-      return json(ctx.res, 200, { user: { ...s, user_id: s.student_id, role: 'student' } });
-    }
     return json(ctx.res, 401, { error: 'Invalid credentials' });
   }
-  json(ctx.res, 200, { user: result.data[0] });
+
+  const user = result.data[0];
+
+  // Now, compare the provided password with the stored hash
+  const passwordMatch = await comparePw(password, user.password_hash);
+
+  if (!passwordMatch) {
+    return json(ctx.res, 401, { error: 'Invalid credentials' });
+  }
+
+  // IMPORTANT: Delete the password hash before sending the user object to the client.
+  delete user.password_hash;
+
+  json(ctx.res, 200, { user });
 }
 
 async function handleChangePassword(ctx) {
   const { user_id, old_password, new_password } = ctx.body;
   if (!user_id || !old_password || !new_password) return json(ctx.res, 400, { error: 'Missing fields' });
   if (new_password.length < 8) return json(ctx.res, 400, { error: 'Password must be 8+ chars' });
-  const oldHash = hashPw(old_password);
-  const newHash = hashPw(new_password);
-  const check = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(oldHash)}&select=id`, { method: 'GET', headers: { 'Prefer': '' } });
-  if (!check.ok || !check.data?.length) return json(ctx.res, 401, { error: 'Current password incorrect.' });
-  await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
+
+  // Fetch user to get their current password hash
+  const check = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&select=id,password_hash`, { method: 'GET', headers: { 'Prefer': '' } });
+  if (!check.ok || !check.data?.length) return json(ctx.res, 404, { error: 'User not found.' });
+
+  const user = check.data[0];
+  const passwordMatch = await comparePw(old_password, user.password_hash);
+  if (!passwordMatch) return json(ctx.res, 401, { error: 'Current password incorrect.' });
+
+  // Hash the new password and update the user
+  const newHash = await hashPw(new_password);
+  await supabase(`/rest/v1/users?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
   console.log(`[auth] Password changed for ${user_id}`);
   json(ctx.res, 200, { ok: true });
 }
@@ -331,7 +361,7 @@ async function handleResetPassword(ctx) {
   if (!tokenResult.ok || !tokenResult.data?.length) return json(ctx.res, 400, { error: 'Invalid or expired reset link.' });
   const resetRecord = tokenResult.data[0];
   if (new Date(resetRecord.expires_at) < new Date()) return json(ctx.res, 400, { error: 'Reset link has expired. Request a new one.' });
-  const newHash = hashPw(new_password);
+  const newHash = await hashPw(new_password);
   await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(student_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
   await supabase(`/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, { method: 'PATCH', body: JSON.stringify({ used: true }) });
   console.log(`[auth] Password reset completed for ${student_id}`);
@@ -369,8 +399,8 @@ async function handleApproveApplication(ctx) {
 async function handleAdminResetPassword(ctx) {
   const { user_id } = ctx.body;
   if (!user_id) return json(ctx.res, 400, { error: 'User ID is required.' });
-  const tempPassword = `hmli-${randomBytes(4).toString('hex')}`;
-  const newHash = hashPw(tempPassword);
+  const tempPassword = `hmli-${randomBytes(6).toString('hex')}`;
+  const newHash = await hashPw(tempPassword);
   const result = await supabase(`/rest/v1/users?id=eq.${user_id}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
   if (!result.ok || !result.data?.length) return json(ctx.res, 404, { error: 'User not found or update failed.' });
   console.log(`[auth] Admin reset password for user ID ${user_id}`);
@@ -380,7 +410,7 @@ async function handleAdminResetPassword(ctx) {
 async function handleSubmitApplication(ctx) {
   const { full_name, email, phone, course, level, password, payment_proof_url } = ctx.body;
   if (!full_name || !email || !password || !course || !level) return json(ctx.res, 400, { error: 'Missing required application fields.' });
-  const pwHash = hashPw(password);
+  const pwHash = await hashPw(password);
   const payload = { full_name, email, phone, course, level, password_hash: pwHash, payment_proof_url: payment_proof_url || null, status: 'pending', submitted_at: new Date().toISOString() };
   const result = await supabase('/rest/v1/applications', { method: 'POST', body: JSON.stringify(payload) });
   json(ctx.res, result.status, result.data);
