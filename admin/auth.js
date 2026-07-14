@@ -40,36 +40,11 @@
         await configReady();
       }
 
-      // ── Expose config values to window for admin portal use ──
-      window.SUPABASE_URL   = window.SUPABASE_URL   || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '');
-      window.SUPABASE_ANON  = window.SUPABASE_ANON  || (typeof SUPABASE_ANON !== 'undefined' ? SUPABASE_ANON : '');
-      window.ADMIN_PASSWORD = window.ADMIN_PASSWORD  || (typeof ADMIN_PASSWORD !== 'undefined' ? ADMIN_PASSWORD : '');
-
-      // Double-check from the supabase.js module-level variables
-      // (These are set by loadRuntimeConfig in supabase.js)
-      if (!window.SUPABASE_URL && typeof SUPABASE_URL !== 'undefined') {
-        window.SUPABASE_URL = SUPABASE_URL;
-      }
-      if (!window.SUPABASE_ANON && typeof SUPABASE_ANON !== 'undefined') {
-        window.SUPABASE_ANON = SUPABASE_ANON;
-      }
-      if (!window.ADMIN_PASSWORD && typeof ADMIN_PASSWORD !== 'undefined') {
-        window.ADMIN_PASSWORD = ADMIN_PASSWORD;
-      }
-
-      // Also attempt to fetch /config.json directly as a fallback
-      if (!window.ADMIN_PASSWORD) {
-        try {
-          const resp = await fetch('/config.json');
-          if (resp.ok) {
-            const cfg = await resp.json();
-            // Note: /config.json no longer exposes ADMIN_PASSWORD for security
-            // Use window.ADMIN_PASSWORD from env/supabase.js if needed
-          }
-        } catch (e) {
-          console.warn('[HMLI Admin] Could not fetch config.json:', e.message);
-        }
-      }
+      // Expose only the necessary public config values to the window
+      window.SUPABASE_URL = typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '';
+      window.SUPABASE_ANON = typeof SUPABASE_ANON !== 'undefined' ? SUPABASE_ANON : '';
+      // ADMIN_PASSWORD is intentionally not exposed to the client.
+      // It will be verified server-side via an API call.
 
       // ── Signal admin readiness ──────────────────────────────────
       window.__HMLI_ADMIN_READY__ = true;

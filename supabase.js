@@ -3,7 +3,7 @@
  * Config loader, REST wrapper, Storage upload/delete helpers.
  * Loaded as <script src="/supabase.js"> on all pages.
  */
-let SUPABASE_URL = null, SUPABASE_ANON = null, ADMIN_PASSWORD = '';
+let SUPABASE_URL = null, SUPABASE_ANON = null, ADMIN_PASSWORD = ''; // default, overridden by config.json or window.__APP_CONFIG__
 let __configPromise = null;
 
 function loadRuntimeConfig() {
