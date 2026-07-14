@@ -47,6 +47,7 @@ INSERT INTO storage.buckets (id, name, public) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 🔐 Create permissive storage access policies
+DROP POLICY IF EXISTS "Public Access" ON storage.objects;
 CREATE POLICY "Public Access" ON storage.objects FOR ALL USING (true) WITH CHECK (true);
 
 SELECT 'RLS disabled, library fixed, and storage configured.' as result;

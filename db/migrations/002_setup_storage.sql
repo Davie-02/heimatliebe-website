@@ -20,26 +20,6 @@ VALUES
   ('avatars',        'avatars',        true, false, 1048576, '{image/png,image/jpeg,image/jpg,image/webp}')
 ON CONFLICT (id) DO NOTHING;
 
--- Allow public access to all buckets (since they're public buckets)
--- RLS is still enforced on the storage.objects table
-DROP POLICY IF EXISTS "Public Access" ON storage.objects;
-CREATE POLICY "Public Access" ON storage.objects
-  FOR ALL USING (bucket_id IN ('payment-proofs','library-files','library-covers','uploads','avatars'))
-  WITH CHECK (bucket_id IN ('payment-proofs','library-files','library-covers','uploads','avatars'));
-
--- Allow anon key to upload to payment-proofs (for student applications)
-DROP POLICY IF EXISTS "Anon Upload payment-proofs" ON storage.objects;
-CREATE POLICY "Anon Upload payment-proofs" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'payment-proofs');
-
--- Allow authenticated users to upload to library buckets
-DROP POLICY IF EXISTS "Auth Upload library" ON storage.objects;
-CREATE POLICY "Auth Upload library" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id IN ('library-files','library-covers','uploads','avatars')
-    AND auth.role() = 'authenticated'
-  );
-
 -- ═══════════════════════════════════════════════════════════════
 -- If the storage extension isn't enabled, enable it:
 -- CREATE EXTENSION IF NOT EXISTS "storage" SCHEMA "storage";
