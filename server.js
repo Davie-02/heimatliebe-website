@@ -8,6 +8,7 @@ import path from 'path';
 import { createHash, randomBytes } from 'crypto';
 import { createTransport } from 'nodemailer';
 
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const PORT  = process.env.PORT || 3000;
 const ROOT  = process.cwd();
 
@@ -17,7 +18,8 @@ const ROOT  = process.cwd();
 const CFG = {
   SUPABASE_URL: process.env.SUPABASE_URL || '',
   SUPABASE_ANON: process.env.SUPABASE_ANON || '',
-  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || ''
+  ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || '',
+  SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY || ''
 };
 
 try {
@@ -27,6 +29,7 @@ try {
   CFG.SUPABASE_URL   = CFG.SUPABASE_URL   || parsed.SUPABASE_URL   || '';
   CFG.SUPABASE_ANON  = CFG.SUPABASE_ANON  || parsed.SUPABASE_ANON  || '';
   CFG.ADMIN_PASSWORD = CFG.ADMIN_PASSWORD || parsed.ADMIN_PASSWORD || '';
+  CFG.SUPABASE_SERVICE_KEY = CFG.SUPABASE_SERVICE_KEY || parsed.SUPABASE_SERVICE_KEY || '';
 } catch {
   console.log('[server] No config.json found. Relying on environment variables.');
 }
@@ -70,11 +73,16 @@ const hashPw = pw => createHash('sha256').update(pw + 'hmli_salt_2025').digest('
 // ── Supabase REST Helper ──────────────────────────────────────
 async function supabase(path, options = {}) {
   const url = `${CFG.SUPABASE_URL}${path}`;
+  // Use the service role key for all server-side operations
+  // The RLS policies will handle permissions based on the user's role
+  const apiKey = CFG.SUPABASE_SERVICE_KEY || CFG.SUPABASE_ANON;
+
   const headers = {
-    'apikey': CFG.SUPABASE_ANON, 'Authorization': `Bearer ${CFG.SUPABASE_ANON}`,
+    'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`,
     'Content-Type': 'application/json', 'Prefer': 'return=representation',
     ...(options.headers || {})
   };
+
   const res = await fetch(url, { ...options, headers });
   const text = await res.text();
   let data = null;
