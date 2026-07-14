@@ -221,9 +221,8 @@ const server = createServer(async (req, res) => {
       const oldHash = hashPw(old_password);
       const newHash = hashPw(new_password);
       const check = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(oldHash)}&select=id`, { method: 'GET', headers: { 'Prefer': '' } });
-      if (!check.ok || !check.data?.length) { json(res, 401, { error: 'Current password incorrect' }); return; }
+      if (!check.ok || !check.data?.length) { json(res, 401, { error: 'Current password incorrect.' }); return; }
       await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
-      await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(user_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
       console.log(`[auth] Password changed for ${user_id}`);
       json(res, 200, { ok: true });
       return;
@@ -273,7 +272,6 @@ const server = createServer(async (req, res) => {
       if (new Date(resetRecord.expires_at) < new Date()) { json(res, 400, { error: 'Reset link has expired. Request a new one.' }); return; }
       // Update password
       const newHash = hashPw(new_password);
-      await supabase(`/rest/v1/users?id=eq.${resetRecord.user_id}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
       await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
       // Mark token as used
       await supabase(`/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, { method: 'PATCH', body: JSON.stringify({ used: true }) });
@@ -292,7 +290,6 @@ const server = createServer(async (req, res) => {
       const sid = `HMLI-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
       const userPayload = { user_id: sid, full_name: app.full_name, email: app.email, phone: app.phone || '', course: app.course, level: app.level, password_hash: app.password_hash, role: 'student', status: 'active' };
       await supabase('/rest/v1/users', { method: 'POST', body: JSON.stringify(userPayload) });
-      await supabase('/rest/v1/students', { method: 'POST', body: JSON.stringify({ student_id: sid, full_name: app.full_name, email: app.email, phone: app.phone, course: app.course, level: app.level, password_hash: app.password_hash }) });
       await supabase(`/rest/v1/applications?id=eq.${application_id}`, { method: 'PATCH', body: JSON.stringify({ status: 'approved', student_id: sid, reviewed_at: new Date().toISOString() }) });
       // Try email
       try {
