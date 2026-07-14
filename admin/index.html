@@ -476,7 +476,7 @@ function renderStudents(data) {
   document.getElementById('studentsTable').innerHTML = renderTable(
     [{label:'Student ID',field:'user_id'},{label:'Name',field:'full_name'},{label:'Course',field:'course'},{label:'Level',field:'level'},{label:'Email',field:'email'}, {label:'Status', field:'status'}],
     data,
-    [{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editStudent'},{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteStudent'}]
+    [{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editStudent'},{lbl:'Invoices',cls:'btn-primary btn-sm',fn:'viewStudentInvoices'},{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteStudent'}]
   );
 }
 document.getElementById('studentSearch').oninput = function() {
@@ -494,7 +494,12 @@ function editStudent(id) {
      </div>
      <div class="form-group"><label>Email</label><input id="eSEmail" value="${esc(s.email||'')}"></div>
      <div class="form-group"><label>Status</label><select id="eSStatus"><option>active</option><option>inactive</option><option>graduated</option></select></div>
-     <button class="btn btn-primary" onclick="saveStudent('${esc(String(id))}')">Save</button>`);
+     <button class="btn btn-primary" onclick="saveStudent('${esc(String(id))}')">Save Changes</button>
+     <hr style="margin: 24px 0 16px; border: none; border-top: 1px solid #eee;">
+     <div class="form-group">
+        <label style="font-weight:bold; color:#c0392b;">Danger Zone</label>
+        <button class="btn btn-danger" onclick="resetStudentPassword('${esc(String(id))}')">Reset Password</button>
+        <div class="hint" style="margin-top:8px;">This will generate a new temporary password for the student.</div></div>`);
   document.getElementById('eSStatus').value = s.status || 'active';
 }
 window.saveStudent = async function(id) {
@@ -511,6 +516,42 @@ window.saveStudent = async function(id) {
 window.deleteStudent = async function(id) {
   if(!confirm('Delete this student?')) return;
   showLoading(); await deleteApi('users', id); await loadStudents(); await loadDashboard(); hideLoading(); showToast('Deleted.');
+};
+window.viewStudentInvoices = async function(id) {
+  const student = students.find(s => s.id == id);
+  if (!student) {
+    showToast('Student not found.', true);
+    return;
+  }
+  showLoading();
+  try {
+    const studentInvoices = await getApi('invoices', `user_id=eq.${student.user_id}&order=due_date.desc`);
+    const tableHtml = renderTable(
+      [{label:'Description', field:'description'}, {label:'Amount', field:'amount'}, {label:'Due Date', field:'due_date'}, {label:'Status', field:'status'}],
+      studentInvoices
+    );
+    openModal(`Invoices for ${esc(student.full_name)} (${esc(student.user_id)})`, tableHtml);
+  } catch (e) { showToast('Error loading invoices: ' + e.message, true); }
+  hideLoading();
+};
+window.resetStudentPassword = async function(id) {
+  const student = students.find(s => s.id == id);
+  if (!student) return showToast('Student not found.', true);
+
+  if (!confirm(`Are you sure you want to reset the password for ${student.full_name} (${student.user_id})?`)) {
+    return;
+  }
+
+  showLoading();
+  try {
+    const result = await api('/api/admin-reset-password', { method: 'POST', body: JSON.stringify({ user_id: id }) });
+    closeModal();
+    openModal('Password Reset Successful',
+      `<p>The password for <strong>${esc(student.full_name)}</strong> has been reset.</p>
+       <p style="margin-top:1rem;">Please provide the student with their new temporary password:</p>
+       <div style="background:#f0f0f0; padding: 1rem; margin-top: 0.5rem; font-family: monospace; font-size: 1.2rem; text-align: center; border: 1px solid #ddd; border-radius: 4px;">${esc(result.new_password)}</div>`);
+  } catch (e) { showToast('Error resetting password: ' + e.message, true); }
+  hideLoading();
 };
 
 // ── CLASSES ─────────────────────────────────────────────────────
@@ -777,10 +818,18 @@ window.saveAssignment = async function() {
   await createApi('assignments', { title: document.getElementById('aTitle').value, class_id: Number(document.getElementById('aClass').value), description: document.getElementById('aDesc').value, due_date: document.getElementById('aDue').value, total_points: Number(document.getElementById('aPts').value) });
   closeModal(); await loadAssignments(); hideLoading(); showToast('✓ Created!');
 };
-function editAssignment(id) {
-  const a = []; // would need to fetch single
-  openModal('Edit Assignment', '<p style="color:#666">Edit functionality loaded dynamically. Use Delete + re-create for changes.</p>');
-}
+window.editAssignment = async function(id) {
+  const assignment = (await getApi('assignments', 'id=eq.'+id+'&limit=1'))[0];
+  if(!assignment) return showToast('Assignment not found.', true);
+  const classes = await getApi('classes');
+  openModal('Edit Assignment', '<div class="form-group"><label>Title</label><input id="aTitle" value="'+esc(assignment.title)+'"></div><div class="form-group"><label>Class</label><select id="aClass">'+classes.map(c=>'<option value="'+c.id+'">'+esc(c.name)+'</option>').join('')+'</select></div><div class="form-group"><label>Description</label><textarea id="aDesc" rows="3">'+esc(assignment.description||'')+'</textarea></div><div class="form-row"><div class="form-group"><label>Due Date</label><input id="aDue" type="datetime-local" value="'+(assignment.due_date ? assignment.due_date.slice(0,16) : '')+'"></div><div class="form-group"><label>Points</label><input id="aPts" type="number" value="'+(assignment.total_points||100)+'"></div></div><button class="btn btn-primary" onclick="updateAssignment(\''+esc(String(id))+'\')">Save Changes</button>');
+  document.getElementById('aClass').value = assignment.class_id;
+};
+window.updateAssignment = async function(id) {
+  showLoading();
+  await updateApi('assignments', id, { title: document.getElementById('aTitle').value, class_id: Number(document.getElementById('aClass').value), description: document.getElementById('aDesc').value, due_date: document.getElementById('aDue').value, total_points: Number(document.getElementById('aPts').value) });
+  closeModal(); await loadAssignments(); hideLoading(); showToast('✓ Updated!');
+};
 window.deleteAssignment = async function(id) {
   if(!confirm('Delete?')) return;
   showLoading(); await deleteApi('assignments', id); await loadAssignments(); hideLoading(); showToast('Deleted.');
@@ -1018,9 +1067,16 @@ window.saveScholarship = async function() {
   await createApi('scholarships', { title: document.getElementById('sTitle').value, description: document.getElementById('sDesc').value, criteria: document.getElementById('sCrit').value, amount: Number(document.getElementById('sAmt').value)||0, open: document.getElementById('sOpen').checked });
   closeModal(); await loadScholarships(); hideLoading(); showToast('✓ Created!');
 };
-function editScholarship(id) {
-  showToast('Edit opens in modal — use Delete + re-create for now.');
-}
+window.editScholarship = async function(id) {
+  const scholarship = (await getApi('scholarships', 'id=eq.'+id+'&limit=1'))[0];
+  if(!scholarship) return showToast('Scholarship not found.', true);
+  openModal('Edit Scholarship', '<div class="form-group"><label>Title</label><input id="sTitle" value="'+esc(scholarship.title)+'"></div><div class="form-group"><label>Description</label><textarea id="sDesc" rows="3">'+esc(scholarship.description||'')+'</textarea></div><div class="form-group"><label>Criteria</label><textarea id="sCrit" rows="2">'+esc(scholarship.criteria||'')+'</textarea></div><div class="form-group"><label>Amount (MWK)</label><input id="sAmt" type="number" value="'+(scholarship.amount||0)+'"></div><div class="form-group"><label><input type="checkbox" id="sOpen" '+(scholarship.open ? 'checked' : '')+'> Open for Applications</label></div><button class="btn btn-primary" onclick="updateScholarship(\''+esc(String(id))+'\')">Save Changes</button>');
+};
+window.updateScholarship = async function(id) {
+  showLoading();
+  await updateApi('scholarships', id, { title: document.getElementById('sTitle').value, description: document.getElementById('sDesc').value, criteria: document.getElementById('sCrit').value, amount: Number(document.getElementById('sAmt').value)||0, open: document.getElementById('sOpen').checked });
+  closeModal(); await loadScholarships(); hideLoading(); showToast('✓ Updated!');
+};
 window.deleteScholarship = async function(id) {
   if(!confirm('Delete?')) return;
   showLoading(); await deleteApi('scholarships', id); await loadScholarships(); hideLoading(); showToast('Deleted.');

@@ -89,7 +89,7 @@ function renderSidebar(session, navItems) {
   navItems.forEach(item => {
     if (item.section && item.section !== lastSection) { navHtml += `<div class="nav-section">${item.section}</div>`; lastSection = item.section; }
     const active = item.page === currentPage ? 'active' : '';
-    const badge = item.badge ? `<span class="nav-badge">${item.badge}</span>` : '';
+    const badge = item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''; // Legacy badge
     navHtml += `<a href="#" class="nav-link ${active}" data-page="${item.page}"><span class="nav-icon">${item.icon}</span><span>${item.label}</span>${badge}</a>`;
   });
   return `
@@ -122,6 +122,7 @@ function renderSidebar(session, navItems) {
           <div class="topbar-right">
             <span class="topbar-date" id="topbar-date"></span>
             <a href="/index.html" class="btn btn-sm btn-ghost" style="text-decoration:none;">Main Site</a>
+            <button id="theme-toggle" class="btn btn-sm btn-ghost" style="font-size: 1.2rem; padding: 0.2rem 0.5rem;">🌓</button>
             <button class="btn btn-sm btn-outline" onclick="logout()">Logout</button>
           </div>
         </header>
@@ -140,6 +141,22 @@ function initPortal(session, pages) {
   updateClock(); setInterval(updateClock, 30000);
   const toggle = document.getElementById('sidebar-toggle');
   const sidebar = document.getElementById('portal-sidebar');
+
+  // Theme toggle logic
+  const themeToggle = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('hmli-theme') || 'light';
+  document.body.setAttribute('data-theme', currentTheme);
+  if (themeToggle) {
+    themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌓';
+    themeToggle.addEventListener('click', () => {
+      let newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('hmli-theme', newTheme);
+      themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌓';
+      showToast(`Switched to ${newTheme} mode`);
+    });
+  }
+
   if (toggle && sidebar) toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
   const navLinks = document.querySelectorAll('.nav-link[data-page]');
   function navigate(page) {
@@ -163,6 +180,8 @@ function initPortal(session, pages) {
   const initialPage = new URLSearchParams(window.location.search).get('page') || 'dashboard';
   navigate(initialPage);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
+  // Fetch and display the notification count
+  updateNotificationCountBadge(session);
   startInactivityTimer(30);
 }
 
@@ -176,6 +195,33 @@ async function loadData(table, options = '') {
   return [];
 }
 function invalidateCache(table) { Object.keys(dataCache).forEach(k => { if (k.startsWith(table)) delete dataCache[k]; }); }
+
+/**
+ * Fetches the count of unread notifications and updates the sidebar badge.
+ * @param {object} session - The current user session object.
+ */
+async function updateNotificationCountBadge(session) {
+  if (!session || !session.id) return;
+
+  const notifLink = document.querySelector('.nav-link[data-page="notifications"]');
+  if (!notifLink) return;
+
+  try {
+    // Fetch only the IDs of unread notifications for a lightweight query
+    const unread = await loadData('notifications', `user_id=eq.${session.id}&is_read=eq.false&select=id`);
+    const count = unread.length;
+
+    let badge = notifLink.querySelector('.nav-badge-count');
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-badge-count';
+        notifLink.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else if (badge) { badge.remove(); }
+  } catch (e) { console.warn('Could not fetch notification count:', e.message); }
+}
 
 // ── FORMAT HELPERS ───────────────────────────────────────────────
 function esc(s) { return String(s || '').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }

@@ -66,16 +66,3 @@ function getPublicUrl(bucket, path) {
 function generateStudentId() {
   return `HMLI-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
 }
-
-// Session helpers (backward compat)
-const SESSION_KEY = 'hmli_student';
-function saveStudentSession(s) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: s.id, student_id: s.student_id, full_name: s.full_name, course: s.course, level: s.level, email: s.email }));
-}
-function getStudentSession() { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch { return null; } }
-function clearStudentSession() { sessionStorage.removeItem(SESSION_KEY); }
-function requireStudent() {
-  const s = getStudentSession();
-  if (!s) window.location.href = '/login.html?next=' + encodeURIComponent(window.location.pathname);
-  return s;
-}

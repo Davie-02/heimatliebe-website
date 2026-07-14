@@ -9,6 +9,7 @@
 -- 1. Enables RLS on all tables.
 -- 2. Drops any conflicting old policies.
 -- 3. Creates a single, permissive policy on each table for the server.
+-- 4. Ensures the `library.published` column exists.
 -- ═══════════════════════════════════════════════════════════════
 
 -- List of all tables managed by the CMS
@@ -65,5 +66,8 @@ BEGIN
   RAISE NOTICE 'Storage policies updated.';
 END;
 $$;
+
+-- Ensure library.published column exists (from 003_fix_rls_and_library.sql)
+ALTER TABLE IF EXISTS public.library ADD COLUMN IF NOT EXISTS published boolean DEFAULT true;
 
 SELECT 'CMS RLS policies consolidated and applied successfully.' as result;

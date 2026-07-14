@@ -156,6 +156,261 @@ function resetEmailHtml({ full_name, site_url, token, student_id }) {
 <p style="margin:0;font-size:13px;color:#4A6572;line-height:1.7">If you didn't request this, you can ignore this email. Your password will remain unchanged.</p></td></tr></table></td></tr></table></body></html>`;
 }
 
+// ── Router & Handlers ──────────────────────────────────────────
+
+class Router {
+  constructor() {
+    this.routes = [];
+  }
+
+  add(method, path, handler) {
+    const paramNames = [];
+    const regexPath = path.replace(/:([a-zA-Z_]+)/g, (_, paramName) => {
+      paramNames.push(paramName);
+      return '([^/]+)';
+    });
+    this.routes.push({
+      method,
+      path: new RegExp(`^${regexPath}$`),
+      paramNames,
+      handler
+    });
+    return this; // Allow chaining
+  }
+
+  get(path, handler) { return this.add('GET', path, handler); }
+  post(path, handler) { return this.add('POST', path, handler); }
+  patch(path, handler) { return this.add('PATCH', path, handler); }
+  delete(path, handler) { return this.add('DELETE', path, handler); }
+
+  find(method, path) {
+    for (const route of this.routes) {
+      if (route.method !== method) continue;
+      const match = path.match(route.path);
+      if (match) {
+        const params = {};
+        route.paramNames.forEach((name, index) => {
+          params[name] = match[index + 1];
+        });
+        return { handler: route.handler, params };
+      }
+    }
+    return null;
+  }
+}
+
+const apiRouter = new Router();
+
+// Generic Table API Handlers
+const ALLOWED_TABLES = ['users','students','courses','classes','class_enrollments','assignments','submissions','exams','exam_results','library','applications','news','payments','fees','invoices','timetable_entries','attendance','notifications','conversations','conversation_participants','messages','scholarships','scholarship_applications','alumni','password_reset_tokens'];
+
+async function handleGetTable(ctx) {
+  const { params: { table }, query } = ctx;
+  if (!ALLOWED_TABLES.includes(table)) return json(ctx.res, 403, { error: 'Table not allowed' });
+
+  const opts = [];
+  if (query.order) opts.push(`order=${encodeURIComponent(query.order)}`);
+  else opts.push('order=created_at.desc');
+  if (query.limit) opts.push(`limit=${query.limit}`);
+
+  let filterPath = `/rest/v1/${table}?select=*&${opts.join('&')}`;
+  for (const [k, v] of Object.entries(query)) {
+    if (!['order','limit','select','page'].includes(k)) {
+      const hasOperator = /^[a-zA-Z_]+\./.test(v);
+      filterPath += hasOperator ? `&${k}=${encodeURIComponent(v)}` : `&${k}=eq.${encodeURIComponent(v)}`;
+    }
+  }
+  const result = await supabase(filterPath, { method: 'GET', headers: { 'Prefer': '' } });
+  if (!result.ok) return json(ctx.res, result.status, { error: result.data });
+  json(ctx.res, 200, result.data);
+}
+
+async function handlePostTable(ctx) {
+  const { params: { table }, body } = ctx;
+  if (!ALLOWED_TABLES.includes(table)) return json(ctx.res, 403, { error: 'Table not allowed' });
+  const result = await supabase(`/rest/v1/${table}`, { method: 'POST', body: JSON.stringify(body) });
+  if (!result.ok) return json(ctx.res, result.status, { error: result.data });
+  json(ctx.res, 201, result.data);
+}
+
+async function handlePatchTable(ctx) {
+  const { params: { table, id }, body } = ctx;
+  if (!ALLOWED_TABLES.includes(table)) return json(ctx.res, 403, { error: 'Table not allowed' });
+  const result = await supabase(`/rest/v1/${table}?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  if (!result.ok) return json(ctx.res, result.status, { error: result.data });
+  json(ctx.res, 200, result.data);
+}
+
+async function handleDeleteTable(ctx) {
+  const { params: { table, id } } = ctx;
+  if (!ALLOWED_TABLES.includes(table)) return json(ctx.res, 403, { error: 'Table not allowed' });
+  await supabase(`/rest/v1/${table}?id=eq.${id}`, { method: 'DELETE' });
+  json(ctx.res, 200, { ok: true });
+}
+
+// Register Generic Table Routes
+apiRouter.get('/api/:table', handleGetTable);
+apiRouter.post('/api/:table', handlePostTable);
+apiRouter.patch('/api/:table/:id', handlePatchTable);
+apiRouter.delete('/api/:table/:id', handleDeleteTable);
+
+// Specific API Handlers
+async function handleVerifyAdmin(ctx) {
+  const { password } = ctx.body;
+  if (!password) return json(ctx.res, 400, { error: 'Password required' });
+  const correct = CFG.ADMIN_PASSWORD;
+  if (!correct) return json(ctx.res, 500, { error: 'Admin password not configured' });
+  if (password === correct) return json(ctx.res, 200, { ok: true });
+  json(ctx.res, 401, { error: 'Incorrect password' });
+}
+
+async function handleLogin(ctx) {
+  const { user_id, password } = ctx.body;
+  if (!user_id || !password) return json(ctx.res, 400, { error: 'Missing credentials' });
+  const pwHash = hashPw(password);
+  let result = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+  if (!result.ok || !result.data?.length) {
+    result = await supabase(`/rest/v1/users?email=eq.${encodeURIComponent(user_id.toLowerCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+  }
+  if (!result.ok || !result.data?.length) {
+    result = await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+    if (result.ok && result.data?.length) {
+      const s = result.data[0];
+      return json(ctx.res, 200, { user: { ...s, user_id: s.student_id, role: 'student' } });
+    }
+    return json(ctx.res, 401, { error: 'Invalid credentials' });
+  }
+  json(ctx.res, 200, { user: result.data[0] });
+}
+
+async function handleChangePassword(ctx) {
+  const { user_id, old_password, new_password } = ctx.body;
+  if (!user_id || !old_password || !new_password) return json(ctx.res, 400, { error: 'Missing fields' });
+  if (new_password.length < 8) return json(ctx.res, 400, { error: 'Password must be 8+ chars' });
+  const oldHash = hashPw(old_password);
+  const newHash = hashPw(new_password);
+  const check = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(oldHash)}&select=id`, { method: 'GET', headers: { 'Prefer': '' } });
+  if (!check.ok || !check.data?.length) return json(ctx.res, 401, { error: 'Current password incorrect.' });
+  await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
+  console.log(`[auth] Password changed for ${user_id}`);
+  json(ctx.res, 200, { ok: true });
+}
+
+async function handleRequestPasswordReset(ctx) {
+  const { student_id, email } = ctx.body;
+  if (!student_id || !email) return json(ctx.res, 400, { error: 'Student ID and email required' });
+  const userResult = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(student_id.toUpperCase())}&email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,user_id,full_name,email`, { method: 'GET', headers: { 'Prefer': '' } });
+  if (userResult.ok && userResult.data?.length) {
+    const user = userResult.data[0];
+    const token = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+    await supabase('/rest/v1/password_reset_tokens', { method: 'POST', body: JSON.stringify({ user_id: user.id, student_id: user.user_id, token, expires_at: expiresAt, used: false }) });
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+        const t = getTransport();
+        await t.sendMail({ from: process.env.SMTP_FROM || `"Heimatliebe" <${process.env.SMTP_USER}>`, to: user.email, subject: 'Reset Your Password — Heimatliebe Institute', html: resetEmailHtml({ full_name: user.full_name, site_url: ctx.siteUrl, token, student_id: user.user_id }) });
+      }
+    } catch (e) { console.warn('[email] Reset email send failed:', e.message); }
+  }
+  json(ctx.res, 200, { ok: true, message: 'If that Student ID and email match, a reset link has been sent.' });
+}
+
+async function handleResetPassword(ctx) {
+  const { token, student_id, new_password } = ctx.body;
+  if (!token || !student_id || !new_password) return json(ctx.res, 400, { error: 'Missing required fields' });
+  if (new_password.length < 8) return json(ctx.res, 400, { error: 'Password must be 8+ characters' });
+  const tokenResult = await supabase(`/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&student_id=eq.${encodeURIComponent(student_id.toUpperCase())}&used=eq.false&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+  if (!tokenResult.ok || !tokenResult.data?.length) return json(ctx.res, 400, { error: 'Invalid or expired reset link.' });
+  const resetRecord = tokenResult.data[0];
+  if (new Date(resetRecord.expires_at) < new Date()) return json(ctx.res, 400, { error: 'Reset link has expired. Request a new one.' });
+  const newHash = hashPw(new_password);
+  await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(student_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
+  await supabase(`/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, { method: 'PATCH', body: JSON.stringify({ used: true }) });
+  console.log(`[auth] Password reset completed for ${student_id}`);
+  json(ctx.res, 200, { ok: true, message: 'Password has been reset successfully.' });
+}
+
+async function handleMarkAllNotificationsRead(ctx) {
+  const { user_id } = ctx.body;
+  if (!user_id) return json(ctx.res, 400, { error: 'User ID is required.' });
+  const result = await supabase(`/rest/v1/notifications?user_id=eq.${user_id}&is_read=eq.false`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) });
+  if (!result.ok) return json(ctx.res, result.status, { error: 'Failed to update notifications', details: result.data });
+  json(ctx.res, 200, { ok: true, message: 'All notifications marked as read.' });
+}
+
+async function handleApproveApplication(ctx) {
+  const { application_id } = ctx.body;
+  if (!application_id) return json(ctx.res, 400, { error: 'Missing application_id' });
+  const appRes = await supabase(`/rest/v1/applications?id=eq.${application_id}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
+  if (!appRes.ok || !appRes.data?.length) return json(ctx.res, 404, { error: 'Application not found' });
+  const app = appRes.data[0];
+  const sid = `HMLI-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
+  const userPayload = { user_id: sid, full_name: app.full_name, email: app.email, phone: app.phone || '', course: app.course, level: app.level, password_hash: app.password_hash, role: 'student', status: 'active' };
+  await supabase('/rest/v1/users', { method: 'POST', body: JSON.stringify(userPayload) });
+  await supabase(`/rest/v1/applications?id=eq.${application_id}`, { method: 'PATCH', body: JSON.stringify({ status: 'approved', student_id: sid, reviewed_at: new Date().toISOString() }) });
+  try {
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const t = getTransport();
+      await t.sendMail({ from: process.env.SMTP_FROM || `"Heimatliebe" <${process.env.SMTP_USER}>`, to: app.email, subject: 'Your Student ID — Heimatliebe Institute', html: approvalEmailHtml({ full_name: app.full_name, student_id: sid, course: app.course, level: app.level, site_url: ctx.siteUrl }) });
+    }
+  } catch (e) { console.warn('[email] Send failed:', e.message); }
+  console.log(`[approve] ${sid} created for ${app.full_name}`);
+  json(ctx.res, 200, { ok: true, student_id: sid });
+}
+
+async function handleAdminResetPassword(ctx) {
+  const { user_id } = ctx.body;
+  if (!user_id) return json(ctx.res, 400, { error: 'User ID is required.' });
+  const tempPassword = `hmli-${randomBytes(4).toString('hex')}`;
+  const newHash = hashPw(tempPassword);
+  const result = await supabase(`/rest/v1/users?id=eq.${user_id}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
+  if (!result.ok || !result.data?.length) return json(ctx.res, 404, { error: 'User not found or update failed.' });
+  console.log(`[auth] Admin reset password for user ID ${user_id}`);
+  json(ctx.res, 200, { ok: true, new_password: tempPassword });
+}
+
+async function handleSubmitApplication(ctx) {
+  const { full_name, email, phone, course, level, password, payment_proof_url } = ctx.body;
+  if (!full_name || !email || !password || !course || !level) return json(ctx.res, 400, { error: 'Missing required application fields.' });
+  const pwHash = hashPw(password);
+  const payload = { full_name, email, phone, course, level, password_hash: pwHash, payment_proof_url: payment_proof_url || null, status: 'pending', submitted_at: new Date().toISOString() };
+  const result = await supabase('/rest/v1/applications', { method: 'POST', body: JSON.stringify(payload) });
+  json(ctx.res, result.status, result.data);
+}
+
+async function handleRejectApplication(ctx) {
+  const { application_id } = ctx.body;
+  await supabase(`/rest/v1/applications?id=eq.${application_id}`, { method: 'PATCH', body: JSON.stringify({ status: 'rejected', reviewed_at: new Date().toISOString() }) });
+  json(ctx.res, 200, { ok: true });
+}
+
+async function handleContactEnquiry(ctx) {
+  const { name, email } = ctx.body;
+  if (!name || !email) return json(ctx.res, 400, { error: 'Name and email required' });
+  const logDir = path.join(ROOT, 'data');
+  await fs.mkdir(logDir, { recursive: true });
+  const logFile = path.join(logDir, 'enquiries.json');
+  let enquiries = [];
+  try { enquiries = JSON.parse(await fs.readFile(logFile, 'utf8')); } catch {}
+  enquiries.push({ id: Date.now(), ...ctx.body, created_at: new Date().toISOString() });
+  if (enquiries.length > 500) enquiries = enquiries.slice(-500);
+  await fs.writeFile(logFile, JSON.stringify(enquiries, null, 2));
+  json(ctx.res, 200, { ok: true, message: 'Thank you! We will be in touch.' });
+}
+
+// Register Specific API Routes
+apiRouter.post('/api/verify-admin', handleVerifyAdmin);
+apiRouter.post('/api/login', handleLogin);
+apiRouter.post('/api/change-password', handleChangePassword);
+apiRouter.post('/api/request-password-reset', handleRequestPasswordReset);
+apiRouter.post('/api/reset-password', handleResetPassword);
+apiRouter.post('/api/notifications/mark-all-read', handleMarkAllNotificationsRead);
+apiRouter.post('/api/approve-application', handleApproveApplication);
+apiRouter.post('/api/admin-reset-password', handleAdminResetPassword);
+apiRouter.post('/api/submit-application', handleSubmitApplication);
+apiRouter.post('/api/reject-application', handleRejectApplication);
+apiRouter.post('/api/contact-enquiry', handleContactEnquiry);
+
 // ── Router ─────────────────────────────────────────────────────
 const server = createServer(async (req, res) => {
   try {
@@ -163,7 +418,6 @@ const server = createServer(async (req, res) => {
     const urlPath  = decodeURIComponent(urlObj.pathname);
     const method   = req.method.toUpperCase();
     const query    = Object.fromEntries(urlObj.searchParams);
-    const siteUrl  = process.env.SITE_URL || `http://${req.headers.host || 'localhost:3000'}`;
 
     // CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -171,166 +425,23 @@ const server = createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     if (method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
 
+    // API Routing
+    const route = apiRouter.find(method, urlPath);
+    if (route && urlPath.startsWith('/api/')) {
+      const body = (method === 'POST' || method === 'PATCH') ? await readBody(req) : {};
+      const ctx = { req, res, query, params: route.params, body, siteUrl: process.env.SITE_URL || `http://${req.headers.host || 'localhost:3000'}` };
+      try {
+        await route.handler(ctx);
+      } catch (e) {
+        console.error(`[handler error] ${method} ${urlPath}:`, e.message);
+        json(res, 500, { error: 'Internal Server Error' });
+      }
+      return;
+    }
+
     // ─── /config.json (public — only non-sensitive fields) ────
     if (urlPath === '/config.json') {
       json(res, 200, { SUPABASE_URL: CFG.SUPABASE_URL, SUPABASE_ANON: CFG.SUPABASE_ANON });
-      return;
-    }
-
-    // ─── VERIFY ADMIN PASSWORD (server-side, no exposure to client) ──
-    if (urlPath === '/api/verify-admin' && method === 'POST') {
-      const { password } = await readBody(req);
-      if (!password) { json(res, 400, { error: 'Password required' }); return; }
-      const correct = CFG.ADMIN_PASSWORD;
-      if (!correct) { json(res, 500, { error: 'Admin password not configured' }); return; }
-      if (password === correct) { json(res, 200, { ok: true }); return; }
-      json(res, 401, { error: 'Incorrect password' });
-      return;
-    }
-
-    // ─── AUTH / LOGIN ──────────────────────────────────────
-    if (urlPath === '/api/login' && method === 'POST') {
-      const { user_id, password } = await readBody(req);
-      if (!user_id || !password) { json(res, 400, { error: 'Missing credentials' }); return; }
-      const pwHash = hashPw(password);
-      // Check users table
-      let result = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-      if (!result.ok || !result.data?.length) {
-        result = await supabase(`/rest/v1/users?email=eq.${encodeURIComponent(user_id.toLowerCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-      }
-      if (!result.ok || !result.data?.length) {
-        // Legacy students table
-        result = await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(pwHash)}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-        if (result.ok && result.data?.length) {
-          const s = result.data[0];
-          json(res, 200, { user: { ...s, user_id: s.student_id, role: 'student' } });
-          return;
-        }
-        json(res, 401, { error: 'Invalid credentials' });
-        return;
-      }
-      json(res, 200, { user: result.data[0] });
-      return;
-    }
-
-    // ─── CHANGE PASSWORD ───────────────────────────────────
-    if (urlPath === '/api/change-password' && method === 'POST') {
-      const { user_id, old_password, new_password } = await readBody(req);
-      if (!user_id || !old_password || !new_password) { json(res, 400, { error: 'Missing fields' }); return; }
-      if (new_password.length < 8) { json(res, 400, { error: 'Password must be 8+ chars' }); return; }
-      const oldHash = hashPw(old_password);
-      const newHash = hashPw(new_password);
-      const check = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}&password_hash=eq.${encodeURIComponent(oldHash)}&select=id`, { method: 'GET', headers: { 'Prefer': '' } });
-      if (!check.ok || !check.data?.length) { json(res, 401, { error: 'Current password incorrect.' }); return; }
-      await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(user_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
-      console.log(`[auth] Password changed for ${user_id}`);
-      json(res, 200, { ok: true });
-      return;
-    }
-
-    // ─── REQUEST PASSWORD RESET ────────────────────────────
-    if (urlPath === '/api/request-password-reset' && method === 'POST') {
-      const { student_id, email } = await readBody(req);
-      if (!student_id || !email) { json(res, 400, { error: 'Student ID and email required' }); return; }
-      // Find user — don't reveal whether the combo exists
-      const userResult = await supabase(`/rest/v1/users?user_id=eq.${encodeURIComponent(student_id.toUpperCase())}&email=eq.${encodeURIComponent(email.toLowerCase())}&select=id,user_id,full_name,email`, { method: 'GET', headers: { 'Prefer': '' } });
-      if (userResult.ok && userResult.data?.length) {
-        const user = userResult.data[0];
-        const token = randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
-        await supabase('/rest/v1/password_reset_tokens', {
-          method: 'POST',
-          body: JSON.stringify({ user_id: user.id, student_id: user.user_id, token, expires_at: expiresAt, used: false })
-        });
-        // Try email
-        try {
-          if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-            const t = getTransport();
-            await t.sendMail({
-              from: process.env.SMTP_FROM || `"Heimatliebe" <${process.env.SMTP_USER}>`,
-              to: user.email,
-              subject: 'Reset Your Password — Heimatliebe Institute',
-              html: resetEmailHtml({ full_name: user.full_name, site_url: siteUrl, token, student_id: user.user_id })
-            });
-          }
-        } catch (e) { console.warn('[email] Reset email send failed:', e.message); }
-      }
-      // Always return same message to avoid leaking user info
-      json(res, 200, { ok: true, message: 'If that Student ID and email match, a reset link has been sent.' });
-      return;
-    }
-
-    // ─── RESET PASSWORD (with token) ───────────────────────
-    if (urlPath === '/api/reset-password' && method === 'POST') {
-      const { token, student_id, new_password } = await readBody(req);
-      if (!token || !student_id || !new_password) { json(res, 400, { error: 'Missing required fields' }); return; }
-      if (new_password.length < 8) { json(res, 400, { error: 'Password must be 8+ characters' }); return; }
-      // Find valid token
-      const tokenResult = await supabase(`/rest/v1/password_reset_tokens?token=eq.${encodeURIComponent(token)}&student_id=eq.${encodeURIComponent(student_id.toUpperCase())}&used=eq.false&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-      if (!tokenResult.ok || !tokenResult.data?.length) { json(res, 400, { error: 'Invalid or expired reset link.' }); return; }
-      const resetRecord = tokenResult.data[0];
-      if (new Date(resetRecord.expires_at) < new Date()) { json(res, 400, { error: 'Reset link has expired. Request a new one.' }); return; }
-      // Update password
-      const newHash = hashPw(new_password);
-      await supabase(`/rest/v1/students?student_id=eq.${encodeURIComponent(student_id.toUpperCase())}`, { method: 'PATCH', body: JSON.stringify({ password_hash: newHash }) });
-      // Mark token as used
-      await supabase(`/rest/v1/password_reset_tokens?id=eq.${resetRecord.id}`, { method: 'PATCH', body: JSON.stringify({ used: true }) });
-      console.log(`[auth] Password reset completed for ${student_id}`);
-      json(res, 200, { ok: true, message: 'Password has been reset successfully.' });
-      return;
-    }
-
-    // ─── APPROVE APPLICATION ───────────────────────────────
-    if (urlPath === '/api/approve-application' && method === 'POST') {
-      const { application_id } = await readBody(req);
-      if (!application_id) { json(res, 400, { error: 'Missing application_id' }); return; }
-      const appRes = await supabase(`/rest/v1/applications?id=eq.${application_id}&select=*`, { method: 'GET', headers: { 'Prefer': '' } });
-      if (!appRes.ok || !appRes.data?.length) { json(res, 404, { error: 'Application not found' }); return; }
-      const app = appRes.data[0];
-      const sid = `HMLI-${new Date().getFullYear()}-${String(Math.floor(Math.random()*9000)+1000)}`;
-      const userPayload = { user_id: sid, full_name: app.full_name, email: app.email, phone: app.phone || '', course: app.course, level: app.level, password_hash: app.password_hash, role: 'student', status: 'active' };
-      await supabase('/rest/v1/users', { method: 'POST', body: JSON.stringify(userPayload) });
-      await supabase(`/rest/v1/applications?id=eq.${application_id}`, { method: 'PATCH', body: JSON.stringify({ status: 'approved', student_id: sid, reviewed_at: new Date().toISOString() }) });
-      // Try email
-      try {
-        if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-          const t = getTransport();
-          await t.sendMail({ from: process.env.SMTP_FROM || `"Heimatliebe" <${process.env.SMTP_USER}>`, to: app.email, subject: 'Your Student ID — Heimatliebe Institute', html: approvalEmailHtml({ full_name: app.full_name, student_id: sid, course: app.course, level: app.level, site_url: siteUrl }) });
-        }
-      } catch (e) { console.warn('[email] Send failed:', e.message); }
-      console.log(`[approve] ${sid} created for ${app.full_name}`);
-      json(res, 200, { ok: true, student_id: sid });
-      return;
-    }
-
-    // ─── SUBMIT APPLICATION (new secure endpoint) ───────────
-    if (urlPath === '/api/submit-application' && method === 'POST') {
-      const body = await readBody(req);
-      const { full_name, email, phone, course, level, password, payment_proof_url } = body;
-
-      if (!full_name || !email || !password || !course || !level) {
-        return json(res, 400, { error: 'Missing required application fields.' });
-      }
-
-      const pwHash = hashPw(password);
-
-      const payload = {
-        full_name, email, phone, course, level,
-        password_hash: pwHash,
-        payment_proof_url: payment_proof_url || null,
-        status: 'pending',
-        submitted_at: new Date().toISOString()
-      };
-
-      const result = await supabase('/rest/v1/applications', { method: 'POST', body: JSON.stringify(payload) });
-      return json(res, result.status, result.data);
-    }
-
-    // ─── REJECT APPLICATION ────────────────────────────────
-    if (urlPath === '/api/reject-application' && method === 'POST') {
-      const { application_id } = await readBody(req);
-      await supabase(`/rest/v1/applications?id=eq.${application_id}`, { method: 'PATCH', body: JSON.stringify({ status: 'rejected', reviewed_at: new Date().toISOString() }) });
-      json(res, 200, { ok: true });
       return;
     }
 
@@ -373,56 +484,6 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // ─── GENERIC TABLE API ─────────────────────────────────
-    const tableMatch = urlPath.match(/^\/api\/([a-zA-Z_]+)(?:\/([0-9]+))?$/);
-    if (tableMatch) {
-      const table = tableMatch[1];
-      const id = tableMatch[2];
-      const allowed = ['users','students','courses','classes','class_enrollments','assignments','submissions','exams','exam_results','library','applications','news','payments','fees','invoices','timetable_entries','attendance','notifications','conversations','conversation_participants','messages','scholarships','scholarship_applications','alumni','password_reset_tokens'];
-      if (!allowed.includes(table)) { json(res, 403, { error: 'Table not allowed' }); return; }
-
-      if (method === 'GET') {
-        const opts = [];
-        if (query.order) opts.push(`order=${encodeURIComponent(query.order)}`);
-        else opts.push('order=created_at.desc');
-        if (query.limit) opts.push(`limit=${query.limit}`);
-        let filterPath = `/rest/v1/${table}?select=*&${opts.join('&')}`;
-        for (const [k, v] of Object.entries(query)) {
-          if (!['order','limit','select','page'].includes(k)) {
-            // Detect if value already has a Supabase operator prefix (e.g., "eq.5", "in.(1,2,3)", "gte.10")
-            // This preserves subqueries: "class_id=in.(select id from class_enrollments where user_id=eq.123)"
-            const hasOperator = /^[a-zA-Z_]+\./.test(v);
-            filterPath += hasOperator ? `&${k}=${encodeURIComponent(v)}` : `&${k}=eq.${encodeURIComponent(v)}`;
-          }
-        }
-        const result = await supabase(filterPath, { method: 'GET', headers: { 'Prefer': '' } });
-        if (!result.ok) { json(res, result.status, { error: result.data }); return; }
-        json(res, 200, result.data);
-        return;
-      }
-      if (method === 'POST') {
-        const body = await readBody(req);
-        const result = await supabase(`/rest/v1/${table}`, { method: 'POST', body: JSON.stringify(body) });
-        if (!result.ok) { json(res, result.status, { error: result.data }); return; }
-        json(res, 201, result.data);
-        return;
-      }
-      if (method === 'PATCH' && id) {
-        const body = await readBody(req);
-        const result = await supabase(`/rest/v1/${table}?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(body) });
-        if (!result.ok) { json(res, result.status, { error: result.data }); return; }
-        json(res, 200, result.data);
-        return;
-      }
-      if (method === 'DELETE' && id) {
-        await supabase(`/rest/v1/${table}?id=eq.${id}`, { method: 'DELETE' });
-        json(res, 200, { ok: true });
-        return;
-      }
-      json(res, 405, { error: 'Method not allowed' });
-      return;
-    }
-
     // ─── CONTENT LIST (list markdown files in a content folder) ──
     if (urlPath === '/content-list' && method === 'GET') {
       const folder = query.folder || '';
@@ -434,22 +495,6 @@ const server = createServer(async (req, res) => {
       } catch {
         json(res, 200, []);
       }
-      return;
-    }
-
-    // ─── CONTACT ENQUIRY ────────────────────────────────────
-    if (urlPath === '/api/contact-enquiry' && method === 'POST') {
-      const body = await readBody(req);
-      if (!body.name || !body.email) { json(res, 400, { error: 'Name and email required' }); return; }
-      const logDir = path.join(ROOT, 'data');
-      await fs.mkdir(logDir, { recursive: true });
-      const logFile = path.join(logDir, 'enquiries.json');
-      let enquiries = [];
-      try { enquiries = JSON.parse(await fs.readFile(logFile, 'utf8')); } catch {}
-      enquiries.push({ id: Date.now(), ...body, created_at: new Date().toISOString() });
-      if (enquiries.length > 500) enquiries = enquiries.slice(-500);
-      await fs.writeFile(logFile, JSON.stringify(enquiries, null, 2));
-      json(res, 200, { ok: true, message: 'Thank you! We will be in touch.' });
       return;
     }
 
