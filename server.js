@@ -273,13 +273,28 @@ async function handleDeleteTable(ctx) {
   json(ctx.res, 200, { ok: true });
 }
 
-// Register Generic Table Routes
+// Specific API Handlers
+
+// Register Specific API Routes first, so they take precedence over generic routes.
+apiRouter.post('/api/verify-admin', handleVerifyAdmin);
+apiRouter.post('/api/login', handleLogin);
+apiRouter.post('/api/change-password', handleChangePassword);
+apiRouter.post('/api/request-password-reset', handleRequestPasswordReset);
+apiRouter.post('/api/reset-password', handleResetPassword);
+apiRouter.post('/api/notifications/mark-all-read', handleMarkAllNotificationsRead);
+apiRouter.post('/api/approve-application', handleApproveApplication);
+apiRouter.post('/api/admin-reset-password', handleAdminResetPassword);
+apiRouter.post('/api/submit-application', handleSubmitApplication);
+apiRouter.post('/api/reject-application', handleRejectApplication);
+apiRouter.post('/api/contact-enquiry', handleContactEnquiry);
+
+// Now, register the generic CRUD routes. These will only be matched
+// if a more specific route was not found above.
 apiRouter.get('/api/:table', handleGetTable);
 apiRouter.post('/api/:table', handlePostTable);
 apiRouter.patch('/api/:table/:id', handlePatchTable);
 apiRouter.delete('/api/:table/:id', handleDeleteTable);
 
-// Specific API Handlers
 async function handleVerifyAdmin(ctx) {
   const { password } = ctx.body;
   if (!password) return json(ctx.res, 400, { error: 'Password required' });
@@ -442,19 +457,6 @@ async function handleContactEnquiry(ctx) {
   await fs.writeFile(logFile, JSON.stringify(enquiries, null, 2));
   json(ctx.res, 200, { ok: true, message: 'Thank you! We will be in touch.' });
 }
-
-// Register Specific API Routes
-apiRouter.post('/api/verify-admin', handleVerifyAdmin);
-apiRouter.post('/api/login', handleLogin);
-apiRouter.post('/api/change-password', handleChangePassword);
-apiRouter.post('/api/request-password-reset', handleRequestPasswordReset);
-apiRouter.post('/api/reset-password', handleResetPassword);
-apiRouter.post('/api/notifications/mark-all-read', handleMarkAllNotificationsRead);
-apiRouter.post('/api/approve-application', handleApproveApplication);
-apiRouter.post('/api/admin-reset-password', handleAdminResetPassword);
-apiRouter.post('/api/submit-application', handleSubmitApplication);
-apiRouter.post('/api/reject-application', handleRejectApplication);
-apiRouter.post('/api/contact-enquiry', handleContactEnquiry);
 
 // ── Router ─────────────────────────────────────────────────────
 const server = createServer(async (req, res) => {
