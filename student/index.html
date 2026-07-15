@@ -272,7 +272,10 @@
           ${i.author ? `<p class="text-sm">${esc(i.author)}</p>` : ''}
           <p class="text-sm mt-sm">${esc((i.description || '').slice(0, 120))}</p>
         </div>
-        ${i.file_url ? `<div class="card-footer"><a href="${esc(i.file_url)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" download>Download</a></div>` : ''}
+        ${(i.file_url || i.file) ? `<div class="card-footer" style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-primary" onclick="openStudentViewer('${esc(i.file_url || i.file)}','${esc(i.title || '')}')">👁 Open</button>
+          <a href="${esc(i.file_url || i.file)}" target="_blank" rel="noopener" class="btn btn-sm btn-outline" download>⬇ Download</a>
+        </div>` : ''}
       </div>
     `).join('');
   }
@@ -436,6 +439,23 @@
   /* ── START ────────────────────────────────────────────────── */
   initPortal(s, pages);
 })();
+
+window.openStudentViewer = function(url, title) {
+  if (!url) return;
+  const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+  let body = '';
+  if (ext === 'pdf') {
+    body = '<iframe src="'+url+'" style="width:100%;height:60vh;border:none;border-radius:8px;background:white"></iframe>';
+  } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+    body = '<img src="'+url+'" style="max-width:100%;border-radius:8px;display:block">';
+  } else if (['mp3','wav','ogg'].includes(ext)) {
+    body = '<audio controls style="width:100%"><source src="'+url+'"><p>Your browser does not support audio.</p></audio>';
+  } else {
+    body = '<p style="color:#667085;margin-bottom:12px">This file type cannot be previewed.</p>';
+  }
+  body += '<div style="margin-top:12px;display:flex;gap:8px"><a href="'+url+'" target="_blank" class="btn btn-sm btn-primary">Open in New Tab</a><a href="'+url+'" download class="btn btn-sm btn-outline">Download</a></div>';
+  openModal(title || 'Resource', body);
+};
 </script>
 </body>
 </html>

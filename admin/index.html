@@ -317,7 +317,7 @@ document.getElementById('logoutBtn').onclick = () => { sessionStorage.removeItem
 document.getElementById('refreshBtn').onclick = () => loadDashboard();
 
 // ── HELPERS ─────────────────────────────────────────────────────
-function esc(s) { return String(s||'').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function showLoading() { const e = document.getElementById('loadingOverlay'); if(e) e.style.display = 'flex'; }
 function hideLoading() { const e = document.getElementById('loadingOverlay'); if(e) e.style.display = 'none'; }
 function showToast(m, err) { let t = document.getElementById('admin-toast'); if(!t){t=document.createElement('div');t.id='admin-toast';t.style.cssText='position:fixed;bottom:24px;right:24px;background:#1B4332;color:#fff;padding:14px 22px;border-radius:8px;font-size:14px;z-index:999999;transition:all .3s;opacity:0;transform:translateY(80px);max-width:380px';document.body.appendChild(t)} t.textContent=m; t.style.opacity='1'; t.style.transform='translateY(0)'; t.style.background=err?'#dc2626':'#1B4332'; setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(80px)'},3500); }
@@ -351,7 +351,7 @@ let allAppls = [];
 async function loadDashboard() {
   showLoading();
   try {
-    const [apps, stus, cous, pays] = await Promise.all([getApi('applications'), getApi('students'), getApi('courses'), getApi('payments')]);
+    const [apps, stus, cous, pays] = await Promise.all([getApi('applications'), getApi('users','role=eq.student'), getApi('courses'), getApi('payments')]);
     allAppls = apps;
     document.getElementById('statApplications').textContent = apps.length;
     document.getElementById('statStudents').textContent = stus.length;
@@ -630,7 +630,7 @@ async function loadLibrary() {
     document.getElementById('libraryTable').innerHTML = renderTable(
       [{label:'Title',field:'title'},{label:'Type',field:'type'},{label:'Language',field:'language'},{label:'Level',field:'level'},{label:'Published',field:'published'}],
       libraryItems,
-      [{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editLibrary'},{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteLibrary'}]
+      [{lbl:'View',cls:'btn-primary btn-sm',fn:'viewLibraryFile'},{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editLibrary'},{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteLibrary'}]
     );
   } catch(e) { document.getElementById('libraryTable').innerHTML = '<p style="color:#a00">Error: '+e.message+'</p>'; }
   hideLoading();
@@ -743,6 +743,27 @@ window.updateLibrary = async function(id) {
     closeModal(); await loadLibrary(); showToast('✓ Updated!');
   } catch(e) { showToast('Error: '+e.message, true); }
   hideLoading();
+};
+
+
+window.viewLibraryFile = function(id) {
+  const item = libraryItems.find(x => x.id == id);
+  if (!item) return;
+  const url = item.file_url || item.file || '';
+  if (!url) { showToast('No file available for this resource.', true); return; }
+  const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+  let content = '';
+  if (ext === 'pdf') {
+    content = '<div style="width:100%"><iframe src="'+url+'" style="width:100%;height:520px;border:none;border-radius:8px"></iframe></div>';
+  } else if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+    content = '<img src="'+url+'" style="max-width:100%;border-radius:8px"><br><a href="'+url+'" target="_blank" class="btn btn-primary" style="margin-top:12px;display:inline-block">Open Full Size</a>';
+  } else if (['mp3','wav','ogg'].includes(ext)) {
+    content = '<p style="margin-bottom:12px">Audio: '+esc(item.title)+'</p><audio controls style="width:100%"><source src="'+url+'"></audio>';
+  } else {
+    content = '<p style="margin-bottom:12px;color:#667085">Preview not available for this file type.</p><a href="'+url+'" target="_blank" class="btn btn-primary">⬇ Download File</a>';
+  }
+  content += '<div style="margin-top:16px;display:flex;gap:8px"><a href="'+url+'" target="_blank" class="btn btn-primary btn-sm">Open in New Tab</a><a href="'+url+'" download class="btn btn-warning btn-sm">⬇ Download</a></div>';
+  openModal('📄 '+esc(item.title), content);
 };
 
 window.deleteLibrary = async function(id) {

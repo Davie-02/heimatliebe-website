@@ -148,6 +148,8 @@
 
     .card-footer { padding: 0.85rem 1.1rem; border-top: 1px solid rgba(27,67,50,0.07); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
     .card-date { font-size: 0.72rem; color: rgba(74,101,114,0.6); }
+    .btn-view{display:inline-flex;align-items:center;justify-content:center;padding:0.35rem 0.7rem;font-size:0.76rem;font-weight:600;background:var(--green-deep);color:var(--white);border:none;border-radius:2px;cursor:pointer;transition:background 0.15s;text-transform:uppercase;letter-spacing:0.05em}
+    .btn-view:hover{background:var(--green-mid)}
     .card-dl {
       font-size: 0.78rem; font-weight: 600; color: var(--green-mid);
       text-decoration: none; border: 1.5px solid var(--green-light);
@@ -220,6 +222,7 @@
     <li><a href="index.html#contact">Contact</a></li>
   </ul>
 </nav>
+<!-- SESSION NAV (injected by JS) -->
 
 <!-- HERO -->
 <div class="lib-hero">
@@ -304,8 +307,23 @@
 </footer>
 
 <script src="/supabase.js"></script>
+<script src="/js/auth.js"></script>
 <script>
-// supabase.js loaded above
+
+// ── AUTH GATE ──────────────────────────────────────────────────
+const _session = requireAuth('/login.html');
+// Show student info in nav
+if (_session) {
+  // Add student pill to nav
+  const _navRight = document.createElement('div');
+  _navRight.style.cssText = 'display:flex;align-items:center;gap:0.75rem';
+  _navRight.innerHTML = `
+    <span style="background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.35);padding:0.3rem 0.85rem;font-size:0.75rem;font-weight:600;color:#EDD591;border-radius:20px;letter-spacing:0.06em">${_session.user_id || _session.student_id || ''}</span>
+    <button onclick="logout()" style="font-size:0.75rem;font-weight:600;color:rgba(255,255,255,0.6);background:none;border:1px solid rgba(255,255,255,0.2);padding:0.3rem 0.75rem;border-radius:2px;cursor:pointer;letter-spacing:0.06em;text-transform:uppercase;transition:all 0.15s">Log Out</button>
+  `;
+  const _navEl = document.querySelector('nav');
+  if (_navEl) _navEl.appendChild(_navRight);
+}
 
 document.getElementById('yr').textContent = new Date().getFullYear();
 
@@ -401,8 +419,8 @@ async function loadLibraryFromSupabase() {
       language: r.language,
       level: r.level,
       type: r.type,
-      file: r.file_url || (r.file_metadata && r.file_metadata.path) || null,
-      cover: r.cover_url || null,
+      file: r.file || r.file_url || (r.file_metadata && r.file_metadata.path) || null,
+      cover: r.cover || r.cover_url || r.cover_image || null,
       description: r.description,
       free: r.free,
       date: r.created_at || r.date
@@ -466,7 +484,10 @@ function buildCard(item) {
         <span class="card-date">${item.date ? formatDate(item.date) : ''}</span>
         ${item.file
           ? (isFree
-              ? `<a class="card-dl" href="${esc(item.file)}" target="_blank" rel="noopener" download>Download</a>`
+              ? `<div style="display:flex;gap:0.5rem">
+                   <button class="btn-view" onclick="openFileViewer(${JSON.stringify(item.file)},${JSON.stringify(item.title||'')})">👁 Open</button>
+                   <a class="card-dl" href="${esc(item.file)}" target="_blank" rel="noopener" download title="Download">⬇</a>
+                 </div>`
               : `<a class="card-contact" href="https://wa.me/265991383466?text=${encodeURIComponent('Hello, I would like to access: ' + (item.title || 'a resource') + ' from the Library.')}" target="_blank" rel="noopener">Request Access</a>`)
           : ''}
       </div>
@@ -568,5 +589,47 @@ async function renderLibrary() {
 
 renderLibrary();
 </script>
+
+<!-- FILE VIEWER MODAL -->
+<div id="file-viewer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:999;flex-direction:column" role="dialog" aria-modal="true">
+  <div style="background:#1B4332;padding:0.85rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid rgba(201,168,76,0.3)">
+    <span id="fv-title" style="color:white;font-size:1rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-family:Georgia,serif"></span>
+    <div style="display:flex;gap:0.75rem;flex-shrink:0;margin-left:1rem">
+      <a id="fv-dl" href="#" download target="_blank" style="background:#C9A84C;color:#1B4332;padding:0.4rem 1rem;font-size:0.78rem;font-weight:700;text-decoration:none;text-transform:uppercase;letter-spacing:0.06em;border-radius:2px">⬇ Download</a>
+      <button onclick="closeFileViewer()" style="background:rgba(255,255,255,0.12);color:white;border:none;padding:0.4rem 1rem;cursor:pointer;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;border-radius:2px">✕ Close</button>
+    </div>
+  </div>
+  <div id="fv-body" style="flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;width:100%;height:calc(100vh - 52px)"></div>
+</div>
+
+<script>
+function openFileViewer(url, title) {
+  if (!url) return;
+  const modal = document.getElementById('file-viewer-modal');
+  document.getElementById('fv-title').textContent = title || 'Resource';
+  const dlBtn = document.getElementById('fv-dl');
+  dlBtn.href = url;
+  dlBtn.setAttribute('download', title || 'file');
+  const body = document.getElementById('fv-body');
+  const ext = (url.split('?')[0].split('.').pop() || '').toLowerCase();
+  if (ext === 'pdf') {
+    body.innerHTML = '<iframe src="'+url+'" style="width:100%;height:100%;border:none;background:white" title="'+title+'"></iframe>';
+  } else if (['jpg','jpeg','png','gif','webp','svg'].includes(ext)) {
+    body.innerHTML = '<img src="'+url+'" alt="'+title+'" style="max-width:95%;max-height:90vh;object-fit:contain;display:block">';
+  } else if (['mp3','wav','ogg','m4a'].includes(ext)) {
+    body.innerHTML = '<div style="text-align:center;color:white;padding:2rem"><div style="font-size:3rem;margin-bottom:1rem">🎧</div><p style="margin-bottom:1.5rem;font-size:1.1rem">'+title+'</p><audio controls style="width:320px;max-width:90vw"><source src="'+url+'"></audio></div>';
+  } else {
+    body.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.7);padding:3rem"><div style="font-size:3rem;margin-bottom:1rem">📁</div><p style="margin-bottom:0.5rem">This file type cannot be previewed in the browser.</p><p style="font-size:0.85rem;margin-bottom:1.5rem;opacity:0.6">Use the download button above.</p></div>';
+  }
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeFileViewer() {
+  document.getElementById('file-viewer-modal').style.display = 'none';
+  document.getElementById('fv-body').innerHTML = '';
+  document.body.style.overflow = '';
+}
+</script>
+
 </body>
 </html>
