@@ -432,7 +432,7 @@ async function handleAdminResetPassword(ctx) {
 async function handleSubmitApplication(ctx) {
   const { full_name, email, phone, course, level, password, payment_proof_url } = ctx.body;
   if (!full_name || !email || !password || !course || !level) return json(ctx.res, 400, { error: 'Missing required application fields.' });
-  const pwHash = await hashPw(password);
+  const pwHash = await hashPw(password); // Use bcrypt hashing
   const payload = { full_name, email, phone, course, level, password_hash: pwHash, payment_proof_url: payment_proof_url || null, status: 'pending', submitted_at: new Date().toISOString() };
   const result = await supabase('/rest/v1/applications', { method: 'POST', body: JSON.stringify(payload) });
   json(ctx.res, result.status, result.data);

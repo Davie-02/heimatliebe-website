@@ -41,6 +41,14 @@
     return { ok: res.ok, status: res.status, data };
   };
 
+  // Load the main auth script to get access to UI helpers like
+  // openModal, closeModal, showToast, etc.
+  if (!window.requireAuth) { // prevent double-loading
+    const script = document.createElement('script');
+    script.src = '/js/auth.js';
+    document.head.appendChild(script);
+  }
+
   // Signal that auth is ready — admin/index.html waits for this
   window.__HMLI_ADMIN_READY__ = true;
   window.dispatchEvent(new Event('hmli:admin:ready'));
