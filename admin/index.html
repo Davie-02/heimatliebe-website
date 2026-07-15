@@ -436,7 +436,7 @@ function viewApplication(id) {
     filePreviewHtml = `<div class="form-group"><label>Payment Proof</label><div>${previewContent}</div></div>`;
   }
 
-  const modalBody = `<div class="form-group"><label>Name</label><input value="${esc(a.full_name)}" readonly></div><div class="form-group"><label>Email</label><input value="${esc(a.email)}" readonly></div><div class="form-group"><label>Phone</label><input value="${esc(a.phone)}" readonly></div><div class="form-row"><div class="form-group"><label>Course</label><input value="${esc(a.course)}" readonly></div><div class="form-group"><label>Level</label><input value="${esc(a.level)}" readonly></div></div><div class="form-group"><label>Status</label><input value="${esc(a.status)}" readonly></div>${filePreviewHtml}<div style="display:flex;gap:10px;margin-top:12px"><button class="btn btn-success" onclick="approveApp('${esc(String(id))}')">✓ Approve</button><button class="btn btn-danger" onclick="rejectApp('${esc(String(id))}')">✕ Reject</button></div>`;
+  const modalBody = `<div class="form-group"><label>Name</label><input value="${esc(a.full_name)}" readonly></div><div class="form-group"><label>Email</label><input value="${esc(a.email)}" readonly></div><div class="form-group"><label>Phone</label><input value="${esc(a.phone)}" readonly></div><div class="form-row"><div class="form-group"><label>Course</label><input value="${esc(a.course)}" readonly></div><div class="form-group"><label>Level</label><input value="${esc(a.level)}" readonly></div></div><div class="form-group"><label>Status</label><input value="${esc(a.status || 'pending')}" readonly></div>${filePreviewHtml}<div style="display:flex;gap:10px;margin-top:12px">${a.status !== 'approved' ? `<button class="btn btn-success" onclick="approveApp('${esc(String(id))}')">✓ Approve</button>` : ''}${a.status !== 'rejected' ? `<button class="btn btn-danger" onclick="rejectApp('${esc(String(id))}')">✕ Reject</button>` : ''}</div>`;
   openModal('Application #' + id, modalBody);
 }
 
@@ -476,7 +476,7 @@ function renderStudents(data) {
   document.getElementById('studentsTable').innerHTML = renderTable(
     [{label:'Student ID',field:'user_id'},{label:'Name',field:'full_name'},{label:'Course',field:'course'},{label:'Level',field:'level'},{label:'Email',field:'email'}, {label:'Status', field:'status'}],
     data,
-    [{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editStudent'},{lbl:'Invoices',cls:'btn-primary btn-sm',fn:'viewStudentInvoices'},{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteStudent'}]
+    [{lbl:'Edit',cls:'btn-warning btn-sm',fn:'editStudent'},{lbl:'Invoices',cls:'btn-primary btn-sm',fn:'viewStudentInvoices'},{lbl:'Reset PW',cls:'btn-danger btn-sm',fn:'resetStudentPassword'}]
   );
 }
 document.getElementById('studentSearch').oninput = function() {
@@ -518,14 +518,14 @@ window.deleteStudent = async function(id) {
   showLoading(); await deleteApi('users', id); await loadStudents(); await loadDashboard(); hideLoading(); showToast('Deleted.');
 };
 window.viewStudentInvoices = async function(id) {
-  const student = students.find(s => s.id == id);
+  const student = students.find(s => String(s.id) === String(id));
   if (!student) {
     showToast('Student not found.', true);
     return;
   }
   showLoading();
   try {
-    const studentInvoices = await getApi('invoices', `user_id=eq.${student.user_id}&order=due_date.desc`);
+    const studentInvoices = await getApi('invoices', `user_id=eq.${student.id}&order=due_date.desc`);
     const tableHtml = renderTable(
       [{label:'Description', field:'description'}, {label:'Amount', field:'amount'}, {label:'Due Date', field:'due_date'}, {label:'Status', field:'status'}],
       studentInvoices
@@ -566,12 +566,20 @@ async function loadClasses() {
   );
   hideLoading();
 }
-window.newClass = function() {
-  openModal('New Class', '<div class="form-group"><label>Name</label><input id="clName" placeholder="e.g., German A1 - Section A"></div><div class="form-row"><div class="form-group"><label>Teacher ID</label><input id="clTeacher"></div><div class="form-group"><label>Course ID</label><input id="clCourse" type="number"></div></div><button class="btn btn-primary" onclick="saveNewClass()">Save</button>');
+window.newClass = async function() {
+  showLoading();
+  const [teachers, courses] = await Promise.all([
+    getApi('users', 'role=eq.teacher&select=id,full_name'),
+    getApi('courses', 'select=id,title,level')
+  ]);
+  hideLoading();
+  const teacherOpts = teachers.map(t => `<option value="${t.id}">${esc(t.full_name)}</option>`).join('');
+  const courseOpts = courses.map(c => `<option value="${c.id}">${esc(c.title)} (${esc(c.level)})</option>`).join('');
+  openModal('New Class', `<div class="form-group"><label>Name</label><input id="clName" placeholder="e.g., German A1 - Section A"></div><div class="form-row"><div class="form-group"><label>Teacher</label><select id="clTeacher">${teacherOpts}</select></div><div class="form-group"><label>Course</label><select id="clCourse">${courseOpts}</select></div></div><button class="btn btn-primary" onclick="saveNewClass()">Save</button>`);
 };
 window.saveNewClass = async function() {
   showLoading();
-  await createApi('classes', { name: document.getElementById('clName').value, teacher_id: document.getElementById('clTeacher').value, course_id: Number(document.getElementById('clCourse').value) });
+  await createApi('classes', { name: document.getElementById('clName').value, teacher_id: Number(document.getElementById('clTeacher').value), course_id: Number(document.getElementById('clCourse').value) });
   closeModal(); await loadClasses(); hideLoading(); showToast('✓ Class created!');
 };
 window.deleteClass = async function(id) {
