@@ -967,22 +967,16 @@ function renderGalleryItems(photos) {
 }
 
 async function renderGallery() {
-  const albums = await loadCollection('gallery');
+  let items = await loadCollectionFromSupabase('gallery');
+  if (!items || items.length === 0) items = await loadCollection('gallery');
   const filterBar = document.getElementById('gallery-filters');
-  const allPhotos = [];
   const cats = new Set();
 
-  albums.sort((a,b) => new Date(b.date) - new Date(a.date));
-  albums.forEach(album => {
-const photos = (album.photos || []).map(photo => ({
-    src: photo.image,
-    caption: photo.caption || ""
-}));
-    allPhotos.push(...photos);
-    if (album.category) cats.add(album.category);
+  items.forEach(item => {
+    if (item.category) cats.add(item.category);
   });
 
-  _galleryAllItems = allPhotos;
+  _galleryAllItems = items;
 
   if (cats.size > 1) {
     filterBar.style.display = 'flex';
@@ -996,12 +990,13 @@ const photos = (album.photos || []).map(photo => ({
     });
   }
 
-  renderGalleryItems(allPhotos);
+  renderGalleryItems(items);
 }
 
 async function renderDocuments() {
   const list = document.getElementById('docs-list');
-  const items = await loadCollection('documents');
+  let items = await loadCollectionFromSupabase('documents');
+  if (!items || items.length === 0) items = await loadCollection('documents');
   if (!items.length) {
     list.innerHTML = '<p class="empty-state">Documents will appear here once uploaded via the admin panel.</p>';
     return;
@@ -1021,7 +1016,8 @@ async function renderDocuments() {
 
 async function renderTestimonials() {
   const grid = document.getElementById('testi-grid');
-  const items = await loadCollection('testimonials');
+  let items = await loadCollectionFromSupabase('testimonials');
+  if (!items || items.length === 0) items = await loadCollection('testimonials');
   if (!items.length) {
     grid.innerHTML = '<p class="empty-state" style="color:rgba(255,255,255,0.45);">Testimonials will appear here once added via the admin panel.</p>';
     return;
@@ -1029,7 +1025,7 @@ async function renderTestimonials() {
   grid.innerHTML = items.map(t => `
     <div class="testi-card">
       <div class="testi-quote">&ldquo;</div>
-      <div class="testi-text">${esc(t._body || '')}</div>
+      <div class="testi-text">${esc(t.body || t._body || '')}</div>
       <div class="testi-footer">
         ${t.photo
           ? `<img src="${esc(t.photo)}" alt="${esc(t.name || '')}" />`

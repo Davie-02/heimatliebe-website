@@ -113,6 +113,9 @@
       <button class="nav-item" data-page="classes"><span>🏫</span> Classes</button>
       <button class="nav-item" data-page="courses"><span>📚</span> Courses</button>
       <button class="nav-item" data-page="library"><span>📖</span> Library</button>
+      <button class="nav-item" data-page="gallery"><span>🖼️</span> Gallery</button>
+      <button class="nav-item" data-page="documents"><span>📄</span> Documents</button>
+      <button class="nav-item" data-page="testimonials"><span>💬</span> Testimonials</button>
       <button class="nav-item" data-page="news"><span>📰</span> News</button>
       <button class="nav-item" data-page="assignments"><span>📝</span> Assignments</button>
       <button class="nav-item" data-page="submissions"><span>📬</span> Submissions</button>
@@ -195,6 +198,24 @@
       <section class="page" id="library">
         <div class="page-toolbar"><div><h2>Library</h2><p>Upload books with files & covers</p></div><div class="toolbar-right"><input id="librarySearch" placeholder="Search..."><button class="btn btn-primary" onclick="newLibraryBook()">+ Upload Book</button></div></div>
         <div id="libraryTable">Loading...</div>
+      </section>
+
+      <!-- GALLERY -->
+      <section class="page" id="gallery">
+        <div class="page-toolbar"><div><h2>Gallery</h2><p>Manage photo gallery images and categories</p></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newGalleryItem()">+ Add Photo</button></div></div>
+        <div id="galleryTable">Loading...</div>
+      </section>
+
+      <!-- DOCUMENTS -->
+      <section class="page" id="documents">
+        <div class="page-toolbar"><div><h2>Documents</h2><p>Manage public-facing downloadable documents</p></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newDocument()">+ Add Document</button></div></div>
+        <div id="documentsTable">Loading...</div>
+      </section>
+
+      <!-- TESTIMONIALS -->
+      <section class="page" id="testimonials">
+        <div class="page-toolbar"><div><h2>Testimonials</h2><p>Manage student testimonials for the homepage</p></div><div class="toolbar-right"><button class="btn btn-primary" onclick="newTestimonial()">+ Add Testimonial</button></div></div>
+        <div id="testimonialsTable">Loading...</div>
       </section>
 
       <!-- NEWS -->
@@ -380,6 +401,9 @@ navBtns.forEach(btn => {
     else if (pn === 'classes') loadClasses();
     else if (pn === 'courses') loadCourses();
     else if (pn === 'library') loadLibrary();
+    else if (pn === 'gallery') loadGallery();
+    else if (pn === 'documents') loadDocuments();
+    else if (pn === 'testimonials') loadTestimonials();
     else if (pn === 'news') loadNews();
     else if (pn === 'assignments') loadAssignments();
     else if (pn === 'submissions') loadSubmissions();
@@ -628,6 +652,119 @@ window.deleteCourse = async function(id) {
   if(!confirm('Delete this course?')) return;
   showLoading(); await deleteApi('courses', id); await loadCourses(); await loadDashboard(); hideLoading(); showToast('Deleted.');
 };
+
+// ── GALLERY ────────────────────────────────────────────────────
+async function loadGallery() {
+  showLoading();
+  const data = await getApi('gallery', 'order=created_at.desc');
+  document.getElementById('galleryTable').innerHTML = renderTable(
+    [{label:'Image', field:'src'}, {label:'Caption', field:'caption'}, {label:'Category', field:'category'}],
+    data,
+    [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteGalleryItem'}]
+  );
+  hideLoading();
+}
+window.newGalleryItem = function() {
+  openModal('Add Photo to Gallery',
+    `<div class="form-group"><label>Image File</label><input type="file" id="gFile" accept="image/*" onchange="previewGalleryImage()"><div id="gPreview"></div></div>
+     <div class="form-group"><label>Caption</label><input id="gCaption" placeholder="e.g., Students in the A2 class"></div>
+     <div class="form-group"><label>Category</label><input id="gCategory" placeholder="e.g., Classroom, Events"></div>
+     <button class="btn btn-primary" onclick="saveGalleryItem()">Save Photo</button>`);
+};
+let uploadedGalleryUrl = '';
+window.previewGalleryImage = async function() {
+  const file = document.getElementById('gFile').files[0];
+  if (!file) return;
+  document.getElementById('gPreview').innerHTML = `<img src="${URL.createObjectURL(file)}" class="preview-thumb">`;
+  try {
+    uploadedGalleryUrl = await sbUpload('gallery', file);
+  } catch(e) { showToast('Image upload failed: '+e.message, true); }
+};
+window.saveGalleryItem = async function() {
+  if (!uploadedGalleryUrl) { showToast('Please upload an image file first.', true); return; }
+  showLoading();
+  await createApi('gallery', {
+    src: uploadedGalleryUrl,
+    caption: document.getElementById('gCaption').value,
+    category: document.getElementById('gCategory').value
+  });
+  closeModal(); await loadGallery(); hideLoading(); showToast('✓ Photo added!');
+  uploadedGalleryUrl = '';
+};
+window.deleteGalleryItem = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('gallery', id); await loadGallery(); hideLoading(); showToast('Deleted.'); };
+
+// ── DOCUMENTS ──────────────────────────────────────────────────
+async function loadDocuments() {
+  showLoading();
+  const data = await getApi('documents', 'order=created_at.desc');
+  document.getElementById('documentsTable').innerHTML = renderTable(
+    [{label:'Title', field:'title'}, {label:'Type', field:'type'}, {label:'File URL', field:'file'}],
+    data,
+    [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteDocument'}]
+  );
+  hideLoading();
+}
+window.newDocument = function() {
+  openModal('Add Document',
+    `<div class="form-group"><label>Title</label><input id="dTitle" placeholder="e.g., 2024 Course Brochure"></div>
+     <div class="form-group"><label>Description</label><input id="dDesc" placeholder="Briefly describe the document"></div>
+     <div class="form-group"><label>Type</label><input id="dType" placeholder="e.g., Brochure, Timetable"></div>
+     <div class="form-group"><label>File</label><input type="file" id="dFile" onchange="uploadDocumentFile()"><div id="dFileStatus" style="font-size:12px;color:#666;margin-top:4px"></div></div>
+     <button class="btn btn-primary" onclick="saveDocument()">Save Document</button>`);
+};
+let uploadedDocUrl = '';
+window.uploadDocumentFile = async function() {
+  const file = document.getElementById('dFile').files[0];
+  if (!file) return;
+  const st = document.getElementById('dFileStatus');
+  st.textContent = '⏳ Uploading...';
+  try {
+    uploadedDocUrl = await sbUpload('documents', file);
+    st.textContent = '✅ Uploaded: ' + file.name;
+  } catch(e) { st.textContent = '❌ Upload failed: '+e.message; }
+};
+window.saveDocument = async function() {
+  if (!uploadedDocUrl) { showToast('Please upload a file first.', true); return; }
+  showLoading();
+  await createApi('documents', {
+    title: document.getElementById('dTitle').value,
+    description: document.getElementById('dDesc').value,
+    type: document.getElementById('dType').value,
+    file: uploadedDocUrl
+  });
+  closeModal(); await loadDocuments(); hideLoading(); showToast('✓ Document added!');
+  uploadedDocUrl = '';
+};
+window.deleteDocument = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('documents', id); await loadDocuments(); hideLoading(); showToast('Deleted.'); };
+
+// ── TESTIMONIALS ───────────────────────────────────────────────
+async function loadTestimonials() {
+  showLoading();
+  const data = await getApi('testimonials', 'order=created_at.desc');
+  document.getElementById('testimonialsTable').innerHTML = renderTable(
+    [{label:'Name', field:'name'}, {label:'Course', field:'course'}, {label:'Quote', field:'body'}],
+    data,
+    [{lbl:'Delete',cls:'btn-danger btn-sm',fn:'deleteTestimonial'}]
+  );
+  hideLoading();
+}
+window.newTestimonial = function() {
+  openModal('Add Testimonial',
+    `<div class="form-group"><label>Student Name</label><input id="tName"></div>
+     <div class="form-group"><label>Course & Year</label><input id="tCourse" placeholder="e.g., German A2, 2024"></div>
+     <div class="form-group"><label>Testimonial Quote</label><textarea id="tBody" rows="4"></textarea></div>
+     <button class="btn btn-primary" onclick="saveTestimonial()">Save Testimonial</button>`);
+};
+window.saveTestimonial = async function() {
+  showLoading();
+  await createApi('testimonials', {
+    name: document.getElementById('tName').value,
+    course: document.getElementById('tCourse').value,
+    body: document.getElementById('tBody').value
+  });
+  closeModal(); await loadTestimonials(); hideLoading(); showToast('✓ Testimonial added!');
+};
+window.deleteTestimonial = async function(id) { if(!confirm('Delete?')) return; showLoading(); await deleteApi('testimonials', id); await loadTestimonials(); hideLoading(); showToast('Deleted.'); };
 
 // ── LIBRARY (with file upload + cover) ─────────────────────────
 let libraryItems = [];
