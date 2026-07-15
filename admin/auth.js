@@ -23,6 +23,9 @@
   window.SUPABASE_ANON  = cfg.SUPABASE_ANON;
   window.ADMIN_PASSWORD = cfg.ADMIN_PASSWORD || '';
 
+  // Simple in-memory cache to speed up repeated data fetches
+  const apiCache = new Map();
+
   window.sbAdmin = async function (path, options = {}) {
     const { headers: extra = {}, ...rest } = options;
     const res = await fetch(`${cfg.SUPABASE_URL}${path}`, {
@@ -39,6 +42,23 @@
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
     return { ok: res.ok, status: res.status, data };
+  };
+
+  // Add a cached API fetcher for the admin panel
+  window.api = async function(table, query = '') {
+    const cacheKey = `${table}?${query}`;
+    if (apiCache.has(cacheKey)) {
+      return apiCache.get(cacheKey);
+    }
+    try {
+      const { ok, data, status } = await sbAdmin(`/rest/v1/${table}?${query}`);
+      if (!ok) throw new Error(JSON.stringify(data));
+      apiCache.set(cacheKey, data); // Cache the successful result
+      return data;
+    } catch (e) {
+      console.error(`API Error fetching ${table}:`, e.message);
+      throw e;
+    }
   };
 
   // Load the main auth script to get access to UI helpers like
