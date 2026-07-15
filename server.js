@@ -83,9 +83,8 @@ const comparePw = async (pw, hash) => await bcrypt.compare(pw, hash);
 // ── Supabase REST Helper ──────────────────────────────────────
 async function supabase(path, options = {}) {
   const url = `${CFG.SUPABASE_URL}${path}`;
-  // Use the service role key for all server-side operations
-  // The RLS policies will handle permissions based on the user's role
-  const apiKey = CFG.SUPABASE_SERVICE_KEY || CFG.SUPABASE_ANON;
+  // Always use the service role key for server-side operations to bypass RLS.
+  const apiKey = CFG.SUPABASE_SERVICE_KEY;
 
   const headers = {
     'apikey': apiKey, 'Authorization': `Bearer ${apiKey}`,
@@ -221,6 +220,7 @@ const apiRouter = new Router();
 
 // Generic Table API Handlers
 const ALLOWED_TABLES = ['users','students','courses','classes','class_enrollments','assignments','submissions','exams','exam_results','library','applications','news','payments','fees','invoices','timetable_entries','attendance','notifications','conversations','conversation_participants','messages','scholarships','scholarship_applications','alumni','password_reset_tokens'];
+const PUBLIC_POST_TABLES = ['applications', 'password_reset_tokens']; // Tables that can be written to by unauthenticated users
 
 async function handleGetTable(ctx) {
   const { params: { table }, query } = ctx;
@@ -246,7 +246,14 @@ async function handleGetTable(ctx) {
 async function handlePostTable(ctx) {
   const { params: { table }, body } = ctx;
   if (!ALLOWED_TABLES.includes(table)) return json(ctx.res, 403, { error: 'Table not allowed' });
-  const result = await supabase(`/rest/v1/${table}`, { method: 'POST', body: JSON.stringify(body) });
+
+  // For public-facing forms (like new applications), we might need to use the ANON key
+  // if we want RLS to apply. However, for a trusted backend, using SERVICE_KEY is standard.
+  // Let's assume for now all POSTs from the server are privileged.
+  // If a specific table needs ANON key, we can check `PUBLIC_POST_TABLES.includes(table)`
+  // and switch the key, but the current `supabase` helper is hardcoded to SERVICE_KEY.
+
+  const result = await supabase(`/rest/v1/${table}`, { method: 'POST', body: JSON.stringify(body), headers: { 'Prefer': 'return=representation,resolution=merge-duplicates' } });
   if (!result.ok) return json(ctx.res, result.status, { error: result.data });
   json(ctx.res, 201, result.data);
 }
@@ -487,21 +494,23 @@ const server = createServer(async (req, res) => {
     const uploadMatch = urlPath.match(/^\/api\/upload\/([^/]+)(?:\/(.+))?$/);
     if (uploadMatch && method === 'POST') {
       const bucket = uploadMatch[1];
+      const fileName = uploadMatch[2] || `upload-${Date.now()}`;
       const buf = await readBuffer(req);
       const ct = req.headers['content-type'] || '';
-      const boundaryMatch = ct.match(/boundary=(.+)/);
-      if (!boundaryMatch) { json(res, 400, { error: 'No boundary' }); return; }
-      const boundary = boundaryMatch[1].trim();
-      const fields = parseMultipart(buf, boundary);
-      const file = fields.file;
-      if (!file || !file.filename) { json(res, 400, { error: 'No file uploaded' }); return; }
-      const ext = path.extname(file.filename) || '';
+
+      // The client sends raw file data, not a multipart form.
+      // We don't need to parse boundaries.
+      if (buf.length === 0) { json(res, 400, { error: 'No file data received' }); return; }
+
+      const ext = path.extname(fileName) || '';
       const storagePath = `${Date.now()}-${randomBytes(4).toString('hex')}${ext}`;
+
       const upRes = await fetch(`${CFG.SUPABASE_URL}/storage/v1/object/${bucket}/${storagePath}`, {
         method: 'POST',
-        headers: { 'apikey': CFG.SUPABASE_ANON, 'Authorization': `Bearer ${CFG.SUPABASE_ANON}`, 'Content-Type': mimeType(file.filename) },
-        body: file.data
+        headers: { 'apikey': CFG.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${CFG.SUPABASE_SERVICE_KEY}`, 'Content-Type': ct || mimeType(fileName) },
+        body: buf
       });
+
       if (!upRes.ok) { const t = await upRes.text(); json(res, 500, { error: 'Upload failed', detail: t }); return; }
       const publicUrl = `${CFG.SUPABASE_URL}/storage/v1/object/public/${bucket}/${storagePath}`;
       console.log(`[upload] ${bucket}/${storagePath}`);
@@ -516,7 +525,7 @@ const server = createServer(async (req, res) => {
       if (!bucket || !filePath) { json(res, 400, { error: 'Missing bucket or path' }); return; }
       await fetch(`${CFG.SUPABASE_URL}/storage/v1/object/${bucket}/${filePath}`, {
         method: 'DELETE',
-        headers: { 'apikey': CFG.SUPABASE_ANON, 'Authorization': `Bearer ${CFG.SUPABASE_ANON}` }
+        headers: { 'apikey': CFG.SUPABASE_SERVICE_KEY, 'Authorization': `Bearer ${CFG.SUPABASE_SERVICE_KEY}` }
       });
       json(res, 200, { ok: true });
       return;

@@ -274,8 +274,7 @@ Visit `http://localhost:3000` — the site is live.
 2. Insert an admin user:
 ```sql
 INSERT INTO users (user_id, full_name, email, password_hash, role)
-VALUES ('ADMIN-001', 'Admin', 'admin@heimatliebe.mw',
-        'hashed_password_here', 'superadmin');
+VALUES ('ADMIN-001', 'Admin', 'admin@heimatliebe.mw', 'your_bcrypt_hash_here', 'superadmin');
 ```
 3. Use the `hashPassword('your-password')` function from the JS console, or use a tool to generate SHA-256 with salt `hmli_salt_2025`
 
@@ -294,6 +293,7 @@ Set these in your Railway project:
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_ANON` | Supabase anonymous key |
 | `ADMIN_PASSWORD` | Admin panel password |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key |
 | `SMTP_HOST` | SMTP server (default: smtp.gmail.com) |
 | `SMTP_PORT` | SMTP port (default: 465) |
 | `SMTP_USER` | SMTP username/email |
