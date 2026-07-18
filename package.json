@@ -5,12 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "import:content": "node scripts/import_markdown_to_supabase.js"
+    "start": "node server.js"
   },
-  "keywords": ["heimatliebe", "language-school", "supabase", "lms"],
-  "author": "Heimatliebe Institute",
-  "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
     "nodemailer": "^6.9.13"

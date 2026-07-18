@@ -189,14 +189,20 @@ function initPortal(session, pages) {
 const dataCache = {};
 async function loadData(table, options = '') {
   const key = `${table}?${options}`;
-  if (dataCache[key] && dataCache[key]._ts > Date.now() - 10000) {
+  if (dataCache[key] && dataCache[key]._ts > Date.now() - 30000) {
     return dataCache[key].data;
   }
-  // Use sbFetch for consistency and error handling
-  const { ok, data } = await sbFetch(`/rest/v1/${table}?${options}`);
-  if (ok) { dataCache[key] = { data, _ts: Date.now() }; return data; }
-  console.error(`Failed to load data for: ${table}`);
-  return [];
+  try {
+    const params = options ? `?${options}` : '';
+    const r = await fetch(`/api/${table}${params}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    dataCache[key] = { data, _ts: Date.now() };
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error(`[loadData] Failed to load ${table}:`, e.message);
+    return [];
+  }
 }
 function invalidateCache(table) { Object.keys(dataCache).forEach(k => { if (k.startsWith(table)) delete dataCache[k]; }); }
 
@@ -213,8 +219,9 @@ async function updateNotificationCountBadge(session) {
   try {
     // Fetch only the IDs of unread notifications for a lightweight query
     // Using sbFetch directly for better error handling visibility
-    const { ok, data } = await sbFetch(`/rest/v1/notifications?user_id=eq.${session.id}&is_read=eq.false&select=id`);
-    if (ok) {
+    const r = await fetch(`/api/notifications?user_id=eq.${encodeURIComponent(session.id)}&is_read=eq.false&select=id&limit=99`);
+    const ok = r.ok; const data = ok ? await r.json() : [];
+    if (ok && Array.isArray(data)) {
       const count = data.length;
 
       let badge = notifLink.querySelector('.nav-badge-count');
@@ -233,7 +240,7 @@ async function updateNotificationCountBadge(session) {
 }
 
 // ── FORMAT HELPERS ───────────────────────────────────────────────
-function esc(s) { return String(s || '').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"'); }
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function formatDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); } catch { return d; } }
 function formatDateTime(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }); } catch { return d; } }
 
@@ -259,6 +266,3 @@ function showToast(msg, isError = false) {
   toast.textContent = msg; toast.className = 'toast' + (isError ? ' toast-error' : ''); toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3500);
 }
-
-// ── INITIAL PASSWORD ─────────────────────────────────────────────
-function getInitialPassword() { return 'changeme123'; }

@@ -35,10 +35,19 @@ try {
   console.log('[server] No config.json found. Relying on environment variables.');
 }
 
-// Fail fast if essential configs are missing
+// Warn if essential configs are missing but don't crash — allows static files to be served
 if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON || !CFG.SUPABASE_SERVICE_KEY) {
-  console.error('[FATAL] Missing required Supabase configuration (URL, ANON, or SERVICE_KEY).');
-  process.exit(1);
+  console.warn('[WARN] Missing Supabase configuration. API endpoints will return 503 until env vars are set.');
+  console.warn('  Required: SUPABASE_URL, SUPABASE_ANON, SUPABASE_SERVICE_KEY');
+}
+
+// Middleware to block API calls if Supabase is not configured
+function requireSupabase(ctx) {
+  if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON || !CFG.SUPABASE_SERVICE_KEY) {
+    json(ctx.res, 503, { error: 'Server configuration incomplete. Contact administrator.' });
+    return false;
+  }
+  return true;
 }
 
 // ── MIME TYPES ────────────────────────────────────────────────
@@ -71,8 +80,13 @@ const readBuffer = req => new Promise((res, rej) => {
 });
 
 const json = (res, status, data) => {
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-  res.end(JSON.stringify(data));
+  const body = JSON.stringify(data);
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Content-Length': Buffer.byteLength(body)
+  });
+  res.end(body);
 };
 
 // Use bcrypt for hashing. It's async and includes a salt automatically.
@@ -223,6 +237,7 @@ const ALLOWED_TABLES = ['users','students','courses','classes','class_enrollment
 const PUBLIC_POST_TABLES = ['applications', 'password_reset_tokens']; // Tables that can be written to by unauthenticated users
 
 async function handleGetTable(ctx) {
+  if (!requireSupabase(ctx)) return;
   const { params: { table }, query } = ctx;
   if (!ALLOWED_TABLES.includes(table)) return json(ctx.res, 403, { error: 'Table not allowed' });
 
@@ -548,17 +563,32 @@ const server = createServer(async (req, res) => {
     }
 
     // ─── STATIC FILE SERVING ────────────────────────────────
+    const assetExts = ['.js','.css','.png','.jpg','.jpeg','.gif','.svg','.webp','.ico','.pdf','.woff','.woff2','.ttf','.mp3','.mp4'];
     let filePath = path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath);
     try {
       const stat = await fs.stat(filePath);
       if (stat.isDirectory()) filePath = path.join(filePath, 'index.html');
     } catch {
-      // Try index.html in directory
+      // For asset files (JS/CSS/images), return proper 404 — don't serve index.html
+      if (assetExts.includes(path.extname(urlPath).toLowerCase())) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end(`Not Found: ${urlPath}`);
+        return;
+      }
+      // For HTML routes (SPA-style), try directory index then fall back to index.html
       filePath = path.join(ROOT, urlPath, 'index.html');
       try { await fs.stat(filePath); } catch { filePath = path.join(ROOT, 'index.html'); }
     }
     const data = await fs.readFile(filePath);
-    res.writeHead(200, { 'Content-Type': mimeType(filePath) });
+    const ext = path.extname(filePath).toLowerCase();
+    const cacheControl = ['.html','.json'].includes(ext)
+      ? 'no-cache' // Always revalidate HTML/JSON
+      : 'public, max-age=31536000, immutable'; // Cache assets for 1 year
+    res.writeHead(200, {
+      'Content-Type': mimeType(filePath),
+      'Cache-Control': cacheControl,
+      'X-Content-Type-Options': 'nosniff'
+    });
     res.end(data);
 
   } catch (err) {

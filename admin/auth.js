@@ -45,15 +45,16 @@
   };
 
   // Add a cached API fetcher for the admin panel
-  window.api = async function(table, query = '') {
+  window.api = async function(table, query = '', { bust = false } = {}) {
     const cacheKey = `${table}?${query}`;
-    if (apiCache.has(cacheKey)) {
-      return apiCache.get(cacheKey);
-    }
+    if (!bust && apiCache.has(cacheKey)) return apiCache.get(cacheKey);
     try {
-      const { ok, data, status } = await sbAdmin(`/rest/v1/${table}?${query}`);
-      if (!ok) throw new Error(JSON.stringify(data));
-      apiCache.set(cacheKey, data); // Cache the successful result
+      // Use server-side /api/ routes which use service role key
+      const params = query ? `?${query}` : '';
+      const r = await fetch(`/api/${table}${params}`);
+      if (!r.ok) { const d = await r.json(); throw new Error(JSON.stringify(d)); }
+      const data = await r.json();
+      apiCache.set(cacheKey, data);
       return data;
     } catch (e) {
       console.error(`API Error fetching ${table}:`, e.message);
@@ -61,12 +62,23 @@
     }
   };
 
-  // Load the main auth script to get access to UI helpers like
-  // openModal, closeModal, showToast, etc.
-  if (!window.requireAuth) { // prevent double-loading
-    const script = document.createElement('script');
-    script.src = '/js/auth.js';
-    document.head.appendChild(script);
+  // Allow callers to bust cache for a table after mutations
+  window.bustCache = function(table) {
+    for (const key of apiCache.keys()) {
+      if (key.startsWith(table)) apiCache.delete(key);
+    }
+  };
+
+  // Load js/auth.js synchronously to ensure helpers (openModal, showToast, etc.)
+  // are available before we fire the ready event
+  if (!window.requireAuth) {
+    await new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = '/js/auth.js';
+      script.onload = resolve;
+      script.onerror = resolve; // resolve even on error to not block
+      document.head.appendChild(script);
+    });
   }
 
   // Signal that auth is ready — admin/index.html waits for this
